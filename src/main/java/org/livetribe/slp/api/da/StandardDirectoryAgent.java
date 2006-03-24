@@ -1,0 +1,458 @@
+/*
+ * Copyright 2006 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.livetribe.slp.api.da;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.logging.Level;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.spi.da.DirectoryAgentManager;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvReg;
+import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.net.MessageEvent;
+import org.livetribe.slp.spi.net.MessageListener;
+
+/**
+ * @version $Rev$ $Date$
+ */
+public class StandardDirectoryAgent extends StandardAgent implements DirectoryAgent
+{
+    private DirectoryAgentManager manager;
+    private int heartBeat;
+    private Timer timer;
+    private long bootTime;
+    private InetAddress localhost;
+    private MessageListener multicastListener;
+    private MessageListener unicastListener;
+    private final Lock servicesLock = new ReentrantLock();
+    private final Map services = new HashMap();
+
+    public void setDirectoryAgentManager(DirectoryAgentManager manager)
+    {
+        this.manager = manager;
+    }
+
+    public void setConfiguration(Configuration configuration) throws IOException
+    {
+        super.setConfiguration(configuration);
+        setHeartBeat(configuration.getDAHeartBeat());
+        if (manager != null) manager.setConfiguration(configuration);
+    }
+
+    public int getHeartBeat()
+    {
+        return heartBeat;
+    }
+
+    public void setHeartBeat(int heartBeat)
+    {
+        this.heartBeat = heartBeat;
+    }
+
+    public long getBootTime()
+    {
+        return bootTime;
+    }
+
+    protected void doStart() throws IOException
+    {
+        bootTime = System.currentTimeMillis();
+
+        // TODO: Override this simple behavior, allowing the user to set the host name
+        // TODO: what to do in case of multihomed hosts ?
+        localhost = InetAddress.getLocalHost();
+
+        multicastListener = new MulticastMessageListener();
+        unicastListener = new UnicastMessageListener();
+        manager.addMessageListener(multicastListener, true);
+        manager.addMessageListener(unicastListener, false);
+        manager.start();
+
+        // DirectoryAgents send unsolicited DAAdverts every heartBeat seconds (RFC 2608, 12.2)
+        timer = new Timer(true);
+        timer.schedule(new UnsolicitedDAAdvert(), 0L, getHeartBeat() * 1000L);
+    }
+
+    protected void doStop() throws IOException
+    {
+        timer.cancel();
+
+        // DirectoryAgents send a DAAdvert on shutdown with bootTime == 0 (RFC 2608, 12.1)
+        manager.multicastDAAdvert(0, getScopes(), null, null, Locale.getDefault().getCountry());
+        manager.stop();
+        manager.removeMessageListener(multicastListener, true);
+        manager.removeMessageListener(unicastListener, false);
+    }
+
+    protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address)
+    {
+        if (!message.isMulticast())
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": expected multicast flag set");
+            return;
+        }
+
+        ServiceType serviceType = message.getServiceType();
+        if (serviceType.isAbstractType() || !"directory-agent".equals(serviceType.getPrincipleTypeName()))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": expected service type 'directory-agent', got " + serviceType);
+            return;
+        }
+
+        List scopesList = Arrays.asList(getScopes());
+        List messageScopes = Arrays.asList(message.getScopes());
+        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopes))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": no scopes match among DA scopes " + scopesList + " and message scopes " + messageScopes);
+            return;
+        }
+
+        String[] prevResponders = message.getPreviousResponders();
+        String responder = localhost.getHostAddress();
+        if (Arrays.asList(prevResponders).contains(responder))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": already contains responder " + responder);
+            return;
+        }
+
+        // Replies must have the same language and XID as the request (RFC 2608, 8.0)
+        try
+        {
+            try
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("DirectoryAgent " + this + " sending unicast reply to " + address.getAddress());
+                manager.unicastDAAdvert(localhost, getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+            }
+            catch (ConnectException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("DirectoryAgent " + this + " could not send unicast reply to " + address.getAddress() + ", trying multicast");
+                manager.multicastDAAdvert(getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+            }
+        }
+        catch (IOException x)
+        {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send reply to " + address.getAddress(), x);
+        }
+    }
+
+    protected void handleUnicastSrvReg(SrvReg message, Socket socket)
+    {
+        int errorCode = 0;
+        if (message.isFresh())
+        {
+            errorCode = registerService(message);
+        }
+        else
+        {
+            errorCode = updateService(message);
+        }
+
+        try
+        {
+            manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
+        }
+        catch (IOException x)
+        {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
+        }
+    }
+
+    private int registerService(SrvReg message)
+    {
+        servicesLock.lock();
+        try
+        {
+            Map serviceURLs = (Map)services.get(message.getServiceType());
+            if (serviceURLs == null)
+            {
+                serviceURLs = new HashMap();
+                services.put(message.getServiceType(), serviceURLs);
+            }
+
+            Object oldRegistration = serviceURLs.put(message.getURLEntry().getURL(), message);
+            if (oldRegistration != null)
+            {
+                if (logger.isLoggable(Level.FINE)) logger.fine("Replacing service registration " + oldRegistration + " with new registration " + message);
+            }
+            else
+            {
+                if (logger.isLoggable(Level.FINE)) logger.fine("Registering new service " + message);
+            }
+            return 0;
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+    }
+
+    private int updateService(SrvReg message)
+    {
+        servicesLock.lock();
+        try
+        {
+            Map serviceURLs = (Map)services.get(message.getServiceType());
+            if (serviceURLs == null)
+            {
+                serviceURLs = new HashMap();
+                services.put(message.getServiceType(), serviceURLs);
+            }
+
+            SrvReg registration = (SrvReg)serviceURLs.get(message.getURLEntry().getURL());
+            // Updating a service that does not exist must fail (RFC 2608, 9.3)
+            if (registration == null) return ServiceLocationException.INVALID_UPDATE;
+            // Services must be updated keeping the same scopes list (RFC 2608, 9.3)
+            if (!Arrays.equals(registration.getScopes(), message.getScopes())) return ServiceLocationException.SCOPE_NOT_SUPPORTED;
+
+            registration.updateAttributes(message.getAttributes());
+            return 0;
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+    }
+
+    protected void handleUnicastSrvDeReg(SrvDeReg message, Socket socket)
+    {
+        servicesLock.lock();
+        try
+        {
+            int errorCode = 0;
+            for (Iterator servicesIterator = services.entrySet().iterator(); servicesIterator.hasNext();)
+            {
+                Map.Entry serviceEntry = (Map.Entry)servicesIterator.next();
+                Map serviceURLs = (Map)serviceEntry.getValue();
+
+                String serviceURL = message.getURLEntry().getURL();
+                SrvReg registration = (SrvReg)serviceURLs.get(serviceURL);
+                if (registration != null)
+                {
+                    String[] tags = message.getTags();
+                    if (tags != null)
+                    {
+                        registration.removeAttributes(tags);
+                    }
+                    else
+                    {
+                        serviceURLs.remove(serviceURL);
+                        if (serviceURLs.isEmpty()) servicesIterator.remove();
+                    }
+                }
+            }
+
+            try
+            {
+                manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
+            }
+            catch (IOException x)
+            {
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
+            }
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+    }
+
+    protected void handleUnicastSrvRqst(SrvRqst message, Socket socket)
+    {
+        List matchingServices = matchServices(message.getServiceType());
+        ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
+
+        try
+        {
+            manager.unicastSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+        }
+        catch (IOException x)
+        {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
+        }
+    }
+
+    private List matchServices(ServiceType serviceType)
+    {
+        Map servicesCopy = new HashMap();
+        servicesLock.lock();
+        try
+        {
+            servicesCopy.putAll(services);
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+
+        List result = new ArrayList();
+        for (Iterator entries = servicesCopy.entrySet().iterator(); entries.hasNext();)
+        {
+            Map.Entry entry = (Map.Entry)entries.next();
+            ServiceType registeredServiceType = (ServiceType)entry.getKey();
+            Map serviceURLs = (Map)entry.getValue();
+            if (registeredServiceType.matches(serviceType))
+            {
+                for (Iterator urls = serviceURLs.entrySet().iterator(); urls.hasNext();)
+                {
+                    Map.Entry urlEntry = (Map.Entry)urls.next();
+                    String serviceURL = (String)urlEntry.getKey();
+                    SrvReg registeredService = (SrvReg)urlEntry.getValue();
+                    result.add(new ServiceURL(serviceURL, registeredService.getURLEntry().getLifetime()));
+                }
+            }
+        }
+        return result;
+    }
+
+    private class UnsolicitedDAAdvert extends TimerTask
+    {
+        public void run()
+        {
+            try
+            {
+                manager.multicastDAAdvert(getBootTime(), getScopes(), null, new Integer(0), Locale.getDefault().getCountry());
+            }
+            catch (IOException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "DirectoryAgent " + this + " cannot send unsolicited DAAdvert", x);
+            }
+        }
+    }
+
+    /**
+     * DirectoryAgents listen for multicast messages that may arrive.
+     * They are interested in:
+     * <ul>
+     * <li>SrvRqst, from UAs and SAs that wants to discover DAs; the reply is a DAAdvert</li>
+     * </ul>
+     */
+    private class MulticastMessageListener implements MessageListener
+    {
+        public void handle(MessageEvent event)
+        {
+            InetSocketAddress address = event.getSocketAddress();
+            try
+            {
+                Message message = Message.deserialize(event.getMessageBytes());
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("DirectoryAgent multicast message listener received message " + message);
+
+                switch (message.getMessageType())
+                {
+                    case SrvRqst.SRV_RQST_TYPE:
+                        handleMulticastSrvRqst((SrvRqst)message, address);
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("DirectoryAgent " + this + " dropping multicast message " + message + ": not handled by DirectoryAgents");
+                        break;
+                }
+            }
+            catch (ServiceLocationException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "DirectoryAgent " + this + " received bad multicast message from: " + address + ", ignoring", x);
+            }
+        }
+    }
+
+    /**
+     * DirectoryAgents listen for unicast messages from UAs and SAs.
+     * They are interested in:
+     * <ul>
+     * <li>SrvRqst, from UAs and SAs that wants register a ServiceURL; the reply is a SrvAck</li>
+     * <li>SrvReg, from SAs that wants to register a ServiceURL; the reply is a SrvAck</li>
+     * <li>SrvDeReg, from SAs that wants to unregister a ServiceURL; the reply is a SrvAck</li>
+     * </ul>
+     */
+    private class UnicastMessageListener implements MessageListener
+    {
+        public void handle(MessageEvent event)
+        {
+            try
+            {
+                Message message = Message.deserialize(event.getMessageBytes());
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("DirectoryAgent unicast message listener received message " + message);
+
+                if (message.isMulticast())
+                {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("DirectoryAgent " + this + " dropping message " + message + ": expected multicast flag unset");
+                    return;
+                }
+
+                switch (message.getMessageType())
+                {
+                    case Message.SRV_RQST_TYPE:
+                        handleUnicastSrvRqst((SrvRqst)message, (Socket)event.getSource());
+                        break;
+
+                    case Message.SRV_REG_TYPE:
+                        handleUnicastSrvReg((SrvReg)message, (Socket)event.getSource());
+                        break;
+
+                    case Message.SRV_DEREG_TYPE:
+                        handleUnicastSrvDeReg((SrvDeReg)message, (Socket)event.getSource());
+                        break;
+
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("DirectoryAgent " + this + " dropping unicast message " + message + ": not handled by DirectoryAgents");
+                        break;
+                }
+            }
+            catch (ServiceLocationException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "DirectoryAgent " + this + " received bad unicast message from: " + event.getSocketAddress() + ", ignoring", x);
+            }
+        }
+    }
+}
