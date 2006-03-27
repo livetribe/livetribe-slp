@@ -57,7 +57,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return request;
     }
 
-    public SrvAck unicastSrvReg(InetAddress address, ServiceURL serviceURL, boolean newService, String[] scopes, String[] attributes) throws IOException
+    public SrvAck unicastSrvReg(InetAddress address, ServiceType serviceType, ServiceURL serviceURL, boolean newService, String[] scopes, String[] attributes, String language) throws IOException
     {
         // TODO: handle negative lifetimes using a Timer (maybe in the API layer)
 
@@ -67,11 +67,12 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         SrvReg registration = new SrvReg();
         registration.setURLEntry(urlEntry);
-        registration.setServiceType(serviceURL.getServiceType());
+        registration.setServiceType(serviceType);
         registration.setScopes(scopes);
         registration.setAttributes(attributes);
         registration.setFresh(newService);
         registration.setXID(generateXID());
+        registration.setLanguage(language);
 
         byte[] requestBytes = serializeMessage(registration);
 

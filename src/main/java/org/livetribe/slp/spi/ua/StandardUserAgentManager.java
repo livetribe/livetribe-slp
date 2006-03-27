@@ -43,7 +43,7 @@ import org.livetribe.slp.spi.net.UnicastConnector;
  */
 public class StandardUserAgentManager extends StandardAgentManager implements UserAgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException, ServiceLocationException
+    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter);
         request.setMulticast(true);
@@ -51,7 +51,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         return convergentDASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
     }
 
-    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException, ServiceLocationException
+    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:service-agent"), scopes, filter);
         request.setMulticast(true);
@@ -59,21 +59,25 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         return convergentSASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
     }
 
-    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException
+    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException
     {
         SrvRqst request = createSrvRqst(serviceType, scopes, filter);
-        byte[] requestBytes = request.serialize();
+        byte[] requestBytes = serializeMessage(request);
 
         UnicastConnector unicast = getUnicastConnector();
         Socket socket = unicast.send(requestBytes, address, false);
+        byte[] replyBytes = unicast.receive(socket);
         try
         {
-            byte[] messageBytes = unicast.receive(socket);
-            Message message = Message.deserialize(messageBytes);
+            Message message = Message.deserialize(replyBytes);
 
             if (message.getMessageType() != Message.SRV_RPLY_TYPE) throw new AssertionError("BUG: expected SrvRply upon SrvRqst, received instead " + message);
 
             return (SrvRply)message;
+        }
+        catch (ServiceLocationException e)
+        {
+            throw new AssertionError("BUG: could not deserialize message " + replyBytes);
         }
         finally
         {

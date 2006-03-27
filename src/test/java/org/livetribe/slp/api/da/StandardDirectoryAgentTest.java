@@ -16,6 +16,7 @@
 package org.livetribe.slp.api.da;
 
 import java.net.InetAddress;
+import java.util.Locale;
 
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicInteger;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
@@ -333,7 +334,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL, true, scopes, null);
+                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, null);
 
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
@@ -399,31 +400,26 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
                 String[] scopes = new String[]{"scope1", "scope2"};
 
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL, true, scopes, null);
+                String language = Locale.getDefault().getCountry();
+
+                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, language);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
                 // Re-registration with same information must replace service
-                ack = saManager.unicastSrvReg(localhost, serviceURL, true, scopes, null);
+                ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, language);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
                 // Update with same information must pass
-                ack = saManager.unicastSrvReg(localhost, serviceURL, true, scopes, null);
+                ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, false, scopes, null, language);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
                 // Update with different scope must fail
-                ack = saManager.unicastSrvReg(localhost, serviceURL, false, new String[]{"scope"}, null);
+                ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, false, new String[]{"scope"}, null, language);
                 assertNotNull(ack);
                 assertEquals(ServiceLocationException.SCOPE_NOT_SUPPORTED, ack.getErrorCode());
-
-                // Update with different scope must fail
-                ack = saManager.unicastSrvReg(localhost, serviceURL, false, new String[]{"scope"}, null);
-                assertNotNull(ack);
-                assertEquals(ServiceLocationException.SCOPE_NOT_SUPPORTED, ack.getErrorCode());
-
-
             }
             finally
             {
@@ -460,7 +456,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL, false, new String[]{"scope1", "scope2"}, null);
+                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, false, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getCountry());
 
                 assertNotNull(ack);
                 assertEquals(ServiceLocationException.INVALID_UPDATE, ack.getErrorCode());
@@ -502,7 +498,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
                 String[] scopes = new String[]{"scope1", "scope2"};
 
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL, true, scopes, null);
+                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, Locale.getDefault().getCountry());
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 

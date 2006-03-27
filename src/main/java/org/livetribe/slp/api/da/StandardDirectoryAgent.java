@@ -28,6 +28,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
@@ -44,6 +45,7 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 
@@ -62,6 +64,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     private MessageListener unicastListener;
     private final Lock servicesLock = new ReentrantLock();
     private final Map services = new HashMap();
+    private final List listeners = new LinkedList();
+    private final Lock listenersLock = new ReentrantLock();
 
     public void setDirectoryAgentManager(DirectoryAgentManager manager)
     {
@@ -133,6 +137,47 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         manager.stop();
         manager.removeMessageListener(multicastListener, true);
         manager.removeMessageListener(unicastListener, false);
+    }
+
+    public void addDirectoryAgentListener(DirectoryAgentListener listener)
+    {
+        listenersLock.lock();
+        try
+        {
+            listeners.add(listener);
+        }
+        finally
+        {
+            listenersLock.unlock();
+        }
+    }
+
+    public void removeDirectoryAgentListener(DirectoryAgentListener listener)
+    {
+        listenersLock.lock();
+        try
+        {
+            listeners.remove(listener);
+        }
+        finally
+        {
+            listenersLock.unlock();
+        }
+    }
+
+    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, String[] attributes, String language) throws ServiceLocationException
+    {
+        SrvReg message = new SrvReg();
+        message.setServiceType(serviceType);
+        URLEntry urlEntry = new URLEntry();
+        urlEntry.setURL(serviceURL.toString());
+        urlEntry.setLifetime(serviceURL.getLifetime());
+        message.setURLEntry(urlEntry);
+        message.setScopes(scopes);
+        message.setAttributes(attributes);
+        message.setLanguage(language);
+        int result = registerService(message);
+        if (result != 0) throw new ServiceLocationException(result);
     }
 
     protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address)
@@ -214,6 +259,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     private int registerService(SrvReg message)
     {
+        int result = 0;
         servicesLock.lock();
         try
         {
@@ -233,12 +279,28 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             {
                 if (logger.isLoggable(Level.FINE)) logger.fine("Registering new service " + message);
             }
-            return 0;
         }
         finally
         {
             servicesLock.unlock();
         }
+
+        DirectoryAgentEvent event = new DirectoryAgentEvent(message);
+        listenersLock.lock();
+        try
+        {
+            for (int i = 0; i < listeners.size(); ++i)
+            {
+                DirectoryAgentListener listener = (DirectoryAgentListener)listeners.get(i);
+                listener.serviceRegistered(event);
+            }
+        }
+        finally
+        {
+            listenersLock.unlock();
+        }
+
+        return result;
     }
 
     private int updateService(SrvReg message)

@@ -18,21 +18,20 @@ package org.livetribe.slp.spi.ua;
 import java.io.IOException;
 import java.net.InetAddress;
 
-import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.AgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
-import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SAAdvert;
+import org.livetribe.slp.spi.msg.SrvRply;
 
 /**
  * @version $Rev$ $Date$
  */
 public interface UserAgentManager extends AgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException, ServiceLocationException;
+    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException;
 
-    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException, ServiceLocationException;
+    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException;
 
-    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException;
+    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException;
 }

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.AgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
@@ -30,7 +31,7 @@ public interface ServiceAgentManager extends AgentManager
 {
     public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException;
 
-    public SrvAck unicastSrvReg(InetAddress address, ServiceURL serviceURL, boolean newService, String[] scopes, String[] attributes) throws IOException;
+    public SrvAck unicastSrvReg(InetAddress address, ServiceType serviceType, ServiceURL serviceURL, boolean newService, String[] scopes, String[] attributes, String language) throws IOException;
 
     public SrvAck unicastSrvDeReg(InetAddress address, ServiceURL serviceURL, String[] scopes, String[] tags) throws IOException;
 }

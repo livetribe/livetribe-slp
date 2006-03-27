@@ -1,19 +1,4 @@
-/*
- * Copyright 2006 the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.livetribe.slp.api.ua;
+package org.livetribe.slp.api.sa;
 
 import java.net.InetAddress;
 import java.util.List;
@@ -22,8 +7,8 @@ import java.util.Locale;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
+import org.livetribe.slp.api.ua.StandardUserAgent;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
-import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.SocketMulticastConnector;
 import org.livetribe.slp.spi.net.SocketUnicastConnector;
 import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
@@ -32,29 +17,29 @@ import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 /**
  * @version $Rev$ $Date$
  */
-public class StandardUserAgentTest extends SLPAPITestCase
+public class StandardServiceAgentTest extends SLPAPITestCase
 {
     public void testStartStop() throws Exception
     {
-        StandardUserAgent ua = new StandardUserAgent();
-        StandardUserAgentManager uaManager = new StandardUserAgentManager();
-        uaManager.setMulticastConnector(new SocketMulticastConnector());
-        uaManager.setUnicastConnector(new SocketUnicastConnector());
-        ua.setUserAgentManager(uaManager);
-        ua.setConfiguration(getDefaultConfiguration());
+        StandardServiceAgent sa = new StandardServiceAgent();
+        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+        saManager.setMulticastConnector(new SocketMulticastConnector());
+        saManager.setUnicastConnector(new SocketUnicastConnector());
+        sa.setServiceAgentManager(saManager);
+        sa.setConfiguration(getDefaultConfiguration());
 
-        assertFalse(ua.isRunning());
-        ua.start();
-        assertTrue(ua.isRunning());
-        ua.stop();
-        assertFalse(ua.isRunning());
-        ua.start();
-        assertTrue(ua.isRunning());
-        ua.stop();
-        assertFalse(ua.isRunning());
+        assertFalse(sa.isRunning());
+        sa.start();
+        assertTrue(sa.isRunning());
+        sa.stop();
+        assertFalse(sa.isRunning());
+        sa.start();
+        assertTrue(sa.isRunning());
+        sa.stop();
+        assertFalse(sa.isRunning());
     }
 
-    public void testFindServices() throws Exception
+    public void testRegisterServices() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
         StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
@@ -66,22 +51,19 @@ public class StandardUserAgentTest extends SLPAPITestCase
 
         try
         {
-            InetAddress localhost = InetAddress.getLocalHost();
-
+            StandardServiceAgent sa = new StandardServiceAgent();
             StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+            sa.setServiceAgentManager(saManager);
             saManager.setMulticastConnector(new SocketMulticastConnector());
             saManager.setUnicastConnector(new SocketUnicastConnector());
-            saManager.setConfiguration(getDefaultConfiguration());
-            saManager.start();
+            sa.setConfiguration(getDefaultConfiguration());
+            sa.start();
 
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, Locale.getDefault().getCountry());
-
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                sa.registerService(serviceURL.getServiceType(), serviceURL, scopes, null, Locale.getDefault().getCountry());
 
                 StandardUserAgent ua = new StandardUserAgent();
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();

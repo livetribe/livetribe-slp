@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.api.sa;
+package org.livetribe.slp.api.da;
 
-import java.io.IOException;
-
-import org.livetribe.slp.api.Agent;
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.spi.sa.ServiceAgentManager;
+import java.util.EventListener;
 
 /**
  * @version $Rev$ $Date$
  */
-public interface ServiceAgent extends Agent
+public interface DirectoryAgentListener extends EventListener
 {
-    public void setServiceAgentManager(ServiceAgentManager manager);
+    public void serviceRegistered(DirectoryAgentEvent event);
 
-    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, String[] attributes, String language) throws IOException, ServiceLocationException;
+    public void serviceDeregistered(DirectoryAgentEvent event);
 }
