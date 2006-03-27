@@ -16,7 +16,7 @@
 package org.livetribe.slp;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public class ServiceTypeTest extends SLPTestCase
 {

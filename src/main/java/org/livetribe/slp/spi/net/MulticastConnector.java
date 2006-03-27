@@ -20,6 +20,9 @@ import java.net.InetAddress;
 
 import org.livetribe.slp.api.Configuration;
 
+/**
+ * @version $Rev$ $Date$
+ */
 public abstract class MulticastConnector extends NetworkConnector
 {
     private int multicastTimeToLive;

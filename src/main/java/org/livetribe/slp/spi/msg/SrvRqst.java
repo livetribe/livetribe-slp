@@ -26,18 +26,18 @@ import org.livetribe.slp.ServiceLocationException;
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |       Service Location header (function = SrvRqst = 1)        |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |      length of <PRList>       |        <PRList> String        \
+ * |      length of [PRList]       |        [PRList] String        \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |   length of <service-type>    |    <service-type> String      \
+ * |   length of [service-type]    |    [service-type] String      \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |    length of <scope-list>     |     <scope-list> String       \
+ * |    length of [scope-list]     |     [scope-list] String       \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |  length of predicate string   |  Service Request <predicate>  \
+ * |  length of predicate string   |  Service Request [predicate]  \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |  length of <SLP SPI> string   |       <SLP SPI> String        \
+ * |  length of [SLP SPI] string   |       [SLP SPI] String        \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public class SrvRqst extends Rqst
 {

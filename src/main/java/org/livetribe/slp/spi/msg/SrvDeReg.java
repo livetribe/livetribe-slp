@@ -25,11 +25,11 @@ import org.livetribe.slp.ServiceLocationException;
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |         Service Location header (function = SrvDeReg = 4)     |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |    Length of <scope-list>     |         <scope-list>          \
+ * |    Length of [scope-list]     |         [scope-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |                           URL Entry                           \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |      Length of <tag-list>     |            <tag-list>         \
+ * |      Length of [tag-list]     |            [tag-list]         \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
  * @version $Rev$ $Date$

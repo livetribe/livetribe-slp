@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public class Configuration
 {
@@ -97,6 +97,22 @@ public class Configuration
     public int getDAHeartBeat()
     {
         return Integer.parseInt(properties.getProperty("net.slp.DAHeartBeat", "10800"));
+    }
+
+
+    public int getDADiscoveryStartWaitBound()
+    {
+        return getRandomStartWaitBound();
+    }
+
+    public int getDADiscoveryPeriod()
+    {
+        return Integer.parseInt(properties.getProperty("net.slp.DAActiveDiscoveryInterval", "900"));
+    }
+
+    private int getRandomStartWaitBound()
+    {
+        return Integer.parseInt(properties.getProperty("net.slp.randomWaitBound", "3"));
     }
 
     private long[] split(String value)

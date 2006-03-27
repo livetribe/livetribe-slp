@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 the original author or authors
+ * Copyright 2006 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi;
+package org.livetribe.slp.api.sa;
 
-import org.livetribe.slp.SLPTestCase;
+import org.livetribe.slp.api.Agent;
 
 /**
  * @version $Rev$ $Date$
  */
-public class SLPSPITestCase extends SLPTestCase
+public interface ServiceAgent extends Agent
 {
 }

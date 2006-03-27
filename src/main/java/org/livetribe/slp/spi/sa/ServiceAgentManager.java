@@ -24,7 +24,7 @@ import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public interface ServiceAgentManager extends AgentManager
 {

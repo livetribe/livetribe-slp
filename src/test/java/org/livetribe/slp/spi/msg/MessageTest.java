@@ -21,7 +21,7 @@ import org.livetribe.slp.spi.SLPSPITestCase;
 import org.livetribe.slp.ServiceType;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public class MessageTest extends SLPSPITestCase
 {
@@ -164,5 +164,24 @@ public class MessageTest extends SLPSPITestCase
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
         assertEquals(original.getURLEntry(), deserialized.getURLEntry());
         assertTrue(Arrays.equals(original.getTags(), deserialized.getTags()));
+    }
+
+    public void testSAAdvertSerializeDeserialize() throws Exception
+    {
+        SAAdvert original = new SAAdvert();
+        original.setScopes(new String[]{"scope1", "scope2"});
+        original.setAttributes(new String[]{"attr1", "attr2"});
+        original.setURL("url1");
+        // TODO: test auth blocks
+//        original.setAuthenticationBlocks();
+
+        byte[] serialized = original.serialize();
+        SAAdvert deserialized = (SAAdvert)Message.deserialize(serialized);
+
+        assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
+        assertTrue(Arrays.equals(original.getAttributes(), deserialized.getAttributes()));
+        assertEquals(original.getURL(), deserialized.getURL());
+        // TODO: test auth blocks
+//        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));
     }
 }

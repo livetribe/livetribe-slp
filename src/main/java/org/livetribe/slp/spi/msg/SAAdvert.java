@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 the original author or authors
+ * Copyright 2006 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,44 +23,28 @@ import org.livetribe.slp.ServiceLocationException;
  *  0                   1                   2                   3
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |        Service Location header (function = DAAdvert = 8)      |
+ * |        Service Location header (function = SAAdvert = 11)     |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |          Error Code           |  DA Stateless Boot Timestamp  |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |DA Stateless Boot Time,, contd.|         Length of URL         |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * \                              URL                              \
+ * |         Length of URL         |              URL              \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |     Length of [scope-list]    |         [scope-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |     Length of [attr-list]     |          [attr-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |    Length of [SLP SPI List]   |     [SLP SPI List] String     \
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * | # Auth Blocks |         Authentication block (if any)         \
+ * | # auth blocks |        authentication block (if any)          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
  * @version $Rev$ $Date$
  */
-public class DAAdvert extends Rply
+public class SAAdvert extends Rply
 {
-    private int errorCode;
-    private long bootTime;
     private String url;
     private String[] scopes;
     private String[] attributes;
-    private String[] securityParamIndexes;
     private AuthenticationBlock[] authenticationBlocks;
-
-    public byte getMessageType()
-    {
-        return DA_ADVERT_TYPE;
-    }
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        int errorCodeBytesLength = 2;
-        int bootTimeBytesLength = 4;
         int urlLengthBytesLength = 2;
         byte[] urlBytes = stringToBytes(getURL());
         int urlBytesLength = urlBytes.length;
@@ -70,9 +54,6 @@ public class DAAdvert extends Rply
         int attrsLengthBytesLength = 2;
         byte[] attrsBytes = stringArrayToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
-        int securityParamsLengthBytesLength = 2;
-        byte[] securityParamsBytes = stringArrayToBytes(getSecurityParamIndexes());
-        int securityParamsBytesLength = securityParamsBytes.length;
         int authBlocksCountBytesLength = 1;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;
@@ -85,17 +66,11 @@ public class DAAdvert extends Rply
             authBlockBytesSum += bytes.length;
         }
 
-        int bodyLength = errorCodeBytesLength + bootTimeBytesLength + urlLengthBytesLength + urlBytesLength + scopesLengthBytesLength + scopesBytesLength;
-        bodyLength += attrsLengthBytesLength + attrsBytesLength + securityParamsLengthBytesLength + securityParamsBytesLength + authBlocksCountBytesLength + authBlockBytesSum;
+        int bodyLength = urlLengthBytesLength + urlBytesLength + scopesLengthBytesLength + scopesBytesLength;
+        bodyLength += attrsLengthBytesLength + attrsBytesLength + authBlocksCountBytesLength + authBlockBytesSum;
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, errorCodeBytesLength);
-
-        offset += errorCodeBytesLength;
-        writeInt((int)(getBootTime() / 1000), result, offset, bootTimeBytesLength);
-
-        offset += bootTimeBytesLength;
         writeInt(urlBytesLength, result, offset, urlLengthBytesLength);
 
         offset += urlLengthBytesLength;
@@ -114,12 +89,6 @@ public class DAAdvert extends Rply
         System.arraycopy(attrsBytes, 0, result, offset, attrsBytesLength);
 
         offset += attrsBytesLength;
-        writeInt(securityParamsBytesLength, result, offset, securityParamsLengthBytesLength);
-
-        offset += securityParamsLengthBytesLength;
-        System.arraycopy(securityParamsBytes, 0, result, offset, securityParamsBytesLength);
-
-        offset += securityParamsBytesLength;
         writeInt(authBlocksCount, result, offset, authBlocksCountBytesLength);
 
         offset += authBlocksCountBytesLength;
@@ -137,14 +106,6 @@ public class DAAdvert extends Rply
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        int errorCodeBytesLength = 2;
-        setErrorCode(readInt(bytes, offset, errorCodeBytesLength));
-
-        offset += errorCodeBytesLength;
-        int bootTimeBytesLength = 4;
-        setBootTime(readInt(bytes, offset, bootTimeBytesLength) * 1000L);
-
-        offset += bootTimeBytesLength;
         int urlLengthBytesLength = 2;
         int urlLength = readInt(bytes, offset, urlLengthBytesLength);
 
@@ -166,13 +127,6 @@ public class DAAdvert extends Rply
         setAttributes(readStringArray(bytes, offset, attrsLength));
 
         offset += attrsLength;
-        int securityParamsLengthBytesLength = 2;
-        int securityParamsLength = readInt(bytes, offset, securityParamsLengthBytesLength);
-
-        offset += securityParamsLengthBytesLength;
-        setSecurityParamIndexes(readStringArray(bytes, offset, securityParamsLength));
-
-        offset += securityParamsLength;
         int authBlocksCountBytesLength = 1;
         int authBlocksCount = readInt(bytes, offset, authBlocksCountBytesLength);
 
@@ -189,25 +143,9 @@ public class DAAdvert extends Rply
         }
     }
 
-    public int getErrorCode()
+    public byte getMessageType()
     {
-        return errorCode;
-    }
-
-    public void setErrorCode(int errorCode)
-    {
-        this.errorCode = errorCode;
-    }
-
-    public long getBootTime()
-    {
-        return bootTime;
-    }
-
-    public void setBootTime(long bootTime)
-    {
-        // Round the given time
-        this.bootTime = (bootTime / 1000L) * 1000L;
+        return SA_ADVERT_TYPE;
     }
 
     public String getURL()
@@ -238,16 +176,6 @@ public class DAAdvert extends Rply
     public void setAttributes(String[] attributes)
     {
         this.attributes = attributes;
-    }
-
-    public String[] getSecurityParamIndexes()
-    {
-        return securityParamIndexes;
-    }
-
-    public void setSecurityParamIndexes(String[] securityParamIndexes)
-    {
-        this.securityParamIndexes = securityParamIndexes;
     }
 
     public AuthenticationBlock[] getAuthenticationBlocks()

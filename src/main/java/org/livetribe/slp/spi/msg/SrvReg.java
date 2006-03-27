@@ -26,13 +26,13 @@ import org.livetribe.slp.ServiceType;
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |         Service Location header (function = SrvReg = 3)       |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                          <URL-Entry>                          \
+ * |                          [URL-Entry]                          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * | length of service type string |        <service-type>         \
+ * | length of service type string |        [service-type]         \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |     length of <scope-list>    |         <scope-list>          \
+ * |     length of [scope-list]    |         [scope-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |  length of attr-list string   |          <attr-list>          \
+ * |  length of attr-list string   |          [attr-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |# of AttrAuths |(if present) Attribute Authentication Blocks...\
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

@@ -40,6 +40,7 @@ import org.livetribe.slp.spi.msg.Rqst;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.net.MulticastConnector;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.UnicastConnector;
@@ -254,14 +255,14 @@ public abstract class StandardAgentManager implements AgentManager
         }
     }
 
-    protected SrvRply[] convergentSASrvRqst(SrvRqst message, long timeframe, boolean repliesOnUnicast) throws IOException
+    protected SAAdvert[] convergentSASrvRqst(SrvRqst message, long timeframe, boolean repliesOnUnicast) throws IOException
     {
         ConvergentSAMessageListener listener = new ConvergentSAMessageListener();
         addMessageListener(listener, !repliesOnUnicast);
         try
         {
             List replies = convergentMulticastSend(message, timeframe, listener);
-            return (SrvRply[])replies.toArray(new SrvRply[replies.size()]);
+            return (SAAdvert[])replies.toArray(new SAAdvert[replies.size()]);
         }
         finally
         {
@@ -486,7 +487,7 @@ public abstract class StandardAgentManager implements AgentManager
 
                 switch (message.getMessageType())
                 {
-                    case DAAdvert.DA_ADVERT_TYPE:
+                    case Message.DA_ADVERT_TYPE:
                         if (logger.isLoggable(Level.FINE)) logger.fine("Convergent DA message listener " + this + " received reply message from " + address + ": " + message);
                         lock();
                         try
@@ -522,7 +523,7 @@ public abstract class StandardAgentManager implements AgentManager
 
                 switch (message.getMessageType())
                 {
-                    case SrvRply.SRV_RPLY_TYPE:
+                    case Message.SRV_RPLY_TYPE:
                         if (logger.isLoggable(Level.FINE)) logger.fine("Convergent SA message listener " + this + " received reply message from " + address + ": " + message);
                         lock();
                         try

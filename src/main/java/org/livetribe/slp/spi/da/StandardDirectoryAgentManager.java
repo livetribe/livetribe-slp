@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.da;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.logging.Level;
 
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
@@ -33,6 +34,7 @@ import org.livetribe.slp.spi.net.UnicastConnector;
  */
 public class StandardDirectoryAgentManager extends StandardAgentManager implements DirectoryAgentManager
 {
+    private InetAddress address;
     private InetAddress localhost;
 
     public void setConfiguration(Configuration configuration) throws IOException
@@ -43,14 +45,31 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         if (unicast != null) unicast.setUnicastListening(true);
     }
 
+    public InetAddress getInetAddress()
+    {
+        return address;
+    }
+
+    public void setInetAddress(InetAddress address)
+    {
+        this.address = address;
+    }
+
     public void doStart() throws IOException
     {
         if (getUnicastConnector() == null)
-            throw new IllegalStateException("DirectoryAgent " + this + " needs a UnicastConnector");
+            throw new IllegalStateException("DirectoryAgentManager " + this + " needs a UnicastConnector");
         if (getMulticastConnector() == null)
-            throw new IllegalStateException("DirectoryAgent " + this + " needs a MulticastConnector");
+            throw new IllegalStateException("DirectoryAgentManager " + this + " needs a MulticastConnector");
 
-        localhost = InetAddress.getLocalHost();
+        InetAddress agentAddr = getInetAddress();
+        if (agentAddr == null) agentAddr = InetAddress.getLocalHost();
+        if (agentAddr.isLoopbackAddress())
+        {
+            if (logger.isLoggable(Level.WARNING))
+                logger.warning("DirectoryAgentManager " + this + " starting on loopback address; this is normally wrong, check your hosts configuration");
+        }
+        localhost = agentAddr;
     }
 
     public void multicastDAAdvert(long bootTime, String[] scopes, String[] attributes, Integer xid, String language) throws IOException
@@ -109,5 +128,11 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         srvRply.setURLEntries(entries);
         byte[] bytes = serializeMessage(srvRply);
         getUnicastConnector().reply(socket, bytes);
+    }
+
+    public boolean canReplyOnUnicastTo(InetAddress address)
+    {
+        if (!getUnicastConnector().isUnicastListening()) return true;
+        return !localhost.equals(address);
     }
 }

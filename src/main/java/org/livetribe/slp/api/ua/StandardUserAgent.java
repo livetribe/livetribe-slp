@@ -16,11 +16,19 @@
 package org.livetribe.slp.api.ua;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.api.DirectoryAgentCache;
+import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.spi.msg.SAAdvert;
+import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.ua.UserAgentManager;
 
 /**
@@ -29,62 +37,93 @@ import org.livetribe.slp.spi.ua.UserAgentManager;
 public class StandardUserAgent extends StandardAgent implements UserAgent
 {
     private UserAgentManager manager;
-    private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+//    private final DirectoryAgentCache daCache = new DirectoryAgentCache();
 
     public void setUserAgentManager(UserAgentManager manager)
     {
         this.manager = manager;
     }
 
-/*
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setDiscoveryStartWait(configuration.getDADiscoveryStartWait());
-        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
+//        setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
+//        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
+        if (manager != null) manager.setConfiguration(configuration);
     }
-*/
 
     protected void doStart() throws IOException
     {
+        // TODO: add listeners to interpret unsolicited DAAdverts and SAAdverts
+        // TODO: add a Timer to rediscover DAs every discoveryPeriod
+        manager.start();
     }
 
     protected void doStop() throws IOException
     {
+        manager.stop();
     }
 
-    public List findServices(ServiceType serviceType, String[] scopes, String filter)
+    public List findServices(ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException
     {
-//        List addresses = getCachedDirectoryAgents(scopes);
-//        if (addresses.isEmpty()) addresses = discoverDirectoryAgents(scopes);
-//        if (addresses.isEmpty()) addresses = discoverServiceAgents(scopes);
-//        if (addresses.isEmpty()) return Collections.EMPTY_LIST;
+        List addresses = findDirectoryAgents(scopes);
 
-        // 1. Use cached DAs, and call manager.unicastSrvRqst()
-        // 2. No cached DAs, call manager.multicastDASrvRqst() to discover DAs; go back to 1.
-        // 3. No DAs, call manager.multicastSrvRqst() to discover SAs; call manager.unicastSrvRqst()
-        // 4. Extract the ServiceURL from SrvRplys and return them to user
-
-        return null;
+        List result = new ArrayList();
+        for (int i = 0; i < addresses.size(); ++i)
+        {
+            InetAddress address = (InetAddress)addresses.get(i);
+            SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter);
+            URLEntry[] entries = srvRply.getURLEntries();
+            for (int j = 0; j < entries.length; ++j)
+            {
+                URLEntry entry = entries[j];
+                result.add(entry.toServiceURL());
+            }
+        }
+        return result;
     }
-/*
+
+    protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
+    {
+        List addresses = getCachedDirectoryAgents(scopes);
+        if (addresses.isEmpty()) addresses = discoverDirectoryAgents(scopes);
+        if (addresses.isEmpty()) addresses = discoverServiceAgents(scopes);
+        if (addresses.isEmpty()) return Collections.emptyList();
+        cacheDirectoryAgents(addresses);
+        return addresses;
+    }
+
     private List getCachedDirectoryAgents(String[] scopes)
     {
-        return daCache.getDirectoryAgents(scopes);
+//        return daCache.getDirectoryAgents(scopes);
+        return Collections.emptyList();
     }
 
-    private List discoverDirectoryAgents(String[] scopes)
+    private void cacheDirectoryAgents(List addresses)
+    {
+    }
+
+    private List discoverDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
     {
         List result = new ArrayList();
-        manager.multicastDASrvRqst(scopes, null, -1);
+        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, -1);
+        for (int i = 0; i < daAdverts.length; ++i)
+        {
+            DAAdvert daAdvert = daAdverts[i];
+            result.add(InetAddress.getByName(daAdvert.getResponder()));
+        }
         return result;
     }
 
-    private List discoverServiceAgents(String[] scopes)
+    private List discoverServiceAgents(String[] scopes) throws IOException, ServiceLocationException
     {
         List result = new ArrayList();
-        manager.multicastSASrvRqst(scopes, null, -1);
+        SAAdvert[] saAdverts = manager.multicastSASrvRqst(scopes, null, -1);
+        for (int i = 0; i < saAdverts.length; ++i)
+        {
+            SAAdvert saAdvert = saAdverts[i];
+            result.add(InetAddress.getByName(saAdvert.getResponder()));
+        }
         return result;
     }
-*/
 }

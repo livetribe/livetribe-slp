@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.msg;
 import java.util.Arrays;
 
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceURL;
 
 /**
  * The RFC 2608 &lt;URL Entry&gt; is defined as:
@@ -181,5 +182,10 @@ public class URLEntry extends BytesBlock
     public void setAuthenticationBlocks(AuthenticationBlock[] authenticationBlocks)
     {
         this.authenticationBlocks = authenticationBlocks;
+    }
+
+    public ServiceURL toServiceURL()
+    {
+        return new ServiceURL(getURL(), getLifetime());
     }
 }

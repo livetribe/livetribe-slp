@@ -34,7 +34,7 @@ import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public class StandardServiceAgentManager extends StandardAgentManager implements ServiceAgentManager
 {

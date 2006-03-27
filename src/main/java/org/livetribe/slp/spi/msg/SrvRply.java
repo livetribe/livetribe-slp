@@ -27,7 +27,7 @@ import org.livetribe.slp.ServiceLocationException;
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |        Error Code             |        URL Entry count        |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |       &lt;URL Entry 1&gt;          ...       &lt;URL Entry N&gt;          \
+ * |       [URL Entry 1]          ...       [URL Entry N]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
  * @version $Rev$ $Date$

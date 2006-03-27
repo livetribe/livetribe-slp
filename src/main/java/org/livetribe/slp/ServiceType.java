@@ -20,7 +20,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public class ServiceType implements Serializable
 {

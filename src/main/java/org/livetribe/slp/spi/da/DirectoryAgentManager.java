@@ -23,7 +23,7 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.spi.AgentManager;
 
 /**
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public interface DirectoryAgentManager extends AgentManager
 {
@@ -34,4 +34,6 @@ public interface DirectoryAgentManager extends AgentManager
     public void unicastSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException;
 
     public void unicastSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
+
+    public boolean canReplyOnUnicastTo(InetAddress address);
 }

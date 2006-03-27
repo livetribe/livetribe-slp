@@ -33,7 +33,7 @@ import org.livetribe.slp.ServiceLocationException;
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
  *
- * $Rev$
+ * @version $Rev$ $Date$
  */
 public abstract class Message extends BytesBlock
 {
@@ -42,7 +42,12 @@ public abstract class Message extends BytesBlock
     public static final byte SRV_REG_TYPE = 3;
     public static final byte SRV_DEREG_TYPE = 4;
     public static final byte SRV_ACK_TYPE = 5;
+    public static final byte ATTR_RQST_TYPE = 6;
+    public static final byte ATTR_RPLY_TYPE = 7;
     public static final byte DA_ADVERT_TYPE = 8;
+    public static final byte SRV_TYPE_RQST_TYPE = 9;
+    public static final byte SRV_TYPE_RPLY_TYPE = 10;
+    public static final byte SA_ADVERT_TYPE = 11;
 
     private static final byte SLP_VERSION = 2;
 
@@ -232,18 +237,18 @@ public abstract class Message extends BytesBlock
                 return new SrvDeReg();
             case SRV_ACK_TYPE:
                 return new SrvAck();
-            case 6:
+            case ATTR_RQST_TYPE:
                 break;
-            case 7:
+            case ATTR_RPLY_TYPE:
                 break;
             case DA_ADVERT_TYPE:
                 return new DAAdvert();
-            case 9:
+            case SRV_TYPE_RQST_TYPE:
                 break;
-            case 10:
+            case SRV_TYPE_RPLY_TYPE:
                 break;
-            case 11:
-                break;
+            case SA_ADVERT_TYPE:
+                return new SAAdvert();
         }
         throw new ServiceLocationException("Unknown message " + messageType, ServiceLocationException.PARSE_ERROR);
     }

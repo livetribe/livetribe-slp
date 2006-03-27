@@ -39,7 +39,7 @@ public class SocketUnicastConnector extends UnicastConnector
     {
         if (!isUnicastListening()) return null;
 
-        InetAddress[] interfaceAddresses = getInterfaceAddresses();
+        InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {

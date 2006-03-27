@@ -27,6 +27,7 @@ import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
@@ -50,9 +51,9 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         return convergentDASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
     }
 
-    public SrvRply[] multicastSrvRqst(ServiceType serviceType, String[] scopes, String filter, long timeframe) throws IOException, ServiceLocationException
+    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException, ServiceLocationException
     {
-        SrvRqst request = createSrvRqst(serviceType, scopes, filter);
+        SrvRqst request = createSrvRqst(new ServiceType("service:service-agent"), scopes, filter);
         request.setMulticast(true);
         UnicastConnector unicast = getUnicastConnector();
         return convergentSASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());

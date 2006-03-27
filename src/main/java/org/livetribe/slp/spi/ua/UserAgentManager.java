@@ -23,15 +23,16 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.AgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.SAAdvert;
 
 /**
  * @version $Rev$ $Date$
  */
 public interface UserAgentManager extends AgentManager
 {
-    public SrvRply[] multicastSrvRqst(ServiceType serviceType, String[] scopes, String filter, long timeframe) throws IOException, ServiceLocationException;
-
     public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException, ServiceLocationException;
+
+    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException, ServiceLocationException;
 
     public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException;
 }

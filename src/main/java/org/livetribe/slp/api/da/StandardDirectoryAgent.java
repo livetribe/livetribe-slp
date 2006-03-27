@@ -54,6 +54,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 {
     private DirectoryAgentManager manager;
     private int heartBeat;
+    private InetAddress address;
     private Timer timer;
     private long bootTime;
     private InetAddress localhost;
@@ -84,6 +85,16 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         this.heartBeat = heartBeat;
     }
 
+    public InetAddress getInetAddress()
+    {
+        return address;
+    }
+
+    public void setInetAddress(InetAddress address)
+    {
+        this.address = address;
+    }
+
     public long getBootTime()
     {
         return bootTime;
@@ -93,9 +104,14 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     {
         bootTime = System.currentTimeMillis();
 
-        // TODO: Override this simple behavior, allowing the user to set the host name
-        // TODO: what to do in case of multihomed hosts ?
-        localhost = InetAddress.getLocalHost();
+        InetAddress agentAddr = getInetAddress();
+        if (agentAddr == null) agentAddr = InetAddress.getLocalHost();
+        if (agentAddr.isLoopbackAddress())
+        {
+            if (logger.isLoggable(Level.WARNING))
+                logger.warning("DirectoryAgent " + this + " starting on loopback address; this is normally wrong, check your hosts configuration");
+        }
+        localhost = agentAddr;
 
         multicastListener = new MulticastMessageListener();
         unicastListener = new UnicastMessageListener();
@@ -121,13 +137,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address)
     {
-        if (!message.isMulticast())
-        {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": expected multicast flag set");
-            return;
-        }
-
         ServiceType serviceType = message.getServiceType();
         if (serviceType.isAbstractType() || !"directory-agent".equals(serviceType.getPrincipleTypeName()))
         {
@@ -159,9 +168,12 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         {
             try
             {
+                // Avoid that unicast replies are sent to this directory agent
+                if (!manager.canReplyOnUnicastTo(address.getAddress())) throw new ConnectException();
+
                 if (logger.isLoggable(Level.FINE))
                     logger.fine("DirectoryAgent " + this + " sending unicast reply to " + address.getAddress());
-                manager.unicastDAAdvert(localhost, getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+                manager.unicastDAAdvert(address.getAddress(), getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
             }
             catch (ConnectException x)
             {
@@ -302,12 +314,15 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     protected void handleUnicastSrvRqst(SrvRqst message, Socket socket)
     {
+        if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + this + " queried for services of type " + message.getServiceType());
+
         List matchingServices = matchServices(message.getServiceType());
         ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
 
         try
         {
             manager.unicastSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+            if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
         }
         catch (IOException x)
         {
@@ -318,35 +333,32 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     private List matchServices(ServiceType serviceType)
     {
-        Map servicesCopy = new HashMap();
         servicesLock.lock();
         try
         {
-            servicesCopy.putAll(services);
+            List result = new ArrayList();
+            for (Iterator entries = services.entrySet().iterator(); entries.hasNext();)
+            {
+                Map.Entry entry = (Map.Entry)entries.next();
+                ServiceType registeredServiceType = (ServiceType)entry.getKey();
+                Map serviceURLs = (Map)entry.getValue();
+                if (registeredServiceType.matches(serviceType))
+                {
+                    for (Iterator urls = serviceURLs.entrySet().iterator(); urls.hasNext();)
+                    {
+                        Map.Entry urlEntry = (Map.Entry)urls.next();
+                        String serviceURL = (String)urlEntry.getKey();
+                        SrvReg registeredService = (SrvReg)urlEntry.getValue();
+                        result.add(new ServiceURL(serviceURL, registeredService.getURLEntry().getLifetime()));
+                    }
+                }
+            }
+            return result;
         }
         finally
         {
             servicesLock.unlock();
         }
-
-        List result = new ArrayList();
-        for (Iterator entries = servicesCopy.entrySet().iterator(); entries.hasNext();)
-        {
-            Map.Entry entry = (Map.Entry)entries.next();
-            ServiceType registeredServiceType = (ServiceType)entry.getKey();
-            Map serviceURLs = (Map)entry.getValue();
-            if (registeredServiceType.matches(serviceType))
-            {
-                for (Iterator urls = serviceURLs.entrySet().iterator(); urls.hasNext();)
-                {
-                    Map.Entry urlEntry = (Map.Entry)urls.next();
-                    String serviceURL = (String)urlEntry.getKey();
-                    SrvReg registeredService = (SrvReg)urlEntry.getValue();
-                    result.add(new ServiceURL(serviceURL, registeredService.getURLEntry().getLifetime()));
-                }
-            }
-        }
-        return result;
     }
 
     private class UnsolicitedDAAdvert extends TimerTask
@@ -383,9 +395,16 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
                 if (logger.isLoggable(Level.FINEST))
                     logger.finest("DirectoryAgent multicast message listener received message " + message);
 
+                if (!message.isMulticast())
+                {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("DirectoryAgent " + this + " dropping message " + message + ": expected multicast flag set");
+                    return;
+                }
+
                 switch (message.getMessageType())
                 {
-                    case SrvRqst.SRV_RQST_TYPE:
+                    case Message.SRV_RQST_TYPE:
                         handleMulticastSrvRqst((SrvRqst)message, address);
                         break;
                     default:

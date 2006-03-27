@@ -33,7 +33,7 @@ public class SocketMulticastConnector extends MulticastConnector
 
     protected Runnable[] createAcceptors() throws IOException
     {
-        InetAddress[] interfaceAddresses = getInterfaceAddresses();
+        InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {

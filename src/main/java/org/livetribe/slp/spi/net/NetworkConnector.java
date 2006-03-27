@@ -45,7 +45,7 @@ public abstract class NetworkConnector
     private int port;
     private final List listeners = new ArrayList();
     private final Lock listenersLock = new ReentrantLock();
-    private InetAddress[] interfaceAddresses;
+    private InetAddress[] inetAddresses;
     private volatile boolean running;
     private ThreadPoolExecutor handlerPool;
     private ExecutorService acceptorPool;
@@ -143,14 +143,14 @@ public abstract class NetworkConnector
         }
     }
 
-    public InetAddress[] getInterfaceAddresses()
+    public InetAddress[] getInetAddresses()
     {
-        return interfaceAddresses;
+        return inetAddresses;
     }
 
-    public void setInterfaceAddresses(InetAddress[] interfaceAddress)
+    public void setInetAddresses(InetAddress[] interfaceAddress)
     {
-        this.interfaceAddresses = interfaceAddress;
+        this.inetAddresses = interfaceAddress;
     }
 
     public void start() throws IOException
