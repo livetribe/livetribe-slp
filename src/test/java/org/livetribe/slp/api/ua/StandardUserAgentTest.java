@@ -26,8 +26,8 @@ import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.SocketMulticastConnector;
 import org.livetribe.slp.spi.net.SocketUnicastConnector;
-import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
+import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 
 /**
@@ -112,6 +112,95 @@ public class StandardUserAgentTest extends SLPAPITestCase
             finally
             {
                 saManager.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    public void testListenForDAAdverts() throws Exception
+    {
+        StandardUserAgent ua = new StandardUserAgent();
+        StandardUserAgentManager uaManager = new StandardUserAgentManager();
+        ua.setUserAgentManager(uaManager);
+        uaManager.setMulticastConnector(new SocketMulticastConnector());
+        uaManager.setUnicastConnector(new SocketUnicastConnector());
+        ua.setConfiguration(getDefaultConfiguration());
+        ua.start();
+
+        try
+        {
+            sleep(500);
+
+            List das = ua.getCachedDirectoryAgents(ua.getScopes());
+            assertNotNull(das);
+            assertTrue(das.isEmpty());
+
+            StandardDirectoryAgent da = new StandardDirectoryAgent();
+            StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
+            da.setDirectoryAgentManager(daManager);
+            daManager.setMulticastConnector(new SocketMulticastConnector());
+            daManager.setUnicastConnector(new SocketUnicastConnector());
+            da.setConfiguration(getDefaultConfiguration());
+            da.start();
+
+            try
+            {
+                // Allow unsolicited DAAdvert to arrive and UA to cache it
+                sleep(500);
+
+                das = ua.getCachedDirectoryAgents(ua.getScopes());
+                assertNotNull(das);
+                assertEquals(1, das.size());
+            }
+            finally
+            {
+                da.stop();
+            }
+        }
+        finally
+        {
+            ua.stop();
+        }
+    }
+
+    public void testDADiscoveryOnStartup() throws Exception
+    {
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
+        da.setDirectoryAgentManager(daManager);
+        daManager.setMulticastConnector(new SocketMulticastConnector());
+        daManager.setUnicastConnector(new SocketUnicastConnector());
+        da.setConfiguration(getDefaultConfiguration());
+        da.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardUserAgent ua = new StandardUserAgent();
+            StandardUserAgentManager uaManager = new StandardUserAgentManager();
+            ua.setUserAgentManager(uaManager);
+            uaManager.setMulticastConnector(new SocketMulticastConnector());
+            uaManager.setUnicastConnector(new SocketUnicastConnector());
+            ua.setConfiguration(getDefaultConfiguration());
+            // Discover the DAs immediately
+            ua.setDiscoveryStartWaitBound(0);
+            ua.start();
+
+            try
+            {
+                sleep(500);
+
+                List das = ua.getCachedDirectoryAgents(ua.getScopes());
+                assertNotNull(das);
+                assertEquals(1, das.size());
+            }
+            finally
+            {
+                ua.stop();
             }
         }
         finally

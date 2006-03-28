@@ -79,7 +79,6 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     /**
      * Sets the bound (in seconds) to the initial random delay this ServiceAgent waits
      * before attempting to discover DirectoryAgents
-     * @param discoveryStartWaitBound
      */
     public void setDiscoveryStartWaitBound(int discoveryStartWaitBound)
     {

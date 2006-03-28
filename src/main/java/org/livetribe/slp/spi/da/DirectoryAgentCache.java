@@ -17,18 +17,23 @@ package org.livetribe.slp.spi.da;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
+ * A thread-safe class that handles caching of {@link DirectoryAgentInfo}, and
+ * allows querying the content depending on parameters.
  * @version $Rev$ $Date$
  */
 public class DirectoryAgentCache
 {
     private final Lock lock = new ReentrantLock();
-    private final List cache = new ArrayList();
+    private final Set cache = new HashSet();
 
     public boolean add(DirectoryAgentInfo info)
     {
@@ -50,9 +55,9 @@ public class DirectoryAgentCache
         {
             List scopesList = Arrays.asList(scopes);
             List result = new ArrayList();
-            for (int i = 0; i < cache.size(); ++i)
+            for (Iterator infos = cache.iterator(); infos.hasNext();)
             {
-                DirectoryAgentInfo info = (DirectoryAgentInfo)cache.get(i);
+                DirectoryAgentInfo info = (DirectoryAgentInfo)infos.next();
                 if (info.matchScopes(scopesList)) result.add(info);
             }
             return result;

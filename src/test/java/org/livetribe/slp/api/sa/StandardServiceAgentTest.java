@@ -303,4 +303,50 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             sa.stop();
         }
     }
+
+
+    public void testDADiscoveryOnStartup() throws Exception
+    {
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
+        da.setDirectoryAgentManager(daManager);
+        daManager.setMulticastConnector(new SocketMulticastConnector());
+        daManager.setUnicastConnector(new SocketUnicastConnector());
+        da.setConfiguration(getDefaultConfiguration());
+        da.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardServiceAgent sa = new StandardServiceAgent();
+            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+            sa.setServiceAgentManager(saManager);
+            saManager.setMulticastConnector(new SocketMulticastConnector());
+            saManager.setUnicastConnector(new SocketUnicastConnector());
+            sa.setConfiguration(getDefaultConfiguration());
+            // Discover the DAs immediately
+            sa.setDiscoveryStartWaitBound(0);
+            ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
+            sa.setServiceURL(serviceURL);
+            sa.start();
+
+            try
+            {
+                sleep(500);
+
+                List das = sa.getCachedDirectoryAgents(sa.getScopes());
+                assertNotNull(das);
+                assertEquals(1, das.size());
+            }
+            finally
+            {
+                sa.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
 }

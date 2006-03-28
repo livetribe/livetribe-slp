@@ -17,27 +17,42 @@ package org.livetribe.slp.api.ua;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.Random;
+import java.util.TimerTask;
+import java.util.logging.Level;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.spi.da.DirectoryAgentCache;
+import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.msg.DAAdvert;
-import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.ua.UserAgentManager;
+import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.net.MessageEvent;
+import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  * @version $Rev$ $Date$
  */
 public class StandardUserAgent extends StandardAgent implements UserAgent
 {
+    private int discoveryStartWaitBound;
+    private long discoveryPeriod;
     private UserAgentManager manager;
-//    private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+    private MessageListener multicastListener;
+    private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+    private Timer timer;
 
     public void setUserAgentManager(UserAgentManager manager)
     {
@@ -47,31 +62,64 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-//        setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
-//        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
+        setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
+        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
         if (manager != null) manager.setConfiguration(configuration);
+    }
+
+    public int getDiscoveryStartWaitBound()
+    {
+        return discoveryStartWaitBound;
+    }
+
+    /**
+     * Sets the bound (in seconds) to the initial random delay this UserAgent waits
+     * before attempting to discover DirectoryAgents
+     */
+    public void setDiscoveryStartWaitBound(int discoveryStartWaitBound)
+    {
+        this.discoveryStartWaitBound = discoveryStartWaitBound;
+    }
+
+    public long getDiscoveryPeriod()
+    {
+        return discoveryPeriod;
+    }
+
+    public void setDiscoveryPeriod(long discoveryPeriod)
+    {
+        this.discoveryPeriod = discoveryPeriod;
     }
 
     protected void doStart() throws IOException
     {
-        // TODO: add listeners to interpret unsolicited DAAdverts and SAAdverts
-        // TODO: add a Timer to rediscover DAs every discoveryPeriod
+        multicastListener = new MulticastListener();
+        manager.addMessageListener(multicastListener, true);
         manager.start();
+
+        timer = new Timer(true);
+        long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
+        timer.schedule(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L);
     }
 
     protected void doStop() throws IOException
     {
+        timer.cancel();
+
         manager.stop();
+        manager.removeMessageListener(multicastListener, true);
     }
 
     public List findServices(ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException
     {
-        List addresses = findDirectoryAgents(scopes);
-
         List result = new ArrayList();
-        for (int i = 0; i < addresses.size(); ++i)
+
+        List das = findDirectoryAgents(scopes);
+
+        for (int i = 0; i < das.size(); ++i)
         {
-            InetAddress address = (InetAddress)addresses.get(i);
+            DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
+            InetAddress address = InetAddress.getByName(info.getHost());
             SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter);
             URLEntry[] entries = srvRply.getURLEntries();
             for (int j = 0; j < entries.length; ++j)
@@ -85,45 +133,136 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
 
     protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
     {
-        List addresses = getCachedDirectoryAgents(scopes);
-        if (addresses.isEmpty()) addresses = discoverDirectoryAgents(scopes);
-        if (addresses.isEmpty()) addresses = discoverServiceAgents(scopes);
-        if (addresses.isEmpty()) return Collections.emptyList();
-        cacheDirectoryAgents(addresses);
-        return addresses;
+        List das = getCachedDirectoryAgents(scopes);
+        if (das.isEmpty())
+        {
+            das = discoverDirectoryAgents(scopes);
+            cacheDirectoryAgents(das);
+        }
+        return das;
     }
 
-    private List getCachedDirectoryAgents(String[] scopes)
+    protected List getCachedDirectoryAgents(String[] scopes)
     {
-//        return daCache.getDirectoryAgents(scopes);
-        return Collections.emptyList();
+        return daCache.getByScopes(scopes);
     }
 
-    private void cacheDirectoryAgents(List addresses)
+    private void cacheDirectoryAgents(List infos)
     {
+        daCache.addAll(infos);
     }
 
-    private List discoverDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
+    private boolean cacheDirectoryAgent(DirectoryAgentInfo info)
+    {
+        return daCache.add(info);
+    }
+
+    private void uncacheDirectoryAgent(DirectoryAgentInfo info)
+    {
+        daCache.remove(info);
+    }
+
+    protected List discoverDirectoryAgents(String[] scopes) throws IOException
     {
         List result = new ArrayList();
         DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, -1);
         for (int i = 0; i < daAdverts.length; ++i)
         {
             DAAdvert daAdvert = daAdverts[i];
-            result.add(InetAddress.getByName(daAdvert.getResponder()));
+            DirectoryAgentInfo info = DirectoryAgentInfo.from(daAdvert);
+            result.add(info);
         }
         return result;
     }
 
-    private List discoverServiceAgents(String[] scopes) throws IOException, ServiceLocationException
+    protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
-        List result = new ArrayList();
-        SAAdvert[] saAdverts = manager.multicastSASrvRqst(scopes, null, -1);
-        for (int i = 0; i < saAdverts.length; ++i)
+        List scopesList = Arrays.asList(getScopes());
+        List messageScopesList = Arrays.asList(message.getScopes());
+        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopesList))
         {
-            SAAdvert saAdvert = saAdverts[i];
-            result.add(InetAddress.getByName(saAdvert.getResponder()));
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("UserAgent " + this + " dropping message " + message + ": no scopes match among UA scopes " + scopesList + " and message scopes " + messageScopesList);
+            return;
         }
-        return result;
+
+        DirectoryAgentInfo info = DirectoryAgentInfo.from(message);
+        if (message.getBootTime() == 0L)
+        {
+            uncacheDirectoryAgent(info);
+        }
+        else
+        {
+            cacheDirectoryAgent(info);
+        }
+    }
+
+    protected void handleMulticastSAAdvert(SAAdvert message, InetSocketAddress address)
+    {
+        throw new AssertionError("Not Yet Implemented");
+    }
+
+    /**
+     * UserAgents listen for multicast messages that may arrive.
+     * They are interested in:
+     * <ul>
+     * <li>DAAdverts, from DAs that boot or shutdown</li>
+     * <li>SAAdverts, from SAs that boot or shutdown</li>
+     * </ul>
+     */
+    private class MulticastListener implements MessageListener
+    {
+        public void handle(MessageEvent event)
+        {
+            InetSocketAddress address = event.getSocketAddress();
+            try
+            {
+                Message message = Message.deserialize(event.getMessageBytes());
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("UserAgent multicast message listener received message " + message);
+
+                if (!message.isMulticast())
+                {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("UserAgent " + this + " dropping message " + message + ": expected multicast flag set");
+                    return;
+                }
+
+                switch (message.getMessageType())
+                {
+                    case Message.DA_ADVERT_TYPE:
+                        handleMulticastDAAdvert((DAAdvert)message, address);
+                        break;
+                    case Message.SA_ADVERT_TYPE:
+                        handleMulticastSAAdvert((SAAdvert)message, address);
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("UserAgent " + this + " dropping multicast message " + message + ": not handled by UserAgents");
+                        break;
+                }
+            }
+            catch (ServiceLocationException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "UserAgent " + this + " received bad multicast message from: " + address + ", ignoring", x);
+            }
+        }
+    }
+
+    private class DirectoryAgentDiscovery extends TimerTask
+    {
+        public void run()
+        {
+            try
+            {
+                List das = discoverDirectoryAgents(getScopes());
+                cacheDirectoryAgents(das);
+            }
+            catch (IOException x)
+            {
+                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not discover DAs", x);
+            }
+        }
     }
 }

@@ -22,6 +22,8 @@ import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
+ * A POJO that holds information about an SLP DirectoryAgent.
+ * This class is not thread safe, and should be created and used within the same thread.
  * @version $Rev$ $Date$
  */
 public class DirectoryAgentInfo
