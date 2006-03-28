@@ -188,7 +188,7 @@ public class SocketUnicastConnector extends UnicastConnector
 
         public void run()
         {
-            if (logger.isLoggable(Level.FINE)) logger.fine("Socket acceptor thread running for " + serverSocket);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Socket acceptor thread running for " + serverSocket);
 
             while (isRunning())
             {
@@ -216,7 +216,7 @@ public class SocketUnicastConnector extends UnicastConnector
                 }
             }
 
-            if (logger.isLoggable(Level.FINE)) logger.fine("Multicast acceptor thread exiting for " + serverSocket);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast acceptor thread exiting for " + serverSocket);
         }
     }
 

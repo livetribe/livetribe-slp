@@ -498,11 +498,12 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
                 String[] scopes = new String[]{"scope1", "scope2"};
 
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, Locale.getDefault().getCountry());
+                String language = Locale.getDefault().getCountry();
+                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, language);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
-                ack = saManager.unicastSrvDeReg(localhost, serviceURL, scopes, null);
+                ack = saManager.unicastSrvDeReg(localhost, serviceURL, scopes, null, language);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 

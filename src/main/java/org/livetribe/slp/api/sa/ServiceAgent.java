@@ -17,10 +17,9 @@ package org.livetribe.slp.api.sa;
 
 import java.io.IOException;
 
-import org.livetribe.slp.api.Agent;
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.api.Agent;
 import org.livetribe.slp.spi.sa.ServiceAgentManager;
 
 /**
@@ -30,5 +29,7 @@ public interface ServiceAgent extends Agent
 {
     public void setServiceAgentManager(ServiceAgentManager manager);
 
-    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, String[] attributes, String language) throws IOException, ServiceLocationException;
+    public void register() throws IOException, ServiceLocationException;
+
+    public void deregisterService(ServiceURL serviceURL, String[] scopes, String language) throws IOException, ServiceLocationException;
 }

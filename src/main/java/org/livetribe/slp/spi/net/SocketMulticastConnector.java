@@ -92,7 +92,7 @@ public class SocketMulticastConnector extends MulticastConnector
         for (int i = 0; i < sockets.length; ++i)
         {
             sockets[i].send(packet);
-            if (logger.isLoggable(Level.FINE)) logger.fine("Sent datagram " + packet + " (" + packet.getLength() + " bytes) on multicast socket " + sockets[i]);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Sent datagram " + packet + " (" + packet.getLength() + " bytes) on multicast socket " + sockets[i]);
         }
     }
 
@@ -107,7 +107,7 @@ public class SocketMulticastConnector extends MulticastConnector
 
         public void run()
         {
-            if (logger.isLoggable(Level.FINE)) logger.fine("Multicast acceptor thread running for " + socket);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast acceptor thread running for " + socket);
 
             while (isRunning())
             {
@@ -116,7 +116,7 @@ public class SocketMulticastConnector extends MulticastConnector
                     byte[] buffer = new byte[getMaxTransmissionUnit()];
                     DatagramPacket packet = new DatagramPacket(buffer, 0, buffer.length);
                     socket.receive(packet);
-                    if (logger.isLoggable(Level.FINE)) logger.fine("Received datagram packet " + packet + " on socket " + socket + ": " + packet.getLength() + " bytes from " + packet.getSocketAddress());
+                    if (logger.isLoggable(Level.FINER)) logger.finer("Received datagram packet " + packet + " on socket " + socket + ": " + packet.getLength() + " bytes from " + packet.getSocketAddress());
                     handle(new Handler(packet));
                 }
                 catch (SocketException x)
@@ -131,12 +131,12 @@ public class SocketMulticastConnector extends MulticastConnector
                 }
                 catch (IOException x)
                 {
-                    if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "", x);
+                    if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Unexpected IOException", x);
                     // TODO: what to do here ?
                 }
             }
 
-            if (logger.isLoggable(Level.FINE)) logger.fine("Multicast acceptor thread exiting for " + socket);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast acceptor thread exiting for " + socket);
         }
     }
 

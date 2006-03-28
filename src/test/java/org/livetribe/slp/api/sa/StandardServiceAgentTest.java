@@ -1,6 +1,5 @@
 package org.livetribe.slp.api.sa;
 
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Locale;
 
@@ -27,6 +26,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         saManager.setUnicastConnector(new SocketUnicastConnector());
         sa.setServiceAgentManager(saManager);
         sa.setConfiguration(getDefaultConfiguration());
+        sa.setServiceURL(new ServiceURL("http://host", ServiceURL.LIFETIME_DEFAULT));
 
         assertFalse(sa.isRunning());
         sa.start();
@@ -57,13 +57,16 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             saManager.setMulticastConnector(new SocketMulticastConnector());
             saManager.setUnicastConnector(new SocketUnicastConnector());
             sa.setConfiguration(getDefaultConfiguration());
+            ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
+            String[] scopes = new String[]{"scope1", "scope2"};
+            sa.setServiceURL(serviceURL);
+            sa.setScopes(scopes);
+            sa.setLanguage(Locale.getDefault().getCountry());
             sa.start();
 
             try
             {
-                ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
-                String[] scopes = new String[]{"scope1", "scope2"};
-                sa.registerService(serviceURL.getServiceType(), serviceURL, scopes, null, Locale.getDefault().getCountry());
+                sa.register();
 
                 StandardUserAgent ua = new StandardUserAgent();
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();
@@ -97,6 +100,136 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         finally
         {
             da.stop();
+        }
+    }
+
+    public void testDeregisterService() throws Exception
+    {
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
+        da.setDirectoryAgentManager(daManager);
+        daManager.setMulticastConnector(new SocketMulticastConnector());
+        daManager.setUnicastConnector(new SocketUnicastConnector());
+        da.setConfiguration(getDefaultConfiguration());
+        da.start();
+
+        try
+        {
+            StandardServiceAgent sa = new StandardServiceAgent();
+            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+            sa.setServiceAgentManager(saManager);
+            saManager.setMulticastConnector(new SocketMulticastConnector());
+            saManager.setUnicastConnector(new SocketUnicastConnector());
+            sa.setConfiguration(getDefaultConfiguration());
+            ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
+            String[] scopes = new String[]{"scope1", "scope2"};
+            String language = Locale.getDefault().getCountry();
+            sa.setServiceURL(serviceURL);
+            sa.setScopes(scopes);
+            sa.setLanguage(language);
+            sa.start();
+
+            try
+            {
+                sa.register();
+
+                sa.deregisterService(serviceURL, scopes, language);
+
+                StandardUserAgent ua = new StandardUserAgent();
+                StandardUserAgentManager uaManager = new StandardUserAgentManager();
+                ua.setUserAgentManager(uaManager);
+                uaManager.setMulticastConnector(new SocketMulticastConnector());
+                uaManager.setUnicastConnector(new SocketUnicastConnector());
+                ua.setConfiguration(getDefaultConfiguration());
+                ua.start();
+
+                try
+                {
+                    List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null);
+
+                    assertNotNull(serviceURLs);
+                    assertEquals(0, serviceURLs.size());
+                }
+                finally
+                {
+                    ua.stop();
+                }
+            }
+            finally
+            {
+                sa.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    public void testListenForDAAdverts() throws Exception
+    {
+        StandardServiceAgent sa = new StandardServiceAgent();
+        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+        sa.setServiceAgentManager(saManager);
+        saManager.setMulticastConnector(new SocketMulticastConnector());
+        saManager.setUnicastConnector(new SocketUnicastConnector());
+        sa.setConfiguration(getDefaultConfiguration());
+        ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
+        sa.setServiceURL(serviceURL);
+        sa.start();
+
+        try
+        {
+            List das = sa.getCachedDirectoryAgents(sa.getScopes());
+            assertNotNull(das);
+            assertTrue(das.isEmpty());
+
+            StandardDirectoryAgent da = new StandardDirectoryAgent();
+            StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
+            da.setDirectoryAgentManager(daManager);
+            daManager.setMulticastConnector(new SocketMulticastConnector());
+            daManager.setUnicastConnector(new SocketUnicastConnector());
+            da.setConfiguration(getDefaultConfiguration());
+            da.start();
+
+            try
+            {
+                // Allow unsolicited DAAdvert to arrive and SA to register with DA
+                sleep(500);
+
+                das = sa.getCachedDirectoryAgents(sa.getScopes());
+                assertNotNull(das);
+                assertEquals(1, das.size());
+
+                StandardUserAgent ua  = new StandardUserAgent();
+                StandardUserAgentManager uaManager = new StandardUserAgentManager();
+                ua.setUserAgentManager(uaManager);
+                uaManager.setMulticastConnector(new SocketMulticastConnector());
+                uaManager.setUnicastConnector(new SocketUnicastConnector());
+                ua.setConfiguration(getDefaultConfiguration());
+                ua.start();
+
+                try
+                {
+                    List services = ua.findServices(sa.getServiceURL().getServiceType(), sa.getScopes(), null);
+                    assertNotNull(services);
+                    assertEquals(1, services.size());
+                    ServiceURL service = (ServiceURL)services.get(0);
+                    assertEquals(serviceURL, service);
+                }
+                finally
+                {
+                    ua.stop();
+                }
+            }
+            finally
+            {
+                da.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
         }
     }
 }

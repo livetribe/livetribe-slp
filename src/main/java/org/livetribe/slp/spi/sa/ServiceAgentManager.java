@@ -33,5 +33,5 @@ public interface ServiceAgentManager extends AgentManager
 
     public SrvAck unicastSrvReg(InetAddress address, ServiceType serviceType, ServiceURL serviceURL, boolean newService, String[] scopes, String[] attributes, String language) throws IOException;
 
-    public SrvAck unicastSrvDeReg(InetAddress address, ServiceURL serviceURL, String[] scopes, String[] tags) throws IOException;
+    public SrvAck unicastSrvDeReg(InetAddress address, ServiceURL serviceURL, String[] scopes, String[] tags, String language) throws IOException;
 }

@@ -95,7 +95,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         }
     }
 
-    public SrvAck unicastSrvDeReg(InetAddress address, ServiceURL serviceURL, String[] scopes, String[] tags) throws IOException
+    public SrvAck unicastSrvDeReg(InetAddress address, ServiceURL serviceURL, String[] scopes, String[] tags, String language) throws IOException
     {
         URLEntry urlEntry = new URLEntry();
         urlEntry.setLifetime(serviceURL.getLifetime());
@@ -106,6 +106,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         deregistration.setScopes(scopes);
         deregistration.setTags(tags);
         deregistration.setXID(generateXID());
+        deregistration.setLanguage(language);
 
         byte[] requestBytes = serializeMessage(deregistration);
 

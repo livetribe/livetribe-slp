@@ -285,14 +285,24 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             servicesLock.unlock();
         }
 
-        DirectoryAgentEvent event = new DirectoryAgentEvent(message);
         listenersLock.lock();
         try
         {
-            for (int i = 0; i < listeners.size(); ++i)
+            if (!listeners.isEmpty())
             {
-                DirectoryAgentListener listener = (DirectoryAgentListener)listeners.get(i);
-                listener.serviceRegistered(event);
+                DirectoryAgentEvent event = new DirectoryAgentEvent(message);
+                for (int i = 0; i < listeners.size(); ++i)
+                {
+                    DirectoryAgentListener listener = (DirectoryAgentListener)listeners.get(i);
+                    try
+                    {
+                        listener.serviceRegistered(event);
+                    }
+                    catch (RuntimeException x)
+                    {
+                        if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "DirectoryAgentListener threw exception, ignoring", x);
+                    }
+                }
             }
         }
         finally
@@ -346,7 +356,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
                 if (registration != null)
                 {
                     String[] tags = message.getTags();
-                    if (tags != null)
+                    if (tags != null && tags.length > 0)
                     {
                         registration.removeAttributes(tags);
                     }

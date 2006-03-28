@@ -166,11 +166,11 @@ public abstract class StandardAgentManager implements AgentManager
     {
         if (isRunning())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("AgentManager " + this + " is already started");
+            if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " is already started");
             return;
         }
 
-        if (logger.isLoggable(Level.FINE)) logger.fine("AgentManager " + this + " starting...");
+        if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " starting...");
 
         if (multicastConnector != null) multicastConnector.start();
         if (unicastConnector != null) unicastConnector.start();
@@ -190,11 +190,11 @@ public abstract class StandardAgentManager implements AgentManager
     {
         if (!isRunning())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("AgentManager " + this + " is already stopped");
+            if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " is already stopped");
             return;
         }
 
-        if (logger.isLoggable(Level.FINE)) logger.fine("AgentManager " + this + " stopping...");
+        if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " stopping...");
 
         running = false;
 
@@ -224,7 +224,7 @@ public abstract class StandardAgentManager implements AgentManager
         }
         catch (IOException x)
         {
-            if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "", x);
+            if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "Could not close socket " + socket, x);
         }
     }
 
@@ -301,14 +301,15 @@ public abstract class StandardAgentManager implements AgentManager
         long start = System.currentTimeMillis();
 
         if (timeframe < 0)
+
         {
-            if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence timeframe is negative, using max multicast wait");
+            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeframe is negative, using max multicast wait");
             timeframe = getMulticastMaxWait();
         }
-        if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence timeframe (ms): " + timeframe);
+        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeframe (ms): " + timeframe);
 
         long[] timeouts = getMulticastTimeouts();
-        if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence timeouts (ms): " + Arrays.toString(timeouts));
+        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeouts (ms): " + Arrays.toString(timeouts));
 
         List result = new ArrayList();
         Set previousResponders = new HashSet();
@@ -322,7 +323,7 @@ public abstract class StandardAgentManager implements AgentManager
             // Exit if the timeframe has been exceeded
             if (timeframe > 0 && now > start + timeframe)
             {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence exit, timeframe exceeded");
+                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, timeframe exceeded");
                 break;
             }
 
@@ -332,7 +333,7 @@ public abstract class StandardAgentManager implements AgentManager
             // Exit if the message bytes cannot fit into the MTU
             if (messageBytes.length > getMaxTransmissionUnit())
             {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence exit, message greater than MTU");
+                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, message greater than MTU");
                 break;
             }
 
@@ -345,7 +346,7 @@ public abstract class StandardAgentManager implements AgentManager
             {
                 // Avoid spurious wakeups
                 long timeout = timeouts[timeoutIndex];
-                if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence start wait on timeout #" + (timeoutIndex + 1) + " (ms): " + timeout);
+                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence start wait on timeout #" + (timeoutIndex + 1) + " (ms): " + timeout);
                 long startWait = System.currentTimeMillis();
                 long endWait = startWait;
                 while (replies.isEmpty() && endWait - startWait < timeout)
@@ -354,7 +355,7 @@ public abstract class StandardAgentManager implements AgentManager
                     endWait = System.currentTimeMillis();
                     if (logger.isLoggable(Level.FINEST)) logger.finest("Multicast convergence waited (ms): " + (endWait - startWait));
                 }
-                if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence stop wait on timeout #" + (timeoutIndex + 1));
+                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence stop wait on timeout #" + (timeoutIndex + 1));
 
                 boolean newMessages = false;
                 if (!replies.isEmpty())
@@ -374,7 +375,7 @@ public abstract class StandardAgentManager implements AgentManager
                             else
                             {
                                 // Drop the duplicate message, one copy arrived already
-                                if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence received a reply from known responder " + responder + ", dropping it");
+                                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence received a reply from known responder " + responder + ", dropping it");
                             }
                         }
                         else
@@ -386,12 +387,12 @@ public abstract class StandardAgentManager implements AgentManager
 
                 if (newMessages)
                 {
-                    if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence replies: " + result);
+                    if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence replies: " + result);
 
                     // As extension, exit when the first storm of messages arrive
                     if (timeframe == 0)
                     {
-                        if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence exit, first reply received");
+                        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, first reply received");
                         break;
                     }
 
@@ -401,7 +402,7 @@ public abstract class StandardAgentManager implements AgentManager
                 }
                 else
                 {
-                    if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence received no new replies");
+                    if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence received no new replies");
 
                     // Timeout expired or duplicate messages
                     ++timeoutIndex;
@@ -410,7 +411,7 @@ public abstract class StandardAgentManager implements AgentManager
                     // Exit if there are no result for 2 successive timeouts (RFC 2614 section 2.1.5)
                     if (noReplies > 1)
                     {
-                        if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence exit, two timeouts elapsed");
+                        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, two timeouts elapsed");
                         break;
                     }
                 }

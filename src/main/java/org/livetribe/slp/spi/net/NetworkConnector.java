@@ -157,11 +157,11 @@ public abstract class NetworkConnector
     {
         if (isRunning())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("Connector " + this + " is already started");
+            if (logger.isLoggable(Level.FINER)) logger.finer("Connector " + this + " is already started");
             return;
         }
 
-        if (logger.isLoggable(Level.FINE)) logger.fine("Connector " + this + " starting...");
+        if (logger.isLoggable(Level.FINER)) logger.finer("Connector " + this + " starting...");
 
         doStart();
 
@@ -190,11 +190,11 @@ public abstract class NetworkConnector
     {
         if (!isRunning())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("Connector " + this + " is already stopped");
+            if (logger.isLoggable(Level.FINER)) logger.finer("Connector " + this + " is already stopped");
             return;
         }
 
-        if (logger.isLoggable(Level.FINE)) logger.fine("Connector " + this + " stopping...");
+        if (logger.isLoggable(Level.FINER)) logger.finer("Connector " + this + " stopping...");
 
         running = false;
 
@@ -247,7 +247,7 @@ public abstract class NetworkConnector
 
         if (copy.isEmpty())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("No MessageListeners to notify of event " + event);
+            if (logger.isLoggable(Level.FINER)) logger.finer("No MessageListeners to notify of event " + event);
         }
         for (int i = 0; i < copy.size(); ++i)
         {
@@ -260,7 +260,7 @@ public abstract class NetworkConnector
             }
             catch (RuntimeException x)
             {
-                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "MessageListener threw RuntimeException", x);
+                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "MessageListener threw RuntimeException, ignored", x);
             }
         }
     }

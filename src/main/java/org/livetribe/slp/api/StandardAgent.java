@@ -57,11 +57,11 @@ public abstract class StandardAgent implements Agent
     {
         if (isRunning())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("Agent " + this + " is already started");
+            if (logger.isLoggable(Level.FINER)) logger.finer("Agent " + this + " is already started");
             return;
         }
 
-        if (logger.isLoggable(Level.FINE)) logger.fine("Agent " + this + " starting...");
+        if (logger.isLoggable(Level.FINER)) logger.finer("Agent " + this + " starting...");
 
         doStart();
 
@@ -76,11 +76,11 @@ public abstract class StandardAgent implements Agent
     {
         if (!isRunning())
         {
-            if (logger.isLoggable(Level.FINEST)) logger.finest("Agent " + this + " is already stopped");
+            if (logger.isLoggable(Level.FINER)) logger.finer("Agent " + this + " is already stopped");
             return;
         }
 
-        if (logger.isLoggable(Level.FINE)) logger.fine("Agent " + this + " stopping...");
+        if (logger.isLoggable(Level.FINER)) logger.finer("Agent " + this + " stopping...");
 
         running = false;
 
