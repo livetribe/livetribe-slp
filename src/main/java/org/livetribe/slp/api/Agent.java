@@ -24,9 +24,9 @@ public interface Agent
 {
     public void setConfiguration(Configuration configuration) throws IOException;
 
-    public void start() throws IOException;
+    public void start() throws Exception;
 
     public boolean isRunning();
 
-    public void stop() throws IOException;
+    public void stop() throws Exception;
 }

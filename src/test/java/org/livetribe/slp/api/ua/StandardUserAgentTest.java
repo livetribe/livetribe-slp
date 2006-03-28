@@ -27,6 +27,7 @@ import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.SocketMulticastConnector;
 import org.livetribe.slp.spi.net.SocketUnicastConnector;
 import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
+import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 
 /**
@@ -78,7 +79,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                SrvAck ack = saManager.unicastSrvReg(localhost, serviceURL.getServiceType(), serviceURL, true, scopes, null, Locale.getDefault().getCountry());
+                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, Locale.getDefault().getCountry(), true);
+                SrvAck ack = saManager.unicastSrvReg(localhost, info);
 
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());

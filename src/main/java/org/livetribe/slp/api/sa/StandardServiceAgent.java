@@ -16,33 +16,39 @@
 package org.livetribe.slp.api.sa;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Level;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
 
-import org.livetribe.slp.api.StandardAgent;
-import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.spi.da.DirectoryAgentInfo;
-import org.livetribe.slp.spi.da.DirectoryAgentCache;
-import org.livetribe.slp.spi.sa.ServiceAgentManager;
-import org.livetribe.slp.spi.msg.DAAdvert;
-import org.livetribe.slp.spi.msg.SrvAck;
-import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.net.MessageListener;
-import org.livetribe.slp.spi.net.MessageEvent;
+import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
+import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.ServiceLocationException;
-import edu.emory.mathcs.backport.java.util.Collections;
-import edu.emory.mathcs.backport.java.util.Arrays;
+import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.spi.da.DirectoryAgentCache;
+import org.livetribe.slp.spi.da.DirectoryAgentInfo;
+import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.net.MessageEvent;
+import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.sa.ServiceAgentInfo;
+import org.livetribe.slp.spi.sa.ServiceAgentManager;
 
 /**
  * @version $Rev$ $Date$
  */
 public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 {
+    private int discoveryStartWaitBound;
+    private long discoveryPeriod;
     private ServiceType serviceType;
     private ServiceURL serviceURL;
     private String[] attributes;
@@ -50,6 +56,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private ServiceAgentManager manager;
     private MessageListener multicastListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+    private Timer timer;
 
     public void setServiceAgentManager(ServiceAgentManager manager)
     {
@@ -59,7 +66,34 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
+        setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
+        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
         if (manager != null) manager.setConfiguration(configuration);
+    }
+
+    public int getDiscoveryStartWaitBound()
+    {
+        return discoveryStartWaitBound;
+    }
+
+    /**
+     * Sets the bound (in seconds) to the initial random delay this ServiceAgent waits
+     * before attempting to discover DirectoryAgents
+     * @param discoveryStartWaitBound
+     */
+    public void setDiscoveryStartWaitBound(int discoveryStartWaitBound)
+    {
+        this.discoveryStartWaitBound = discoveryStartWaitBound;
+    }
+
+    public long getDiscoveryPeriod()
+    {
+        return discoveryPeriod;
+    }
+
+    public void setDiscoveryPeriod(long discoveryPeriod)
+    {
+        this.discoveryPeriod = discoveryPeriod;
     }
 
     public ServiceType getServiceType()
@@ -102,18 +136,25 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         this.language = language;
     }
 
-    protected void doStart() throws IOException
+    protected void doStart() throws Exception
     {
         if (getServiceURL() == null) throw new IllegalStateException("Could not start ServiceAgent " + this + ", its ServiceURL has not been set");
 
-        // TODO: add a Timer to rediscover DAs every discoveryPeriod
         multicastListener = new MulticastListener();
         manager.addMessageListener(multicastListener, true);
         manager.start();
+
+        timer = new Timer(true);
+        long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
+        timer.schedule(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L);
+
+        register();
     }
 
     protected void doStop() throws IOException
     {
+        timer.cancel();
+
         manager.stop();
         manager.removeMessageListener(multicastListener, true);
     }
@@ -131,32 +172,64 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private void register(DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
-        // TODO: handle registration renewal
         ServiceURL su = getServiceURL();
 
         ServiceType st = getServiceType();
         if (st == null) st = su.getServiceType();
 
         InetAddress address = InetAddress.getByName(da.getHost());
-        SrvAck srvAck = manager.unicastSrvReg(address, st, su, true, getScopes(), getAttributes(), getLanguage());
+        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, getScopes(), getAttributes(), getLanguage(), true);
+        SrvAck srvAck = manager.unicastSrvReg(address, sa);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != 0) throw new ServiceLocationException("Could not register service " + serviceURL + " to DirectoryAgent " + address, errorCode);
         if (logger.isLoggable(Level.FINE)) logger.fine("Registered service " + serviceURL + " to DirectoryAgent " + address);
+
+        long renewalPeriod = calculateRenewalPeriod(sa);
+        long renewalDelay = calculateRenewalDelay(sa);
+        if (renewalPeriod > 0) timer.schedule(new RegistrationRenewal(da), renewalDelay, renewalPeriod);
     }
 
-    public void deregisterService(ServiceURL serviceURL, String[] scopes, String language) throws IOException, ServiceLocationException
+    private long calculateRenewalPeriod(ServiceAgentInfo info)
     {
-        List das = findDirectoryAgents(scopes);
+        long lifetime = info.getServiceURL().getLifetime();
+        if (lifetime < ServiceURL.LIFETIME_NONE) lifetime = ServiceURL.LIFETIME_MAXIMUM;
+        // Convert from seconds to milliseconds
+        lifetime *= 1000L;
+        return lifetime;
+    }
+
+    private long calculateRenewalDelay(ServiceAgentInfo info)
+    {
+        long lifetime = calculateRenewalPeriod(info);
+        // Renew when 80% of the lifetime is passed
+        return lifetime - (lifetime >> 3);
+    }
+
+    public void deregister() throws IOException, ServiceLocationException
+    {
+        List das = findDirectoryAgents(getScopes());
 
         for (int i = 0; i < das.size(); ++i)
         {
             DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
-            InetAddress address = InetAddress.getByName(info.getHost());
-            SrvAck srvAck = manager.unicastSrvDeReg(address, serviceURL, scopes, null, language);
-            int errorCode = srvAck.getErrorCode();
-            if (errorCode != 0) throw new ServiceLocationException("Could not deregister service " + serviceURL + " from DirectoryAgent " + address, errorCode);
-            if (logger.isLoggable(Level.FINE)) logger.fine("Deregistered service " + serviceURL + " from DirectoryAgent " + address);
+            deregister(info);
         }
+    }
+
+    private void deregister(DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    {
+        ServiceURL su = getServiceURL();
+
+        ServiceType st = getServiceType();
+        if (st == null) st = su.getServiceType();
+
+        InetAddress address = InetAddress.getByName(da.getHost());
+        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, getScopes(), null, null, true);
+
+        SrvAck srvAck = manager.unicastSrvDeReg(address, sa);
+        int errorCode = srvAck.getErrorCode();
+        if (errorCode != 0) throw new ServiceLocationException("Could not deregister service " + serviceURL + " from DirectoryAgent " + address, errorCode);
+        if (logger.isLoggable(Level.FINE)) logger.fine("Deregistered service " + serviceURL + " from DirectoryAgent " + address);
     }
 
     protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
@@ -226,6 +299,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             {
                 try
                 {
+                    // TODO: RFC 2608, 12.2.2 requires to wait some time before registering
                     register(info);
                 }
                 catch (IOException x)
@@ -280,6 +354,48 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "ServiceAgent " + this + " received bad multicast message from: " + address + ", ignoring", x);
+            }
+        }
+    }
+
+    /**
+     * ServiceAgent must refresh their registration with DAs before the lifetime specified
+     * in the ServiceURL expires, otherwise the DA does not advertise them anymore.
+     */
+    private class RegistrationRenewal extends TimerTask
+    {
+        private final DirectoryAgentInfo da;
+
+        public RegistrationRenewal(DirectoryAgentInfo da)
+        {
+            this.da = da;
+        }
+
+        public void run()
+        {
+            try
+            {
+                register(da);
+            }
+            catch (Exception x)
+            {
+                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not renew service registration", x);
+            }
+        }
+    }
+
+    private class DirectoryAgentDiscovery extends TimerTask
+    {
+        public void run()
+        {
+            try
+            {
+                List das = discoverDirectoryAgents(getScopes());
+                cacheDirectoryAgents(das);
+            }
+            catch (IOException x)
+            {
+                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not discover DAs", x);
             }
         }
     }

@@ -99,7 +99,6 @@ public class Configuration
         return Integer.parseInt(properties.getProperty("net.slp.DAHeartBeat", "10800"));
     }
 
-
     public int getDADiscoveryStartWaitBound()
     {
         return getRandomStartWaitBound();

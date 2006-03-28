@@ -57,22 +57,25 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return request;
     }
 
-    public SrvAck unicastSrvReg(InetAddress address, ServiceType serviceType, ServiceURL serviceURL, boolean newService, String[] scopes, String[] attributes, String language) throws IOException
+    public SrvAck unicastSrvReg(InetAddress address, ServiceAgentInfo info) throws IOException
     {
-        // TODO: handle negative lifetimes using a Timer (maybe in the API layer)
+        ServiceURL serviceURL = info.getServiceURL();
 
         URLEntry urlEntry = new URLEntry();
         urlEntry.setLifetime(serviceURL.getLifetime());
         urlEntry.setURL(serviceURL.toString());
 
+        ServiceType serviceType = info.getServiceType();
+        if (serviceType == null) serviceType = serviceURL.getServiceType();
+
         SrvReg registration = new SrvReg();
         registration.setURLEntry(urlEntry);
         registration.setServiceType(serviceType);
-        registration.setScopes(scopes);
-        registration.setAttributes(attributes);
-        registration.setFresh(newService);
+        registration.setScopes(info.getScopes());
+        registration.setAttributes(info.getAttributes());
+        registration.setFresh(info.isFresh());
         registration.setXID(generateXID());
-        registration.setLanguage(language);
+        registration.setLanguage(info.getLanguage());
 
         byte[] requestBytes = serializeMessage(registration);
 
@@ -95,18 +98,20 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         }
     }
 
-    public SrvAck unicastSrvDeReg(InetAddress address, ServiceURL serviceURL, String[] scopes, String[] tags, String language) throws IOException
+    public SrvAck unicastSrvDeReg(InetAddress address, ServiceAgentInfo info) throws IOException
     {
+        ServiceURL serviceURL = info.getServiceURL();
+
         URLEntry urlEntry = new URLEntry();
         urlEntry.setLifetime(serviceURL.getLifetime());
         urlEntry.setURL(serviceURL.toString());
 
         SrvDeReg deregistration = new SrvDeReg();
         deregistration.setURLEntry(urlEntry);
-        deregistration.setScopes(scopes);
-        deregistration.setTags(tags);
+        deregistration.setScopes(info.getScopes());
+        deregistration.setTags(info.getAttributes());
         deregistration.setXID(generateXID());
-        deregistration.setLanguage(language);
+        deregistration.setLanguage(info.getLanguage());
 
         byte[] requestBytes = serializeMessage(deregistration);
 

@@ -53,7 +53,7 @@ public abstract class StandardAgent implements Agent
         return running;
     }
 
-    public void start() throws IOException
+    public void start() throws Exception
     {
         if (isRunning())
         {
@@ -70,9 +70,9 @@ public abstract class StandardAgent implements Agent
         if (logger.isLoggable(Level.FINE)) logger.fine("Agent " + this + " started successfully");
     }
 
-    protected abstract void doStart() throws IOException;
+    protected abstract void doStart() throws Exception;
 
-    public void stop() throws IOException
+    public void stop() throws Exception
     {
         if (!isRunning())
         {
@@ -89,5 +89,5 @@ public abstract class StandardAgent implements Agent
         if (logger.isLoggable(Level.FINE)) logger.fine("Agent " + this + " stopped successfully");
     }
 
-    protected abstract void doStop() throws IOException;
+    protected abstract void doStop() throws Exception;
 }
