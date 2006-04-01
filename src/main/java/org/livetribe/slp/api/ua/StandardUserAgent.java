@@ -37,6 +37,7 @@ import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.ua.UserAgentManager;
+import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.MessageEvent;
 import edu.emory.mathcs.backport.java.util.Arrays;
@@ -93,21 +94,32 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
 
     protected void doStart() throws IOException
     {
+        if (manager == null)
+        {
+            manager = createUserAgentManager();
+            manager.setConfiguration(getConfiguration());
+        }
+        manager.start();
+
         multicastListener = new MulticastListener();
         manager.addMessageListener(multicastListener, true);
-        manager.start();
 
         timer = new Timer(true);
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
         timer.schedule(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L);
     }
 
+    protected UserAgentManager createUserAgentManager()
+    {
+        return new StandardUserAgentManager();
+    }
+
     protected void doStop() throws IOException
     {
         timer.cancel();
 
-        manager.stop();
         manager.removeMessageListener(multicastListener, true);
+        manager.stop();
     }
 
     public List findServices(ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException

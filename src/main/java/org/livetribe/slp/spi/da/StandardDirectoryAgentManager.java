@@ -20,15 +20,15 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.logging.Level;
 
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.spi.StandardAgentManager;
+import org.livetribe.slp.spi.net.UnicastConnector;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
-import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -58,10 +58,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
 
     public void doStart() throws IOException
     {
-        if (getUnicastConnector() == null)
-            throw new IllegalStateException("DirectoryAgentManager " + this + " needs a UnicastConnector");
-        if (getMulticastConnector() == null)
-            throw new IllegalStateException("DirectoryAgentManager " + this + " needs a MulticastConnector");
+        super.doStart();
 
         InetAddress agentAddr = getInetAddress();
         if (agentAddr == null) agentAddr = InetAddress.getLocalHost();

@@ -27,10 +27,10 @@ import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.Attributes;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentCache;
@@ -42,6 +42,7 @@ import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 import org.livetribe.slp.spi.sa.ServiceAgentManager;
+import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 
 /**
  * @version $Rev$ $Date$
@@ -140,9 +141,15 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     {
         if (getServiceURL() == null) throw new IllegalStateException("Could not start ServiceAgent " + this + ", its ServiceURL has not been set");
 
+        if (manager == null)
+        {
+            manager = createServiceAgentManager();
+            manager.setConfiguration(getConfiguration());
+        }
+        manager.start();
+
         multicastListener = new MulticastListener();
         manager.addMessageListener(multicastListener, true);
-        manager.start();
 
         timer = new Timer(true);
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
@@ -151,12 +158,17 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         register();
     }
 
+    protected ServiceAgentManager createServiceAgentManager()
+    {
+        return new StandardServiceAgentManager();
+    }
+
     protected void doStop() throws IOException
     {
         timer.cancel();
 
-        manager.stop();
         manager.removeMessageListener(multicastListener, true);
+        manager.stop();
     }
 
     public void register() throws IOException, ServiceLocationException

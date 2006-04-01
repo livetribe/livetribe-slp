@@ -39,6 +39,7 @@ public abstract class NetworkConnector
 {
     protected Logger logger = Logger.getLogger(getClass().getName());
 
+    private Configuration configuration;
     private int corePoolSize;
     private int maxPoolSize;
     private long poolKeepAlive;
@@ -52,6 +53,7 @@ public abstract class NetworkConnector
 
     public void setConfiguration(Configuration configuration) throws IOException
     {
+        this.configuration = configuration;
         setCorePoolSize(configuration.getCorePoolSize());
         setMaxPoolSize(configuration.getMaxPoolSize());
         setPoolKeepAlive(configuration.getPoolKeepAlive());
@@ -62,6 +64,11 @@ public abstract class NetworkConnector
             InetAddress[] interfaceAddresses = new InetAddress[interfaces.length];
             for (int i = 0; i < interfaces.length; ++i) interfaceAddresses[i] = InetAddress.getByName(interfaces[i]);
         }
+    }
+
+    protected Configuration getConfiguration()
+    {
+        return configuration;
     }
 
     public void setCorePoolSize(int corePoolSize)

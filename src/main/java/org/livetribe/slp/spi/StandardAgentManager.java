@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,17 +34,19 @@ import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.Rqst;
-import org.livetribe.slp.spi.msg.DAAdvert;
-import org.livetribe.slp.spi.msg.SrvRqst;
-import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SAAdvert;
-import org.livetribe.slp.spi.net.MulticastConnector;
-import org.livetribe.slp.spi.net.MessageListener;
-import org.livetribe.slp.spi.net.UnicastConnector;
+import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
+import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.net.MulticastConnector;
+import org.livetribe.slp.spi.net.SocketMulticastConnector;
+import org.livetribe.slp.spi.net.SocketUnicastConnector;
+import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -53,6 +55,7 @@ public abstract class StandardAgentManager implements AgentManager
 {
     protected Logger logger = Logger.getLogger(getClass().getName());
 
+    private Configuration configuration;
     private long multicastMaxWait;
     private long[] multicastTimeouts;
     private int maxTransmissionUnit;
@@ -64,13 +67,18 @@ public abstract class StandardAgentManager implements AgentManager
 
     public void setConfiguration(Configuration configuration) throws IOException
     {
+        this.configuration = configuration;
         setMulticastMaxWait(configuration.getMulticastMaxWait());
         setMulticastTimeouts(configuration.getMulticastTimeouts());
         setMaxTransmissionUnit(configuration.getMTU());
         setPort(configuration.getPort());
-
         if (multicastConnector != null) multicastConnector.setConfiguration(configuration);
         if (unicastConnector != null) unicastConnector.setConfiguration(configuration);
+    }
+
+    protected Configuration getConfiguration()
+    {
+        return configuration;
     }
 
     public long getMulticastMaxWait()
@@ -172,8 +180,17 @@ public abstract class StandardAgentManager implements AgentManager
 
         if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " starting...");
 
-        if (multicastConnector != null) multicastConnector.start();
-        if (unicastConnector != null) unicastConnector.start();
+        Configuration config = getConfiguration();
+        if (multicastConnector == null)
+        {
+            multicastConnector = createMulticastConnector();
+            multicastConnector.setConfiguration(config);
+        }
+        if (unicastConnector == null)
+        {
+            unicastConnector = createUnicastConnector();
+            unicastConnector.setConfiguration(config);
+        }
 
         doStart();
 
@@ -184,6 +201,18 @@ public abstract class StandardAgentManager implements AgentManager
 
     protected void doStart() throws IOException
     {
+        multicastConnector.start();
+        unicastConnector.start();
+    }
+
+    protected MulticastConnector createMulticastConnector()
+    {
+        return new SocketMulticastConnector();
+    }
+
+    protected UnicastConnector createUnicastConnector()
+    {
+        return new SocketUnicastConnector();
     }
 
     public void stop() throws IOException
@@ -200,14 +229,13 @@ public abstract class StandardAgentManager implements AgentManager
 
         doStop();
 
-        if (multicastConnector != null) multicastConnector.stop();
-        if (unicastConnector != null) unicastConnector.stop();
-
         if (logger.isLoggable(Level.FINE)) logger.fine("AgentManager " + this + " stopped successfully");
     }
 
     protected void doStop() throws IOException
     {
+        if (multicastConnector != null) multicastConnector.stop();
+        if (unicastConnector != null) unicastConnector.stop();
     }
 
     protected int generateXID()

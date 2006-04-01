@@ -16,9 +16,9 @@
 package org.livetribe.slp.spi.net;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.ConnectException;
 
 import org.livetribe.slp.api.Configuration;
 

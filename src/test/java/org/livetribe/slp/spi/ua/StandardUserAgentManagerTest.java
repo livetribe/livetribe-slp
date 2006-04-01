@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.ua;
 
 import org.livetribe.slp.spi.SLPSPITestCase;
+import org.livetribe.slp.api.Configuration;
 
 /**
  * @version $Rev$ $Date$
@@ -24,7 +25,12 @@ public class StandardUserAgentManagerTest extends SLPSPITestCase
 {
     public void testStartStop() throws Exception
     {
+        Configuration configuration = new Configuration();
+        configuration.setPort(1427);
+
         StandardUserAgentManager agent = new StandardUserAgentManager();
+        agent.setConfiguration(configuration);
+        
         assertFalse(agent.isRunning());
 
         agent.start();

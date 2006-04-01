@@ -29,11 +29,18 @@ public abstract class StandardAgent implements Agent
 
     protected Logger logger = Logger.getLogger(getClass().getName());
 
+    private Configuration configuration;
     private volatile boolean running;
     private String[] scopes;
 
     public void setConfiguration(Configuration configuration) throws IOException
     {
+        this.configuration = configuration;
+    }
+
+    protected Configuration getConfiguration()
+    {
+        return configuration;
     }
 
     public String[] getScopes()

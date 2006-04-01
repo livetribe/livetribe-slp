@@ -24,6 +24,8 @@ import java.util.Properties;
  */
 public class Configuration
 {
+    private static final String SLP_PORT_KEY = "org.livetribe.slp.port";
+
     private final Properties properties = new Properties();
 
     public Configuration configure(InputStream stream) throws IOException
@@ -32,9 +34,14 @@ public class Configuration
         return this;
     }
 
+    public void setPort(int port)
+    {
+        properties.setProperty(SLP_PORT_KEY, String.valueOf(port));
+    }
+
     public int getPort()
     {
-        return Integer.parseInt(properties.getProperty("org.livetribe.slp.port", "427"));
+        return Integer.parseInt(properties.getProperty(SLP_PORT_KEY, "427"));
     }
 
     public String getMulticastAddress()

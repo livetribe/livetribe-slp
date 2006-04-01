@@ -17,9 +17,9 @@ package org.livetribe.slp.api.sa;
 
 import java.io.IOException;
 
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.Attributes;
 import org.livetribe.slp.api.Agent;
 import org.livetribe.slp.spi.sa.ServiceAgentManager;
 

@@ -39,9 +39,10 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
+import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
@@ -118,15 +119,26 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
         localhost = agentAddr;
 
+        if (manager == null)
+        {
+            manager = createDirectoryAgentManager();
+            manager.setConfiguration(getConfiguration());
+        }
+        manager.start();
+
         multicastListener = new MulticastMessageListener();
         unicastListener = new UnicastMessageListener();
         manager.addMessageListener(multicastListener, true);
         manager.addMessageListener(unicastListener, false);
-        manager.start();
 
         // DirectoryAgents send unsolicited DAAdverts every heartBeat seconds (RFC 2608, 12.2)
         timer = new Timer(true);
         timer.schedule(new UnsolicitedDAAdvert(), 0L, getHeartBeat() * 1000L);
+    }
+
+    protected DirectoryAgentManager createDirectoryAgentManager()
+    {
+        return new StandardDirectoryAgentManager();
     }
 
     protected void doStop() throws IOException
@@ -135,9 +147,9 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
         // DirectoryAgents send a DAAdvert on shutdown with bootTime == 0 (RFC 2608, 12.1)
         manager.multicastDAAdvert(0, getScopes(), null, null, Locale.getDefault().getCountry());
-        manager.stop();
         manager.removeMessageListener(multicastListener, true);
         manager.removeMessageListener(unicastListener, false);
+        manager.stop();
     }
 
     public void addServiceRegistrationListener(ServiceRegistrationListener listener)
