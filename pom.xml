@@ -5,7 +5,7 @@
     <groupId>org.livetribe.nursery</groupId>
     <artifactId>slp</artifactId>
     <packaging>jar</packaging>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>SLP</name>
 
     <build>

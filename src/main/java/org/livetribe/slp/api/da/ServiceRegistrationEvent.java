@@ -13,36 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.sa;
+package org.livetribe.slp.api.da;
 
-import java.util.List;
+import java.util.EventObject;
 
-import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.Attributes;
-import edu.emory.mathcs.backport.java.util.Collections;
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
  * @version $Rev$ $Date$
  */
-public class ServiceAgentInfo
+public class ServiceRegistrationEvent extends EventObject
 {
     private final ServiceType serviceType;
     private final ServiceURL serviceURL;
-    private final List scopes;
+    private final String[] scopes;
     private final Attributes attributes;
-    private final String language;
-    private final boolean fresh;
 
-    public ServiceAgentInfo(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean fresh)
+    public ServiceRegistrationEvent(Object source, ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes)
     {
+        super(source);
         this.serviceType = serviceType;
         this.serviceURL = serviceURL;
-        this.scopes = scopes == null ? Collections.emptyList() : Arrays.asList(scopes);
+        this.scopes = scopes;
         this.attributes = attributes;
-        this.language = language;
-        this.fresh = fresh;
     }
 
     public ServiceType getServiceType()
@@ -57,21 +52,11 @@ public class ServiceAgentInfo
 
     public String[] getScopes()
     {
-        return (String[])scopes.toArray(new String[scopes.size()]);
+        return scopes;
     }
 
     public Attributes getAttributes()
     {
         return attributes;
-    }
-
-    public String getLanguage()
-    {
-        return language;
-    }
-
-    public boolean isFresh()
-    {
-        return fresh;
     }
 }

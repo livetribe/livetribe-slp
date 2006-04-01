@@ -15,15 +15,14 @@
  */
 package org.livetribe.slp.api.da;
 
-import java.util.EventObject;
+import java.util.EventListener;
 
 /**
  * @version $Rev$ $Date$
  */
-public class DirectoryAgentEvent extends EventObject
+public interface ServiceRegistrationListener extends EventListener
 {
-    public DirectoryAgentEvent(Object source)
-    {
-        super(source);
-    }
+    public void serviceRegistered(ServiceRegistrationEvent event);
+
+    public void serviceDeregistered(ServiceRegistrationEvent event);
 }

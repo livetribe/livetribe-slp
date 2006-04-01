@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.Attributes;
 
 /**
  * The RFC 2608 message header is the following:
@@ -251,5 +252,11 @@ public abstract class Message extends BytesBlock
                 return new SAAdvert();
         }
         throw new ServiceLocationException("Unknown message " + messageType, ServiceLocationException.PARSE_ERROR);
+    }
+
+    protected static byte[] attributesToBytes(Attributes attributes) throws ServiceLocationException
+    {
+        if (attributes == null) return EMPTY_BYTES;
+        return stringToUTF8Bytes(attributes.asString());
     }
 }

@@ -81,12 +81,12 @@ public class DirectoryAgentCache
         }
     }
 
-    public void remove(DirectoryAgentInfo info)
+    public boolean remove(DirectoryAgentInfo info)
     {
         lock.lock();
         try
         {
-            cache.remove(info);
+            return cache.remove(info);
         }
         finally
         {

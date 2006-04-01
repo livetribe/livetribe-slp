@@ -63,7 +63,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         URLEntry urlEntry = new URLEntry();
         urlEntry.setLifetime(serviceURL.getLifetime());
-        urlEntry.setURL(serviceURL.toString());
+        urlEntry.setURL(serviceURL.getURL());
 
         ServiceType serviceType = info.getServiceType();
         if (serviceType == null) serviceType = serviceURL.getServiceType();
@@ -104,7 +104,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         URLEntry urlEntry = new URLEntry();
         urlEntry.setLifetime(serviceURL.getLifetime());
-        urlEntry.setURL(serviceURL.toString());
+        urlEntry.setURL(serviceURL.getURL());
 
         SrvDeReg deregistration = new SrvDeReg();
         deregistration.setURLEntry(urlEntry);

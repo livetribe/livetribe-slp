@@ -157,9 +157,9 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return daCache.add(info);
     }
 
-    private void uncacheDirectoryAgent(DirectoryAgentInfo info)
+    private boolean uncacheDirectoryAgent(DirectoryAgentInfo info)
     {
-        daCache.remove(info);
+        return daCache.remove(info);
     }
 
     protected List discoverDirectoryAgents(String[] scopes) throws IOException
@@ -189,11 +189,15 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         DirectoryAgentInfo info = DirectoryAgentInfo.from(message);
         if (message.getBootTime() == 0L)
         {
-            uncacheDirectoryAgent(info);
+            boolean removed = uncacheDirectoryAgent(info);
+            // TODO
+//            if (removed) notifyListeners();
         }
         else
         {
-            cacheDirectoryAgent(info);
+            boolean added = cacheDirectoryAgent(info);
+            // TODO
+//            if (added) notifyListeners();
         }
     }
 

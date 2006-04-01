@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.da;
 import java.util.List;
 
 import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.Attributes;
 import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -28,7 +29,7 @@ import edu.emory.mathcs.backport.java.util.Arrays;
  */
 public class DirectoryAgentInfo
 {
-    private final List attributes;
+    private final Attributes attributes;
     private final long bootTime;
     private final String language;
     private final List scopes;
@@ -40,9 +41,9 @@ public class DirectoryAgentInfo
         return new DirectoryAgentInfo(daAdvert.getAttributes(), daAdvert.getBootTime(), daAdvert.getLanguage(), daAdvert.getScopes(), daAdvert.getURL());
     }
 
-    private DirectoryAgentInfo(String[] attributes, long bootTime, String language, String[] scopes, String url)
+    private DirectoryAgentInfo(Attributes attributes, long bootTime, String language, String[] scopes, String url)
     {
-        this.attributes = attributes == null ? Collections.emptyList() : Arrays.asList(attributes);
+        this.attributes = attributes;
         this.bootTime = bootTime;
         this.language = language;
         this.scopes = scopes == null ? Collections.emptyList() : Arrays.asList(scopes);
@@ -60,9 +61,9 @@ public class DirectoryAgentInfo
         return host;
     }
 
-    public String[] getAttributes()
+    public Attributes getAttributes()
     {
-        return (String[])attributes.toArray(new String[attributes.size()]);
+        return attributes;
     }
 
     public long getBootTime()

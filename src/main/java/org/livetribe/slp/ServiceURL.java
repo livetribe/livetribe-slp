@@ -76,6 +76,11 @@ public class ServiceURL implements Serializable
         return lifetime;
     }
 
+    public String getURL()
+    {
+        return url;
+    }
+
     public boolean equals(Object obj)
     {
         if (this == obj) return true;
@@ -87,11 +92,6 @@ public class ServiceURL implements Serializable
     public int hashCode()
     {
         return url.hashCode();
-    }
-
-    public String toString()
-    {
-        return url;
     }
 
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException

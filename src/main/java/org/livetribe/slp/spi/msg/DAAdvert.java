@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.Attributes;
 
 /**
  * The RFC 2608 DAAdvert message body is the following:
@@ -48,7 +49,7 @@ public class DAAdvert extends Rply
     private long bootTime;
     private String url;
     private String[] scopes;
-    private String[] attributes;
+    private Attributes attributes;
     private String[] securityParamIndexes;
     private AuthenticationBlock[] authenticationBlocks;
 
@@ -68,7 +69,7 @@ public class DAAdvert extends Rply
         byte[] scopesBytes = stringArrayToBytes(getScopes());
         int scopesBytesLength = scopesBytes.length;
         int attrsLengthBytesLength = 2;
-        byte[] attrsBytes = stringArrayToBytes(getAttributes());
+        byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
         int securityParamsLengthBytesLength = 2;
         byte[] securityParamsBytes = stringArrayToBytes(getSecurityParamIndexes());
@@ -163,7 +164,7 @@ public class DAAdvert extends Rply
         int attrsLength = readInt(bytes, offset, attrsLengthBytesLength);
 
         offset += attrsLengthBytesLength;
-        setAttributes(readStringArray(bytes, offset, attrsLength));
+        setAttributes(new Attributes(readString(bytes, offset, attrsLength)));
 
         offset += attrsLength;
         int securityParamsLengthBytesLength = 2;
@@ -230,12 +231,12 @@ public class DAAdvert extends Rply
         this.scopes = scopes;
     }
 
-    public String[] getAttributes()
+    public Attributes getAttributes()
     {
         return attributes;
     }
 
-    public void setAttributes(String[] attributes)
+    public void setAttributes(Attributes attributes)
     {
         this.attributes = attributes;
     }

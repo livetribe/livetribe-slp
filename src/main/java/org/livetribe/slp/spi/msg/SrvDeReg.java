@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.Attributes;
 
 /**
  * The RFC 2608 SrvDeReg message body is the following:
@@ -38,7 +39,7 @@ public class SrvDeReg extends Message
 {
     private String[] scopes;
     private URLEntry urlEntry;
-    private String[] tags;
+    private Attributes tags;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
@@ -48,7 +49,7 @@ public class SrvDeReg extends Message
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
         int tagsLengthBytesLength = 2;
-        byte[] tagsBytes = stringArrayToBytes(getTags());
+        byte[] tagsBytes = attributesToBytes(getTags());
         int tagsLength = tagsBytes.length;
 
         int bodyLength = scopesLengthBytesLength + scopesLength + urlLength + tagsLengthBytesLength + tagsLength;
@@ -90,7 +91,7 @@ public class SrvDeReg extends Message
         int tagsLength = readInt(bytes, offset, tagsLengthBytesLength);
 
         offset += tagsLengthBytesLength;
-        setTags(readStringArray(bytes, offset, tagsLength));
+        setTags(new Attributes(readString(bytes, offset, tagsLength)));
     }
 
     public byte getMessageType()
@@ -118,12 +119,12 @@ public class SrvDeReg extends Message
         this.urlEntry = urlEntry;
     }
 
-    public String[] getTags()
+    public Attributes getTags()
     {
         return tags;
     }
 
-    public void setTags(String[] tags)
+    public void setTags(Attributes tags)
     {
         this.tags = tags;
     }

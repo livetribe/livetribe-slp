@@ -36,7 +36,6 @@ public class BytesBlock
         reservedChars['*'] = '*';
         reservedChars['+'] = '+';
         reservedChars[','] = ',';
-        reservedChars[','] = ',';
         reservedChars[';'] = ';';
         reservedChars['<'] = '<';
         reservedChars['='] = '=';
@@ -44,6 +43,7 @@ public class BytesBlock
         reservedChars['\\'] = '\\';
         reservedChars['~'] = '~';
     }
+    protected static final byte[] EMPTY_BYTES = new byte[0];
 
     /**
      * Reads an integer from <code>bytes</code> in network byte order.
@@ -103,13 +103,13 @@ public class BytesBlock
 
     protected static byte[] stringToBytes(String value) throws ServiceLocationException
     {
-        if (value == null || value.length() == 0) return new byte[0];
+        if (value == null || value.length() == 0) return EMPTY_BYTES;
         return stringToUTF8Bytes(escape(value));
     }
 
     protected static byte[] stringArrayToBytes(String[] value) throws ServiceLocationException
     {
-        if (value == null || value.length == 0) return new byte[0];
+        if (value == null || value.length == 0) return EMPTY_BYTES;
 
         StringBuffer buffer = new StringBuffer();
         for (int i = 0; i < value.length; ++i)
@@ -121,7 +121,7 @@ public class BytesBlock
         return stringToUTF8Bytes(buffer.toString());
     }
 
-    private static byte[] stringToUTF8Bytes(String value) throws ServiceLocationException
+    protected static byte[] stringToUTF8Bytes(String value) throws ServiceLocationException
     {
         try
         {

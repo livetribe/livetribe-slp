@@ -19,6 +19,7 @@ import java.util.Arrays;
 
 import org.livetribe.slp.spi.SLPSPITestCase;
 import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.Attributes;
 
 /**
  * @version $Rev$ $Date$
@@ -96,7 +97,8 @@ public class MessageTest extends SLPSPITestCase
         original.setBootTime(System.currentTimeMillis());
         original.setURL("service:directory-agent://test");
         original.setScopes(new String[]{"scope1", "scope2"});
-        original.setAttributes(new String[]{"attr1", "attr2"});
+        Attributes attributes = new Attributes("(attr1=foo),attr2");
+        original.setAttributes(attributes);
         original.setSecurityParamIndexes(new String[]{"spi1", "spi2"});
         // TODO: test auth blocks
 //        original.setAuthenticationBlocks();
@@ -108,7 +110,7 @@ public class MessageTest extends SLPSPITestCase
         assertEquals(original.getBootTime(), deserialized.getBootTime());
         assertEquals(original.getURL(), deserialized.getURL());
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
-        assertTrue(Arrays.equals(original.getAttributes(), deserialized.getAttributes()));
+        assertEquals(original.getAttributes(), deserialized.getAttributes());
         assertTrue(Arrays.equals(original.getSecurityParamIndexes(), deserialized.getSecurityParamIndexes()));
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));
@@ -133,7 +135,8 @@ public class MessageTest extends SLPSPITestCase
         original.setURLEntry(urlEntry);
         original.setServiceType(new ServiceType("a:b"));
         original.setScopes(new String[]{"scope1", "scope2"});
-        original.setAttributes(new String[]{"attr1", "attr2"});
+        Attributes attributes = new Attributes("(attr1=foo),attr2");
+        original.setAttributes(attributes);
         // TODO: test auth blocks
 //        original.setAuthenticationBlocks();
 
@@ -143,7 +146,7 @@ public class MessageTest extends SLPSPITestCase
         assertEquals(original.getURLEntry(), deserialized.getURLEntry());
         assertEquals(original.getServiceType(), deserialized.getServiceType());
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
-        assertTrue(Arrays.equals(original.getAttributes(), deserialized.getAttributes()));
+        assertEquals(original.getAttributes(), deserialized.getAttributes());
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));
     }
@@ -156,21 +159,23 @@ public class MessageTest extends SLPSPITestCase
         urlEntry.setURL("url1");
         urlEntry.setLifetime(123);
         original.setURLEntry(urlEntry);
-        original.setTags(new String[]{"tag1", "tag2"});
+        Attributes tags = new Attributes("(tag1=foo),tag2");
+        original.setTags(tags);
 
         byte[] serialized = original.serialize();
         SrvDeReg deserialized = (SrvDeReg)Message.deserialize(serialized);
 
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
         assertEquals(original.getURLEntry(), deserialized.getURLEntry());
-        assertTrue(Arrays.equals(original.getTags(), deserialized.getTags()));
+        assertEquals(original.getTags(), deserialized.getTags());
     }
 
     public void testSAAdvertSerializeDeserialize() throws Exception
     {
         SAAdvert original = new SAAdvert();
         original.setScopes(new String[]{"scope1", "scope2"});
-        original.setAttributes(new String[]{"attr1", "attr2"});
+        Attributes attributes = new Attributes("(attr1=foo),attr2");
+        original.setAttributes(attributes);
         original.setURL("url1");
         // TODO: test auth blocks
 //        original.setAuthenticationBlocks();
@@ -179,7 +184,7 @@ public class MessageTest extends SLPSPITestCase
         SAAdvert deserialized = (SAAdvert)Message.deserialize(serialized);
 
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
-        assertTrue(Arrays.equals(original.getAttributes(), deserialized.getAttributes()));
+        assertEquals(original.getAttributes(), deserialized.getAttributes());
         assertEquals(original.getURL(), deserialized.getURL());
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));

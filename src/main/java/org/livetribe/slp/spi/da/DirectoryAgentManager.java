@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.spi.AgentManager;
 
 /**
@@ -27,9 +28,9 @@ import org.livetribe.slp.spi.AgentManager;
  */
 public interface DirectoryAgentManager extends AgentManager
 {
-    public void multicastDAAdvert(long bootTime, String[] scopes, String[] attributes, Integer xid, String language) throws IOException;
+    public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
-    public void unicastDAAdvert(InetAddress address, long bootTime, String[] scopes, String[] attributes, Integer xid, String language) throws IOException;
+    public void unicastDAAdvert(InetAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
     public void unicastSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException;
 

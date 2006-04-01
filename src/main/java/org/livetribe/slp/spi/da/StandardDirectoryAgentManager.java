@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.util.logging.Level;
 
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.spi.StandardAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
@@ -72,14 +73,14 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         localhost = agentAddr;
     }
 
-    public void multicastDAAdvert(long bootTime, String[] scopes, String[] attributes, Integer xid, String language) throws IOException
+    public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         byte[] bytes = serializeMessage(daAdvert);
         getMulticastConnector().send(bytes);
     }
 
-    public void unicastDAAdvert(InetAddress address, long bootTime, String[] scopes, String[] attributes, Integer xid, String language) throws IOException
+    public void unicastDAAdvert(InetAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         daAdvert.setMulticast(false);
@@ -87,7 +88,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         getUnicastConnector().send(bytes, address, true);
     }
 
-    private DAAdvert createDAAdvert(long bootTime, String[] scopes, String[] attributes, Integer xid, String language)
+    private DAAdvert createDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language)
     {
         DAAdvert daAdvert = new DAAdvert();
         daAdvert.setLanguage(language);
@@ -122,7 +123,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         {
             ServiceURL serviceURL = serviceURLs[i];
             entries[i] = new URLEntry();
-            entries[i].setURL(serviceURL.toString());
+            entries[i].setURL(serviceURL.getURL());
             entries[i].setLifetime(serviceURL.getLifetime());
         }
         srvRply.setURLEntries(entries);

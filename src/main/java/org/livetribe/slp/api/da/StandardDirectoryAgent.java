@@ -20,21 +20,22 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
@@ -42,9 +43,9 @@ import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
 import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRqst;
-import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
@@ -139,7 +140,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         manager.removeMessageListener(unicastListener, false);
     }
 
-    public void addDirectoryAgentListener(DirectoryAgentListener listener)
+    public void addServiceRegistrationListener(ServiceRegistrationListener listener)
     {
         listenersLock.lock();
         try
@@ -152,7 +153,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    public void removeDirectoryAgentListener(DirectoryAgentListener listener)
+    public void removeServiceRegistrationListener(ServiceRegistrationListener listener)
     {
         listenersLock.lock();
         try
@@ -165,12 +166,12 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, String[] attributes, String language) throws ServiceLocationException
+    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language) throws ServiceLocationException
     {
         SrvReg message = new SrvReg();
         message.setServiceType(serviceType);
         URLEntry urlEntry = new URLEntry();
-        urlEntry.setURL(serviceURL.toString());
+        urlEntry.setURL(serviceURL.getURL());
         urlEntry.setLifetime(serviceURL.getLifetime());
         message.setURLEntry(urlEntry);
         message.setScopes(scopes);
@@ -273,7 +274,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             Object oldRegistration = serviceURLs.put(message.getURLEntry().getURL(), message);
             if (oldRegistration != null)
             {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Replacing service registration " + oldRegistration + " with new registration " + message);
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("Replacing service registration " + oldRegistration + " with new registration " + message);
             }
             else
             {
@@ -285,22 +287,30 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             servicesLock.unlock();
         }
 
+        notifyServiceRegistered(message);
+
+        return result;
+    }
+
+    private void notifyServiceRegistered(SrvReg message)
+    {
         listenersLock.lock();
         try
         {
             if (!listeners.isEmpty())
             {
-                DirectoryAgentEvent event = new DirectoryAgentEvent(message);
+                ServiceRegistrationEvent event = new ServiceRegistrationEvent(message, message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes());
                 for (int i = 0; i < listeners.size(); ++i)
                 {
-                    DirectoryAgentListener listener = (DirectoryAgentListener)listeners.get(i);
+                    ServiceRegistrationListener listener = (ServiceRegistrationListener)listeners.get(i);
                     try
                     {
                         listener.serviceRegistered(event);
                     }
                     catch (RuntimeException x)
                     {
-                        if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "DirectoryAgentListener threw exception, ignoring", x);
+                        if (logger.isLoggable(Level.INFO))
+                            logger.log(Level.INFO, "ServiceRegistrationListener threw exception, ignoring", x);
                     }
                 }
             }
@@ -309,8 +319,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         {
             listenersLock.unlock();
         }
-
-        return result;
     }
 
     private int updateService(SrvReg message)
@@ -329,7 +337,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
             if (registration == null) return ServiceLocationException.INVALID_UPDATE;
             // Services must be updated keeping the same scopes list (RFC 2608, 9.3)
-            if (!Arrays.equals(registration.getScopes(), message.getScopes())) return ServiceLocationException.SCOPE_NOT_SUPPORTED;
+            if (!Arrays.equals(registration.getScopes(), message.getScopes()))
+                return ServiceLocationException.SCOPE_NOT_SUPPORTED;
 
             registration.updateAttributes(message.getAttributes());
             return 0;
@@ -342,10 +351,11 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     protected void handleUnicastSrvDeReg(SrvDeReg message, Socket socket)
     {
+        int errorCode = 0;
+
         servicesLock.lock();
         try
         {
-            int errorCode = 0;
             for (Iterator servicesIterator = services.entrySet().iterator(); servicesIterator.hasNext();)
             {
                 Map.Entry serviceEntry = (Map.Entry)servicesIterator.next();
@@ -355,8 +365,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
                 SrvReg registration = (SrvReg)serviceURLs.get(serviceURL);
                 if (registration != null)
                 {
-                    String[] tags = message.getTags();
-                    if (tags != null && tags.length > 0)
+                    Attributes tags = message.getTags();
+                    if (tags != null && !tags.isEmpty())
                     {
                         registration.removeAttributes(tags);
                     }
@@ -364,29 +374,60 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
                     {
                         serviceURLs.remove(serviceURL);
                         if (serviceURLs.isEmpty()) servicesIterator.remove();
+                        notifyServiceDeregistered(registration);
                     }
                 }
-            }
-
-            try
-            {
-                manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
-            }
-            catch (IOException x)
-            {
-                if (logger.isLoggable(Level.INFO))
-                    logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
             }
         }
         finally
         {
             servicesLock.unlock();
         }
+
+        try
+        {
+            manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
+        }
+        catch (IOException x)
+        {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
+        }
+    }
+
+    private void notifyServiceDeregistered(SrvReg message)
+    {
+        listenersLock.lock();
+        try
+        {
+            if (!listeners.isEmpty())
+            {
+                ServiceRegistrationEvent event = new ServiceRegistrationEvent(message, message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes());
+                for (int i = 0; i < listeners.size(); ++i)
+                {
+                    ServiceRegistrationListener listener = (ServiceRegistrationListener)listeners.get(i);
+                    try
+                    {
+                        listener.serviceDeregistered(event);
+                    }
+                    catch (RuntimeException x)
+                    {
+                        if (logger.isLoggable(Level.INFO))
+                            logger.log(Level.INFO, "ServiceRegistrationListener threw exception, ignoring", x);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            listenersLock.unlock();
+        }
     }
 
     protected void handleUnicastSrvRqst(SrvRqst message, Socket socket)
     {
-        if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + this + " queried for services of type " + message.getServiceType());
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " queried for services of type " + message.getServiceType());
 
         List matchingServices = matchServices(message.getServiceType());
         ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
@@ -394,7 +435,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         try
         {
             manager.unicastSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
-            if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
         }
         catch (IOException x)
         {

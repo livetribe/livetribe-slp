@@ -357,7 +357,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                     assertNotNull(urlEntries);
                     assertEquals(1, urlEntries.length);
                     URLEntry urlEntry = urlEntries[0];
-                    assertEquals(serviceURL.toString(), urlEntry.getURL());
+                    assertEquals(serviceURL.getURL(), urlEntry.getURL());
                     assertEquals(serviceURL.getLifetime(), urlEntry.getLifetime());
                 }
                 finally

@@ -30,6 +30,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentCache;
@@ -51,7 +52,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private long discoveryPeriod;
     private ServiceType serviceType;
     private ServiceURL serviceURL;
-    private String[] attributes;
+    private Attributes attributes;
     private String language;
     private ServiceAgentManager manager;
     private MessageListener multicastListener;
@@ -115,12 +116,12 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         this.serviceURL = serviceURL;
     }
 
-    public String[] getAttributes()
+    public Attributes getAttributes()
     {
         return attributes;
     }
 
-    public void setAttributes(String[] attributes)
+    public void setAttributes(Attributes attributes)
     {
         this.attributes = attributes;
     }

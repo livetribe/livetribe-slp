@@ -17,6 +17,7 @@ package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.Attributes;
 
 /**
  * The RFC 2608 SrvReg message body is the following:
@@ -32,7 +33,7 @@ import org.livetribe.slp.ServiceType;
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |     length of [scope-list]    |         [scope-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |  length of attr-list string   |          [attr-list]          \
+ * | length of [attr-list] string  |          [attr-list]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |# of AttrAuths |(if present) Attribute Authentication Blocks...\
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -44,7 +45,7 @@ public class SrvReg extends Message
     private URLEntry urlEntry;
     private ServiceType serviceType;
     private String[] scopes;
-    private String[] attributes;
+    private Attributes attributes;
     private AuthenticationBlock[] authenticationBlocks;
 
     protected byte[] serializeBody() throws ServiceLocationException
@@ -58,7 +59,7 @@ public class SrvReg extends Message
         byte[] scopesBytes = stringArrayToBytes(getScopes());
         int scopesLength = scopesBytes.length;
         int attrsLengthBytesLength = 2;
-        byte[] attrsBytes = stringArrayToBytes(getAttributes());
+        byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsLength = attrsBytes.length;
         int authBlocksCountBytesLength = 1;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
@@ -138,7 +139,7 @@ public class SrvReg extends Message
         int attrsLength = readInt(bytes, offset, attrsLengthBytesLength);
 
         offset += attrsLengthBytesLength;
-        setAttributes(readStringArray(bytes, offset, attrsLength));
+        setAttributes(new Attributes(readString(bytes, offset, attrsLength)));
 
         offset += attrsLength;
         int authBlocksCountBytesLength = 1;
@@ -192,12 +193,12 @@ public class SrvReg extends Message
         this.scopes = scopes;
     }
 
-    public String[] getAttributes()
+    public Attributes getAttributes()
     {
         return attributes;
     }
 
-    public void setAttributes(String[] attributes)
+    public void setAttributes(Attributes attributes)
     {
         this.attributes = attributes;
     }
@@ -212,12 +213,12 @@ public class SrvReg extends Message
         this.authenticationBlocks = authenticationBlocks;
     }
 
-    public void updateAttributes(String[] newAttributes)
+    public void updateAttributes(Attributes newAttributes)
     {
         // TODO
     }
 
-    public void removeAttributes(String[] tags)
+    public void removeAttributes(Attributes tags)
     {
         // TODO
     }
