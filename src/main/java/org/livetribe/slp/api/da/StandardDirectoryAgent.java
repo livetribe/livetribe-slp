@@ -178,7 +178,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language) throws ServiceLocationException
+    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean notifyListeners) throws ServiceLocationException
     {
         SrvReg message = new SrvReg();
         message.setServiceType(serviceType);
@@ -189,7 +189,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         message.setScopes(scopes);
         message.setAttributes(attributes);
         message.setLanguage(language);
-        int result = registerService(message);
+        int result = registerService(message, notifyListeners);
         if (result != 0) throw new ServiceLocationException(result);
     }
 
@@ -252,7 +252,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         int errorCode = 0;
         if (message.isFresh())
         {
-            errorCode = registerService(message);
+            errorCode = registerService(message, true);
         }
         else
         {
@@ -270,7 +270,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    private int registerService(SrvReg message)
+    private int registerService(SrvReg message, boolean notifyListeners)
     {
         int result = 0;
         servicesLock.lock();
@@ -299,7 +299,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             servicesLock.unlock();
         }
 
-        notifyServiceRegistered(message);
+        if (notifyListeners) notifyServiceRegistered(message);
 
         return result;
     }

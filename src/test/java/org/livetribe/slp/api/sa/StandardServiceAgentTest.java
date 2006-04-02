@@ -18,6 +18,11 @@ import org.livetribe.slp.spi.ua.StandardUserAgentManager;
  */
 public class StandardServiceAgentTest extends SLPAPITestCase
 {
+    protected void tearDown() throws Exception
+    {
+        sleep(500);
+    }
+
     public void testStartStop() throws Exception
     {
         StandardServiceAgent sa = new StandardServiceAgent();

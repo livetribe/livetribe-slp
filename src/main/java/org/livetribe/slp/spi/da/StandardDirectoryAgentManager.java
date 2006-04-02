@@ -70,6 +70,14 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         localhost = agentAddr;
     }
 
+    protected UnicastConnector createUnicastConnector()
+    {
+        UnicastConnector result = super.createUnicastConnector();
+        // By default, DirectoryAgent listens to TCP also
+        result.setUnicastListening(true);
+        return result;
+    }
+
     public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
