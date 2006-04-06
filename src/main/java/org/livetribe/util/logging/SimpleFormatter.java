@@ -32,8 +32,8 @@ public class SimpleFormatter extends Formatter
         StringBuffer result = new StringBuffer();
         result.append(record.getMillis()).append(" ");
         result.append("{").append(record.getThreadID()).append("} ");
-//        result.append("[").append(record.getLoggerName()).append("] ");
-        result.append(record.getLevel().getLocalizedName()).append(": ");
+        result.append("[").append(record.getLoggerName()).append("] ");
+//        result.append(record.getLevel().getLocalizedName()).append(": ");
         result.append(formatMessage(record)).append(EOL);
         Throwable x = record.getThrown();
         if (x != null)

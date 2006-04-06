@@ -15,8 +15,9 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
+
 
 /**
  * The RFC 2608 SrvRqst message body is the following:
@@ -37,6 +38,7 @@ import org.livetribe.slp.ServiceLocationException;
  * |  length of [SLP SPI] string   |       [SLP SPI] String        \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
+ *
  * @version $Rev$ $Date$
  */
 public class SrvRqst extends Rqst
@@ -177,5 +179,32 @@ public class SrvRqst extends Rqst
     public void setSecurityParameterIndex(String securityParameterIndex)
     {
         this.securityParameterIndex = securityParameterIndex;
+    }
+
+    public String toString()
+    {
+        String result = "[SrvReqst@" + Integer.toHexString(hashCode()) + " ";
+
+        String[] PRL = getPreviousResponders();
+        for (int i = 0; i < PRL.length; i++)
+        {
+            result += (i > 0 ? "," : "") + PRL[i];
+        }
+
+        result += " " + getServiceType() + " ";
+
+        String[] scopes = getScopes();
+        for (int i = 0; i < scopes.length; i++)
+        {
+            result += (i > 0 ? "," : "") + scopes[i];
+        }
+
+        result += " " + getFilter() + " ";
+
+        result += " " + getSecurityParameterIndex() + " ";
+
+        result += "]";
+
+        return result;
     }
 }

@@ -82,6 +82,9 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         byte[] bytes = serializeMessage(daAdvert);
+
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Multicasting " + daAdvert);
+
         getMulticastConnector().send(bytes);
     }
 
@@ -90,6 +93,9 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         daAdvert.setMulticast(false);
         byte[] bytes = serializeMessage(daAdvert);
+
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + daAdvert + " to " + address);
+
         getUnicastConnector().send(bytes, address, true);
     }
 
@@ -113,6 +119,9 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         srvAck.setLanguage(language);
         srvAck.setErrorCode(errorCode);
         byte[] bytes = serializeMessage(srvAck);
+
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvAck + " to " + address);
+
         getUnicastConnector().reply(socket, bytes);
     }
 
@@ -133,6 +142,9 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         }
         srvRply.setURLEntries(entries);
         byte[] bytes = serializeMessage(srvRply);
+
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvRply + " to " + address);
+
         getUnicastConnector().reply(socket, bytes);
     }
 
