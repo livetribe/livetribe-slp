@@ -20,11 +20,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
 import java.util.Random;
-import java.util.TimerTask;
 import java.util.logging.Level;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Configuration;
@@ -32,16 +35,14 @@ import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentCache;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.msg.DAAdvert;
-import org.livetribe.slp.spi.msg.SrvRply;
-import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
-import org.livetribe.slp.spi.ua.UserAgentManager;
-import org.livetribe.slp.spi.ua.StandardUserAgentManager;
-import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.MessageEvent;
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
+import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.ua.StandardUserAgentManager;
+import org.livetribe.slp.spi.ua.UserAgentManager;
 
 /**
  * @version $Rev$ $Date$
@@ -53,7 +54,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     private UserAgentManager manager;
     private MessageListener multicastListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
-    private Timer timer;
+    private ScheduledExecutorService scheduledExecutorService;
 
     public void setUserAgentManager(UserAgentManager manager)
     {
@@ -66,6 +67,11 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
         setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
         if (manager != null) manager.setConfiguration(configuration);
+    }
+
+    public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)
+    {
+        this.scheduledExecutorService = scheduledExecutorService;
     }
 
     public int getDiscoveryStartWaitBound()
@@ -104,9 +110,9 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         multicastListener = new MulticastListener();
         manager.addMessageListener(multicastListener, true);
 
-        timer = new Timer(true);
+        if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
-        timer.schedule(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L);
+        scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L, TimeUnit.MILLISECONDS);
     }
 
     protected UserAgentManager createUserAgentManager()
@@ -116,7 +122,11 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
 
     protected void doStop() throws IOException
     {
-        timer.cancel();
+        if (scheduledExecutorService != null)
+        {
+            scheduledExecutorService.shutdown();
+            scheduledExecutorService = null;
+        }
 
         manager.removeMessageListener(multicastListener, true);
         manager.stop();
@@ -266,7 +276,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
     }
 
-    private class DirectoryAgentDiscovery extends TimerTask
+    private class DirectoryAgentDiscovery implements Runnable
     {
         public void run()
         {

@@ -27,14 +27,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -59,7 +60,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     private DirectoryAgentManager manager;
     private int heartBeat;
     private InetAddress address;
-    private Timer timer;
+    private ScheduledExecutorService scheduledExecutorService;
     private long bootTime;
     private InetAddress localhost;
     private MessageListener multicastListener;
@@ -77,8 +78,13 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setHeartBeat(configuration.getDAHeartBeat());
+        setHeartBeat(configuration.getDAHeartBeatPeriod());
         if (manager != null) manager.setConfiguration(configuration);
+    }
+
+    public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)
+    {
+        this.scheduledExecutorService = scheduledExecutorService;
     }
 
     public int getHeartBeat()
@@ -132,8 +138,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         manager.addMessageListener(unicastListener, false);
 
         // DirectoryAgents send unsolicited DAAdverts every heartBeat seconds (RFC 2608, 12.2)
-        timer = new Timer(true);
-        timer.schedule(new UnsolicitedDAAdvert(), 0L, getHeartBeat() * 1000L);
+        if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.scheduleWithFixedDelay(new UnsolicitedDAAdvert(), 0L, getHeartBeat() * 1000L, TimeUnit.MILLISECONDS);
     }
 
     protected DirectoryAgentManager createDirectoryAgentManager()
@@ -143,7 +149,11 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     protected void doStop() throws IOException
     {
-        timer.cancel();
+        if (scheduledExecutorService != null)
+        {
+            scheduledExecutorService.shutdown();
+            scheduledExecutorService = null;
+        }
 
         // DirectoryAgents send a DAAdvert on shutdown with bootTime == 0 (RFC 2608, 12.1)
         manager.multicastDAAdvert(0, getScopes(), null, null, Locale.getDefault().getCountry());
@@ -487,7 +497,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    private class UnsolicitedDAAdvert extends TimerTask
+    private class UnsolicitedDAAdvert implements Runnable
     {
         public void run()
         {
@@ -495,7 +505,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             {
                 manager.multicastDAAdvert(getBootTime(), getScopes(), null, new Integer(0), Locale.getDefault().getCountry());
             }
-            catch (IOException x)
+            catch (Exception x)
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "DirectoryAgent " + this + " cannot send unsolicited DAAdvert", x);

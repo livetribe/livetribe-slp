@@ -16,8 +16,6 @@
 package org.livetribe.slp;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 
 import junit.framework.TestCase;
 import org.livetribe.slp.api.Configuration;
@@ -41,12 +39,8 @@ public class SLPTestCase extends TestCase
 
     protected Configuration getDefaultConfiguration() throws IOException
     {
-        String EOL = System.getProperty("line.separator");
-        StringBuffer configText = new StringBuffer();
-        // Linux does not allow non-root users to listen on ports < 1024
-        configText.append("org.livetribe.slp.port=1427").append(EOL);
-        // Properties files are always encoded in ISO-8859-1
-        InputStream stream = new ByteArrayInputStream(configText.toString().getBytes("ISO-8859-1"));
-        return new Configuration().configure(stream);
+        Configuration configuration = new Configuration();
+        configuration.setPort(1427);
+        return configuration;
     }
 }

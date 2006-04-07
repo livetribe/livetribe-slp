@@ -40,23 +40,17 @@ public abstract class NetworkConnector
     protected Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;
-    private int corePoolSize;
-    private int maxPoolSize;
-    private long poolKeepAlive;
     private int port;
     private final List listeners = new ArrayList();
     private final Lock listenersLock = new ReentrantLock();
     private InetAddress[] inetAddresses;
     private volatile boolean running;
-    private ThreadPoolExecutor handlerPool;
+    private ThreadPoolExecutor connectionPool;
     private ExecutorService acceptorPool;
 
     public void setConfiguration(Configuration configuration) throws IOException
     {
         this.configuration = configuration;
-        setCorePoolSize(configuration.getCorePoolSize());
-        setMaxPoolSize(configuration.getMaxPoolSize());
-        setPoolKeepAlive(configuration.getPoolKeepAlive());
         setPort(configuration.getPort());
         String[] interfaces = configuration.getInterfaceAddresses();
         if (interfaces != null)
@@ -71,34 +65,14 @@ public abstract class NetworkConnector
         return configuration;
     }
 
-    public void setCorePoolSize(int corePoolSize)
+    public void setAcceptorPool(ExecutorService acceptorPool)
     {
-        this.corePoolSize = corePoolSize;
+        this.acceptorPool = acceptorPool;
     }
 
-    public int getCorePoolSize()
+    public void setConnectionPool(ThreadPoolExecutor threadPool)
     {
-        return corePoolSize;
-    }
-
-    public void setMaxPoolSize(int maxPoolSize)
-    {
-        this.maxPoolSize = maxPoolSize;
-    }
-
-    public int getMaxPoolSize()
-    {
-        return maxPoolSize;
-    }
-
-    public void setPoolKeepAlive(long poolKeepAlive)
-    {
-        this.poolKeepAlive = poolKeepAlive;
-    }
-
-    public long getPoolKeepAlive()
-    {
-        return poolKeepAlive;
+        this.connectionPool = threadPool;
     }
 
     public void setPort(int port)
@@ -182,8 +156,8 @@ public abstract class NetworkConnector
         Runnable[] acceptors = createAcceptors();
         if (acceptors != null && acceptors.length > 0)
         {
-            acceptorPool = Executors.newFixedThreadPool(acceptors.length);
-            handlerPool = new ThreadPoolExecutor(getCorePoolSize(), getMaxPoolSize(), getPoolKeepAlive(), TimeUnit.SECONDS, new SynchronousQueue());
+            if (acceptorPool == null) acceptorPool = Executors.newFixedThreadPool(acceptors.length);
+            if (connectionPool == null) connectionPool = new ThreadPoolExecutor(2, 20, 5, TimeUnit.SECONDS, new SynchronousQueue());
             for (int i = 0; i < acceptors.length; ++i) acceptorPool.execute(acceptors[i]);
         }
     }
@@ -217,7 +191,12 @@ public abstract class NetworkConnector
         if (acceptorPool != null)
         {
             acceptorPool.shutdown();
-            handlerPool.shutdown();
+            acceptorPool = null;
+        }
+        if (connectionPool != null)
+        {
+            connectionPool.shutdown();
+            connectionPool = null;
         }
         destroyAcceptors();
     }
@@ -230,7 +209,14 @@ public abstract class NetworkConnector
     {
         try
         {
-            handlerPool.execute(executor);
+            if (connectionPool == null)
+            {
+                if (isRunning()) throw new AssertionError("BUG: connection pool has been reset, but this connector still running");
+            }
+            else
+            {
+                connectionPool.execute(executor);
+            }
         }
         catch (RejectedExecutionException x)
         {

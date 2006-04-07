@@ -21,12 +21,13 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -58,7 +59,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private ServiceAgentManager manager;
     private MessageListener multicastListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
-    private Timer timer;
+    private ScheduledExecutorService scheduledExecutorService;
 
     public void setServiceAgentManager(ServiceAgentManager manager)
     {
@@ -71,6 +72,11 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
         setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
         if (manager != null) manager.setConfiguration(configuration);
+    }
+
+    public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)
+    {
+        this.scheduledExecutorService = scheduledExecutorService;
     }
 
     public int getDiscoveryStartWaitBound()
@@ -151,9 +157,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         multicastListener = new MulticastListener();
         manager.addMessageListener(multicastListener, true);
 
-        timer = new Timer(true);
+        if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
-        timer.schedule(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L);
+        scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L, TimeUnit.MILLISECONDS);
 
         register();
     }
@@ -165,7 +171,11 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     protected void doStop() throws IOException
     {
-        timer.cancel();
+        if (scheduledExecutorService != null)
+        {
+            scheduledExecutorService.shutdown();
+            scheduledExecutorService = null;
+        }
 
         manager.removeMessageListener(multicastListener, true);
         manager.stop();
@@ -198,7 +208,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
         long renewalPeriod = calculateRenewalPeriod(sa);
         long renewalDelay = calculateRenewalDelay(sa);
-        if (renewalPeriod > 0) timer.schedule(new RegistrationRenewal(da), renewalDelay, renewalPeriod);
+        if (renewalPeriod > 0) scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
     }
 
     private long calculateRenewalPeriod(ServiceAgentInfo info)
@@ -374,7 +384,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      * ServiceAgent must refresh their registration with DAs before the lifetime specified
      * in the ServiceURL expires, otherwise the DA does not advertise them anymore.
      */
-    private class RegistrationRenewal extends TimerTask
+    private class RegistrationRenewal implements Runnable
     {
         private final DirectoryAgentInfo da;
 
@@ -396,7 +406,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    private class DirectoryAgentDiscovery extends TimerTask
+    private class DirectoryAgentDiscovery implements Runnable
     {
         public void run()
         {
@@ -405,7 +415,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
                 List das = discoverDirectoryAgents(getScopes());
                 cacheDirectoryAgents(das);
             }
-            catch (IOException x)
+            catch (Exception x)
             {
                 if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not discover DAs", x);
             }

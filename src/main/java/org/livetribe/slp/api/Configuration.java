@@ -15,121 +15,141 @@
  */
 package org.livetribe.slp.api;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
  * @version $Rev$ $Date$
  */
 public class Configuration
 {
-    private static final String SLP_PORT_KEY = "org.livetribe.slp.port";
-
-    private final Properties properties = new Properties();
-
-    public Configuration configure(InputStream stream) throws IOException
-    {
-        properties.load(stream);
-        return this;
-    }
+    private int port = 427;
+    private String multicastAddress = "239.255.255.253";
+    private int mtu = 1400; // bytes
+    private int multicastTTL = 255; // 0..255
+    private long multicastMaxWait = 15000; // milliseconds
+    private long[] multicastTimeouts = new long[]{250L, 500L, 750L, 1000L, 1250L, 1500L, 2000L, 3000L, 4000L}; // milliseconds
+    private String[] interfaceAddresses = null;
+    private int unicastReadTimeout = 2000; // milliseconds
+    private int unicastMaxMessageLength = 8192; // bytes
+    private int daHeartBeatPeriod = 10800; // seconds
+    private int daDiscoveryStartWaitBound = 3; // seconds
+    private int daDiscoveryPeriod = 900; // seconds
 
     public void setPort(int port)
     {
-        properties.setProperty(SLP_PORT_KEY, String.valueOf(port));
+        this.port = port;
     }
 
     public int getPort()
     {
-        return Integer.parseInt(properties.getProperty(SLP_PORT_KEY, "427"));
+        return port;
+    }
+
+    public void setMulticastAddress(String multicastAddress)
+    {
+        this.multicastAddress = multicastAddress;
     }
 
     public String getMulticastAddress()
     {
-        return "239.255.255.253";
+        return multicastAddress;
+    }
+
+    public void setMTU(int mtu)
+    {
+        this.mtu = mtu;
     }
 
     public int getMTU()
     {
-        return Integer.parseInt(properties.getProperty("net.slp.MTU", "1400"));
+        return mtu;
+    }
+
+    public void setMulticastTTL(int multicastTTL)
+    {
+        this.multicastTTL = multicastTTL;
     }
 
     public int getMulticastTTL()
     {
-        return Integer.parseInt(properties.getProperty("net.slp.multicastTTL", "255"));
+        return multicastTTL;
     }
 
-    public int getCorePoolSize()
+    public void setMulticastMaxWait(long multicastMaxWait)
     {
-        return Integer.parseInt(properties.getProperty("org.livetribe.slp.corePoolSize", "2"));
-    }
-
-    public int getMaxPoolSize()
-    {
-        return Integer.parseInt(properties.getProperty("org.livetribe.slp.maxPoolSize", "20"));
-    }
-
-    public long getPoolKeepAlive()
-    {
-        return Integer.parseInt(properties.getProperty("org.livetribe.slp.poolKeepAlive", "5"));
+        this.multicastMaxWait = multicastMaxWait;
     }
 
     public long getMulticastMaxWait()
     {
-        return Long.parseLong(properties.getProperty("net.slp.multicastMaximumWait", "15000"));
+        return multicastMaxWait;
+    }
+
+    public void setMulticastTimeouts(long[] multicastTimeouts)
+    {
+        this.multicastTimeouts = multicastTimeouts;
     }
 
     public long[] getMulticastTimeouts()
     {
-        String timeoutString = properties.getProperty("net.slp.multicastTimeouts", "250,500,750,1000,1250,1500,2000,3000,4000");
-        return split(timeoutString);
+        return multicastTimeouts;
+    }
+
+    public void setInterfaceAddresses(String[] interfaceAddresses)
+    {
+        this.interfaceAddresses = interfaceAddresses;
     }
 
     public String[] getInterfaceAddresses()
     {
-        String interfaces = properties.getProperty("net.slp.interfaces", null);
-        return interfaces == null ? null : interfaces.split(",", 0);
+        return interfaceAddresses;
+    }
+
+    public void setUnicastReadTimeout(int unicastReadTimeout)
+    {
+        this.unicastReadTimeout = unicastReadTimeout;
     }
 
     public int getUnicastReadTimeout()
     {
-        return Integer.parseInt(properties.getProperty("org.livetribe.slp.unicast.read.timeout", "2000"));
+        return unicastReadTimeout;
+    }
+
+    public void setUnicastMaxMessageLength(int unicastMaxMessageLength)
+    {
+        this.unicastMaxMessageLength = unicastMaxMessageLength;
     }
 
     public int getUnicastMaxMessageLength()
     {
-        return Integer.parseInt(properties.getProperty("org.livetribe.slp.unicast.max.message.length", "8192"));
+        return unicastMaxMessageLength;
     }
 
-    public int getDAHeartBeat()
+    public void setDAHeartBeatPeriod(int daHeartBeatPeriod)
     {
-        return Integer.parseInt(properties.getProperty("net.slp.DAHeartBeat", "10800"));
+        this.daHeartBeatPeriod = daHeartBeatPeriod;
+    }
+
+    public int getDAHeartBeatPeriod()
+    {
+        return daHeartBeatPeriod;
+    }
+
+    public void setDADiscoveryStartWaitBound(int daDiscoveryStartWaitBound)
+    {
+        this.daDiscoveryStartWaitBound = daDiscoveryStartWaitBound;
     }
 
     public int getDADiscoveryStartWaitBound()
     {
-        return getRandomStartWaitBound();
+        return daDiscoveryStartWaitBound;
+    }
+
+    public void setDADiscoveryPeriod(int daDiscoveryPeriod)
+    {
+        this.daDiscoveryPeriod = daDiscoveryPeriod;
     }
 
     public int getDADiscoveryPeriod()
     {
-        return Integer.parseInt(properties.getProperty("net.slp.DAActiveDiscoveryInterval", "900"));
-    }
-
-    private int getRandomStartWaitBound()
-    {
-        return Integer.parseInt(properties.getProperty("net.slp.randomWaitBound", "3"));
-    }
-
-    private long[] split(String value)
-    {
-        String[] strings = value.split(",", 0);
-        long[] result = new long[strings.length];
-        for (int i = 0; i < strings.length; ++i)
-        {
-            String string = strings[i];
-            result[i] = Long.parseLong(string);
-        }
-        return result;
+        return daDiscoveryPeriod;
     }
 }
