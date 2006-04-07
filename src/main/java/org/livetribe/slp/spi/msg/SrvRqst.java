@@ -183,28 +183,33 @@ public class SrvRqst extends Rqst
 
     public String toString()
     {
-        String result = "[SrvReqst@" + Integer.toHexString(hashCode()) + " ";
+        StringBuffer result = new StringBuffer("[SrvRqst@").append(Integer.toHexString(hashCode()));
 
-        String[] PRL = getPreviousResponders();
-        for (int i = 0; i < PRL.length; i++)
+        result.append(" (");
+        String[] responders = getPreviousResponders();
+        for (int i = 0; i < responders.length; i++)
         {
-            result += (i > 0 ? "," : "") + PRL[i];
+            if (i > 0) result.append(",");
+            result.append(responders[i]);
         }
+        result.append(")");
 
-        result += " " + getServiceType() + " ";
+        result.append(" ").append(getServiceType());
 
+        result.append(" ");
         String[] scopes = getScopes();
         for (int i = 0; i < scopes.length; i++)
         {
-            result += (i > 0 ? "," : "") + scopes[i];
+            if (i > 0) result.append(",");
+            result.append(scopes[i]);
         }
 
-        result += " " + getFilter() + " ";
+        result.append(" ").append(getFilter());
 
-        result += " " + getSecurityParameterIndex() + " ";
+        result.append(" ").append(getSecurityParameterIndex());
 
-        result += "]";
+        result.append("]");
 
-        return result;
+        return result.toString();
     }
 }
