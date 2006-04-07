@@ -31,9 +31,22 @@ public class PropertiesConfigurationFactory
 
     public static Configuration newConfiguration(String resource) throws IOException
     {
-        Properties properties = new Properties();
-        InputStream stream = PropertiesConfigurationFactory.class.getClassLoader().getResourceAsStream(resource);
+        return newConfiguration(resource, PropertiesConfigurationFactory.class.getClassLoader());
+    }
+
+    public static Configuration newConfiguration(String resource, ClassLoader classLoader) throws IOException
+    {
+        InputStream stream = classLoader.getResourceAsStream(resource);
+
         if (stream == null) throw new FileNotFoundException("Could not find resource " + resource + " in classpath");
+
+        return newConfiguration(stream);
+    }
+
+    public static Configuration newConfiguration(InputStream stream) throws IOException
+    {
+        Properties properties = new Properties();
+
         properties.load(stream);
         stream.close();
 
