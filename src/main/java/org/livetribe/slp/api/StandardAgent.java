@@ -16,8 +16,8 @@
 package org.livetribe.slp.api;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @version $Rev$ $Date$
@@ -27,7 +27,7 @@ public abstract class StandardAgent implements Agent
     protected static final String DEFAULT_SCOPE = "DEFAULT";
     protected static final String[] DEFAULT_SCOPES = new String[]{DEFAULT_SCOPE};
 
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;
     private volatile boolean running;
