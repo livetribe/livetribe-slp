@@ -194,6 +194,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             DirectoryAgentInfo info = DirectoryAgentInfo.from(daAdvert);
             result.add(info);
         }
+        if (logger.isLoggable(Level.FINE)) logger.fine("UserAgent " + this + " discovered DAs: " + result);
         return result;
     }
 
@@ -280,6 +281,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     {
         public void run()
         {
+            if (logger.isLoggable(Level.FINE)) logger.fine("UserAgent " + this + " executing periodic discovery of DAs");
             try
             {
                 List das = discoverDirectoryAgents(getScopes());
