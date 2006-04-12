@@ -17,11 +17,12 @@ package org.livetribe.slp.spi.net;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.SocketTimeoutException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 
 /**
@@ -37,6 +38,7 @@ public class SocketMulticastConnector extends MulticastConnector
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {
+            // No interface addresses defined, bind on the wildcard address
             bindAddresses = new InetSocketAddress[1];
             bindAddresses[0] = new InetSocketAddress((InetAddress)null, getPort());
         }
@@ -63,10 +65,7 @@ public class SocketMulticastConnector extends MulticastConnector
             sockets[i].joinGroup(getMulticastAddress());
             if (logger.isLoggable(Level.FINE)) logger.fine("Multicast socket " + bindAddress + " joined multicast group " + getMulticastAddress());
 
-            // TODO: handle timeouts ?
-//          socket.setSoTimeout();
-
-            acceptors[i] = new Acceptor(sockets[i]);
+            acceptors[i] = new Receiver(sockets[i]);
         }
 
         return acceptors;
@@ -84,23 +83,37 @@ public class SocketMulticastConnector extends MulticastConnector
         }
     }
 
-    public void send(byte[] bytes) throws IOException
+    public DatagramSocket unicastSend(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException
     {
-        DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
-        packet.setAddress(getMulticastAddress());
-        packet.setPort(getPort());
-        for (int i = 0; i < sockets.length; ++i)
-        {
-            sockets[i].send(packet);
-            if (logger.isLoggable(Level.FINER)) logger.finer("Sent datagram " + packet + " (" + packet.getLength() + " bytes) on multicast socket " + sockets[i]);
-        }
+        return send(socket, address, bytes);
     }
 
-    private class Acceptor implements Runnable
+    public DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException
+    {
+        return send(socket, new InetSocketAddress(getMulticastAddress(), getPort()), bytes);
+    }
+
+    private DatagramSocket send(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException
+    {
+        DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+        packet.setSocketAddress(address);
+
+        // Use an ephemeral port to send the packet in case the socket has not been provided.
+        // It is very important not to use the multicast socket to send datagrams, since there normally are
+        // several multicast socket listening, and a unicast UDP sent via the multicast socket is only received
+        // by one listener (which one depends on the operative system). If the receiving listener is the one
+        // we used to send the message, the effect is exactly as if the message has never been sent.
+        if (socket == null) socket = new DatagramSocket();
+        socket.send(packet);
+        if (logger.isLoggable(Level.FINER)) logger.finer("Sent datagram " + packet + " (" + packet.getLength() + " bytes) to " + packet.getSocketAddress() + " from socket " + socket.getLocalSocketAddress());
+        return socket;
+    }
+
+    private class Receiver extends Acceptor
     {
         private final MulticastSocket socket;
 
-        public Acceptor(MulticastSocket socket)
+        public Receiver(MulticastSocket socket)
         {
             this.socket = socket;
         }
@@ -127,12 +140,12 @@ public class SocketMulticastConnector extends MulticastConnector
                 catch (SocketTimeoutException x)
                 {
                     // Timed out, but the socket is still valid, don't shut down
-                    if (logger.isLoggable(Level.FINEST)) logger.finest("Receive timeout on multicast socket " + socket);
+                    if (logger.isLoggable(Level.FINEST)) logger.finest("Timeout during receive() on multicast socket " + socket);
                 }
                 catch (IOException x)
                 {
                     if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Unexpected IOException", x);
-                    // TODO: what to do here ?
+                    break;
                 }
             }
 
@@ -152,7 +165,7 @@ public class SocketMulticastConnector extends MulticastConnector
         public void run()
         {
             byte[] data = new byte[packet.getLength()];
-            System.arraycopy(packet.getData(), packet.getOffset(), data, 0, packet.getLength());
+            System.arraycopy(packet.getData(), packet.getOffset(), data, 0, data.length);
             MessageEvent event = new MessageEvent(packet, data, (InetSocketAddress)packet.getSocketAddress());
             notifyMessageListeners(event);
         }

@@ -23,7 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.emory.mathcs.backport.java.util.concurrent.ExecutorService;
-import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.LinkedBlockingQueue;
 import edu.emory.mathcs.backport.java.util.concurrent.RejectedExecutionException;
 import edu.emory.mathcs.backport.java.util.concurrent.SynchronousQueue;
 import edu.emory.mathcs.backport.java.util.concurrent.ThreadPoolExecutor;
@@ -37,7 +37,7 @@ import org.livetribe.slp.api.Configuration;
  */
 public abstract class NetworkConnector
 {
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;
     private int port;
@@ -156,9 +156,10 @@ public abstract class NetworkConnector
         Runnable[] acceptors = createAcceptors();
         if (acceptors != null && acceptors.length > 0)
         {
-            if (acceptorPool == null) acceptorPool = Executors.newFixedThreadPool(acceptors.length);
-            if (connectionPool == null) connectionPool = new ThreadPoolExecutor(2, 20, 5, TimeUnit.SECONDS, new SynchronousQueue());
-            for (int i = 0; i < acceptors.length; ++i) acceptorPool.execute(acceptors[i]);
+            int size = acceptors.length;
+            if (acceptorPool == null) acceptorPool = new ThreadPoolExecutor(size, Integer.MAX_VALUE, 5, TimeUnit.SECONDS, new SynchronousQueue());
+            if (connectionPool == null) connectionPool = new ThreadPoolExecutor(size, Integer.MAX_VALUE, 5, TimeUnit.SECONDS, new LinkedBlockingQueue());
+            for (int i = 0; i < acceptors.length; ++i) accept(acceptors[i]);
         }
     }
 
@@ -205,13 +206,33 @@ public abstract class NetworkConnector
 
     protected abstract void destroyAcceptors() throws IOException;
 
+    protected void accept(Runnable executor)
+    {
+        try
+        {
+            if (acceptorPool == null)
+            {
+                if (isRunning()) throw new AssertionError("BUG: acceptor pool has been reset, but this connector is still running");
+            }
+            else
+            {
+                acceptorPool.execute(executor);
+            }
+        }
+        catch (RejectedExecutionException x)
+        {
+            if (isRunning()) throw x;
+            if (logger.isLoggable(Level.FINEST)) logger.finest("Connector has been stopped, rejected execution of " + executor);
+        }
+    }
+
     protected void handle(Runnable executor)
     {
         try
         {
             if (connectionPool == null)
             {
-                if (isRunning()) throw new AssertionError("BUG: connection pool has been reset, but this connector still running");
+                if (isRunning()) throw new AssertionError("BUG: connection pool has been reset, but this connector is still running");
             }
             else
             {

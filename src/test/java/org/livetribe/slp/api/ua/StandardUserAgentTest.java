@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
@@ -127,18 +128,18 @@ public class StandardUserAgentTest extends SLPAPITestCase
 
     public void testListenForDAAdverts() throws Exception
     {
+        Configuration configuration = getDefaultConfiguration();
+
         StandardUserAgent ua = new StandardUserAgent();
         StandardUserAgentManager uaManager = new StandardUserAgentManager();
         ua.setUserAgentManager(uaManager);
         uaManager.setMulticastConnector(new SocketMulticastConnector());
         uaManager.setUnicastConnector(new SocketUnicastConnector());
-        ua.setConfiguration(getDefaultConfiguration());
+        ua.setConfiguration(configuration);
         ua.start();
 
         try
         {
-            sleep(500);
-
             List das = ua.getCachedDirectoryAgents(ua.getScopes());
             assertNotNull(das);
             assertTrue(das.isEmpty());
@@ -173,12 +174,14 @@ public class StandardUserAgentTest extends SLPAPITestCase
 
     public void testDADiscoveryOnStartup() throws Exception
     {
+        Configuration configuration = getDefaultConfiguration();
+
         StandardDirectoryAgent da = new StandardDirectoryAgent();
         StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
         da.setDirectoryAgentManager(daManager);
         daManager.setMulticastConnector(new SocketMulticastConnector());
         daManager.setUnicastConnector(new SocketUnicastConnector());
-        da.setConfiguration(getDefaultConfiguration());
+        da.setConfiguration(configuration);
         da.start();
 
         try
@@ -190,14 +193,17 @@ public class StandardUserAgentTest extends SLPAPITestCase
             ua.setUserAgentManager(uaManager);
             uaManager.setMulticastConnector(new SocketMulticastConnector());
             uaManager.setUnicastConnector(new SocketUnicastConnector());
-            ua.setConfiguration(getDefaultConfiguration());
+            ua.setConfiguration(configuration);
             // Discover the DAs immediately
             ua.setDiscoveryStartWaitBound(0);
             ua.start();
 
             try
             {
-                sleep(500);
+                // The multicast convergence should stop after 2 timeouts, but use 3 to be sure
+                long[] timeouts = configuration.getMulticastTimeouts();
+                long sleep = timeouts[0] + timeouts[1] + timeouts[2];
+                sleep(sleep);
 
                 List das = ua.getCachedDirectoryAgents(ua.getScopes());
                 assertNotNull(das);

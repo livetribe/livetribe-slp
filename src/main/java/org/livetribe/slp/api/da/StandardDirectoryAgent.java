@@ -16,7 +16,6 @@
 package org.livetribe.slp.api.da;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -27,21 +26,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
-import edu.emory.mathcs.backport.java.util.concurrent.Executors;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.Message;
@@ -222,9 +222,9 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             return;
         }
 
-        String[] prevResponders = message.getPreviousResponders();
+        Set prevResponders = message.getPreviousResponders();
         String responder = localhost.getHostAddress();
-        if (Arrays.asList(prevResponders).contains(responder))
+        if (prevResponders.contains(responder))
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " dropping message " + message + ": already contains responder " + responder);
@@ -234,41 +234,20 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         // Replies must have the same language and XID as the request (RFC 2608, 8.0)
         try
         {
-            try
-            {
-                // Avoid that unicast replies are sent to this directory agent
-                if (!manager.canReplyOnUnicastTo(address.getAddress())) throw new ConnectException();
-
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("DirectoryAgent " + this + " sending unicast reply to " + address.getAddress());
-                manager.unicastDAAdvert(address.getAddress(), getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
-            }
-            catch (ConnectException x)
-            {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("DirectoryAgent " + this + " could not send unicast reply to " + address.getAddress() + ", trying multicast");
-                manager.multicastDAAdvert(getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
-            }
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " sending UDP unicast reply to " + address);
+            manager.unicastDAAdvert(address, getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
         }
         catch (IOException x)
         {
             if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send reply to " + address.getAddress(), x);
+                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send reply to " + address, x);
         }
     }
 
     protected void handleUnicastSrvReg(SrvReg message, Socket socket)
     {
-        int errorCode = 0;
-        if (message.isFresh())
-        {
-            errorCode = registerService(message, true);
-        }
-        else
-        {
-            errorCode = updateService(message);
-        }
-
+        int errorCode = message.isFresh() ? registerService(message, true) : updateService(message);
         try
         {
             manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);

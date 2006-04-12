@@ -17,6 +17,7 @@ package org.livetribe.slp.spi.da;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.logging.Level;
 
@@ -24,11 +25,11 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.spi.StandardAgentManager;
-import org.livetribe.slp.spi.net.UnicastConnector;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
+import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -85,10 +86,10 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Multicasting " + daAdvert);
 
-        getMulticastConnector().send(bytes);
+        getMulticastConnector().multicastSend(null, bytes).close();
     }
 
-    public void unicastDAAdvert(InetAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void unicastDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         daAdvert.setMulticast(false);
@@ -96,7 +97,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + daAdvert + " to " + address);
 
-        getUnicastConnector().send(bytes, address, true);
+        getMulticastConnector().unicastSend(null, address, bytes).close();
     }
 
     private DAAdvert createDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language)
@@ -120,7 +121,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         srvAck.setErrorCode(errorCode);
         byte[] bytes = serializeMessage(srvAck);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvAck + " to " + address);
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvAck + " to " + socket.getRemoteSocketAddress());
 
         getUnicastConnector().reply(socket, bytes);
     }
@@ -143,14 +144,8 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         srvRply.setURLEntries(entries);
         byte[] bytes = serializeMessage(srvRply);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvRply + " to " + address);
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
 
         getUnicastConnector().reply(socket, bytes);
-    }
-
-    public boolean canReplyOnUnicastTo(InetAddress address)
-    {
-        if (!getUnicastConnector().isUnicastListening()) return true;
-        return !localhost.equals(address);
     }
 }

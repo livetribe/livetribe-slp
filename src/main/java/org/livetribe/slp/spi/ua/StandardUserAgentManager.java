@@ -25,9 +25,9 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.StandardAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
-import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
@@ -47,8 +47,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter);
         request.setMulticast(true);
-        UnicastConnector unicast = getUnicastConnector();
-        return convergentDASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
+        return convergentDASrvRqst(request, timeframe);
     }
 
     public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException

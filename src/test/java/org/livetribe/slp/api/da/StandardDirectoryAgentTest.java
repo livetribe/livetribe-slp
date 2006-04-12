@@ -20,6 +20,8 @@ import java.util.Locale;
 
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicInteger;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
@@ -31,11 +33,9 @@ import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.SocketMulticastConnector;
 import org.livetribe.slp.spi.net.SocketUnicastConnector;
-import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
+import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
-import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.ServiceLocationException;
 
 /**
  * @version $Rev$ $Date$
@@ -218,8 +218,6 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         SocketUnicastConnector daUnicastConnector = new SocketUnicastConnector();
         daManager.setUnicastConnector(daUnicastConnector);
         da.setConfiguration(getDefaultConfiguration());
-        // Avoid that replies are sent to the DA listening on unicast
-        daUnicastConnector.setUnicastListening(false);
         da.start();
 
         try
@@ -231,7 +229,6 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             SocketUnicastConnector uaUnicastConnector = new SocketUnicastConnector();
             uaManager.setUnicastConnector(uaUnicastConnector);
             uaManager.setConfiguration(getDefaultConfiguration());
-            uaUnicastConnector.setUnicastListening(true);
             uaManager.start();
 
             try
@@ -252,56 +249,6 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             finally
             {
                 uaManager.stop();
-            }
-        }
-        finally
-        {
-            da.stop();
-        }
-    }
-
-    public void testDADiscoveryRepliesOnMulticast() throws Exception
-    {
-        InetAddress localhost = InetAddress.getLocalHost();
-
-        StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setMulticastConnector(new SocketMulticastConnector());
-        SocketUnicastConnector daUnicastConnector = new SocketUnicastConnector();
-        daManager.setUnicastConnector(daUnicastConnector);
-        da.setConfiguration(getDefaultConfiguration());
-        // Avoid that replies are sent to the DA listening on unicast
-        daUnicastConnector.setUnicastListening(false);
-        da.start();
-
-        try
-        {
-            long afterBoot = System.currentTimeMillis();
-
-            StandardServiceAgentManager sa = new StandardServiceAgentManager();
-            sa.setMulticastConnector(new SocketMulticastConnector());
-            sa.setConfiguration(getDefaultConfiguration());
-            sa.start();
-
-            try
-            {
-                sleep(500);
-
-                DAAdvert[] replies = sa.multicastDASrvRqst(new String[]{"DEFAULT"}, null, -1);
-
-                assertNotNull(replies);
-                assertEquals(1, replies.length);
-                DAAdvert reply = replies[0];
-                assertEquals(0, reply.getErrorCode());
-                assertEquals("service:directory-agent://" + localhost.getHostAddress(), reply.getURL());
-                assertTrue(afterBoot >= reply.getBootTime());
-                assertNotNull(reply.getResponder());
-                assertTrue(reply.isMulticast());
-            }
-            finally
-            {
-                sa.stop();
             }
         }
         finally

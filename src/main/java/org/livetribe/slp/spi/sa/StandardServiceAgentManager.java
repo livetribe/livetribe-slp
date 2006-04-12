@@ -27,10 +27,10 @@ import org.livetribe.slp.spi.StandardAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.msg.URLEntry;
-import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.net.UnicastConnector;
 
 /**
@@ -42,8 +42,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter);
         request.setMulticast(true);
-        UnicastConnector unicast = getUnicastConnector();
-        return convergentDASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
+        return convergentDASrvRqst(request, timeframe);
     }
 
     private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter)

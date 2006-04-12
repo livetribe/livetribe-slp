@@ -16,11 +16,12 @@
 package org.livetribe.slp.spi;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -28,10 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.Condition;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.spi.msg.DAAdvert;
@@ -53,7 +50,7 @@ import org.livetribe.slp.spi.net.UnicastConnector;
  */
 public abstract class StandardAgentManager implements AgentManager
 {
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;
     private long multicastMaxWait;
@@ -268,33 +265,31 @@ public abstract class StandardAgentManager implements AgentManager
         }
     }
 
-    protected DAAdvert[] convergentDASrvRqst(SrvRqst message, long timeframe, boolean repliesOnUnicast) throws IOException
+    protected DAAdvert[] convergentDASrvRqst(SrvRqst message, long timeframe) throws IOException
     {
-        ConvergentDAMessageListener listener = new ConvergentDAMessageListener();
-        addMessageListener(listener, !repliesOnUnicast);
+        ConvergentDAMessageListener converger = new ConvergentDAMessageListener();
         try
         {
-            List replies = convergentMulticastSend(message, timeframe, listener);
+            List replies = convergentMulticastSend(message, timeframe, converger);
             return (DAAdvert[])replies.toArray(new DAAdvert[replies.size()]);
         }
         finally
         {
-            removeMessageListener(listener, !repliesOnUnicast);
+            converger.close();
         }
     }
 
     protected SAAdvert[] convergentSASrvRqst(SrvRqst message, long timeframe, boolean repliesOnUnicast) throws IOException
     {
-        ConvergentSAMessageListener listener = new ConvergentSAMessageListener();
-        addMessageListener(listener, !repliesOnUnicast);
+        ConvergentSAMessageListener converger = new ConvergentSAMessageListener();
         try
         {
-            List replies = convergentMulticastSend(message, timeframe, listener);
+            List replies = convergentMulticastSend(message, timeframe, converger);
             return (SAAdvert[])replies.toArray(new SAAdvert[replies.size()]);
         }
         finally
         {
-            removeMessageListener(listener, !repliesOnUnicast);
+            converger.close();
         }
     }
 
@@ -324,12 +319,11 @@ public abstract class StandardAgentManager implements AgentManager
      * The algorithm is described very briefly in RFC 2608, section 6.3
      * @return A list of messages in response of the multicast send
      */
-    protected List convergentMulticastSend(Rqst message, long timeframe, ConvergentMessageListener replies) throws IOException
+    protected List convergentMulticastSend(Rqst message, long timeframe, Converger converger) throws IOException
     {
         long start = System.currentTimeMillis();
 
         if (timeframe < 0)
-
         {
             if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeframe is negative, using max multicast wait");
             timeframe = getMulticastMaxWait();
@@ -341,6 +335,9 @@ public abstract class StandardAgentManager implements AgentManager
 
         List result = new ArrayList();
         Set previousResponders = new HashSet();
+
+        DatagramSocket socket = converger.getDatagramSocket();
+        multicastConnector.accept(converger);
 
         int noReplies = 0;
         int timeoutIndex = 0;
@@ -355,7 +352,7 @@ public abstract class StandardAgentManager implements AgentManager
                 break;
             }
 
-            message.setPreviousResponders((String[])previousResponders.toArray(new String[previousResponders.size()]));
+            message.setPreviousResponders(previousResponders);
             byte[] messageBytes = serializeMessage(message);
 
             // Exit if the message bytes cannot fit into the MTU
@@ -366,10 +363,10 @@ public abstract class StandardAgentManager implements AgentManager
             }
 
             if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence sending " + message);
-            multicastConnector.send(messageBytes);
+            multicastConnector.multicastSend(socket, messageBytes);
 
             // Wait for the convergence timeout at timeoutIndex
-            replies.lock();
+            converger.lock();
             try
             {
                 // Avoid spurious wakeups
@@ -377,21 +374,21 @@ public abstract class StandardAgentManager implements AgentManager
                 if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence start wait on timeout #" + (timeoutIndex + 1) + " (ms): " + timeout);
                 long startWait = System.currentTimeMillis();
                 long endWait = startWait;
-                while (replies.isEmpty() && endWait - startWait < timeout)
+                while (converger.isEmpty() && endWait - startWait < timeout)
                 {
-                    replies.await(startWait + timeout - endWait);
+                    converger.await(startWait + timeout - endWait);
                     endWait = System.currentTimeMillis();
                     if (logger.isLoggable(Level.FINEST)) logger.finest("Multicast convergence waited (ms): " + (endWait - startWait));
                 }
                 if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence stop wait on timeout #" + (timeoutIndex + 1));
 
                 boolean newMessages = false;
-                if (!replies.isEmpty())
+                if (!converger.isEmpty())
                 {
                     // Messages arrived
-                    while (!replies.isEmpty())
+                    while (!converger.isEmpty())
                     {
-                        Rply reply = replies.pop();
+                        Rply reply = converger.pop();
                         String responder = reply.getResponder();
                         if (responder != null && responder.length() > 0)
                         {
@@ -451,7 +448,7 @@ public abstract class StandardAgentManager implements AgentManager
             }
             finally
             {
-                replies.unlock();
+                converger.unlock();
             }
         }
 
@@ -461,51 +458,12 @@ public abstract class StandardAgentManager implements AgentManager
         return result;
     }
 
-    protected static abstract class ConvergentMessageListener implements MessageListener
+    private class ConvergentDAMessageListener extends Converger
     {
-        private final List replies = new LinkedList();
-        private final Lock lock = new ReentrantLock();
-        private final Condition wait = lock.newCondition();
-
-        public void lock()
+        public ConvergentDAMessageListener() throws SocketException
         {
-            lock.lock();
         }
 
-        public void unlock()
-        {
-            lock.unlock();
-        }
-
-        public void await(long time) throws InterruptedException
-        {
-            wait.await(time, TimeUnit.MILLISECONDS);
-        }
-
-        protected void signalAll()
-        {
-            wait.signalAll();
-        }
-
-        public boolean isEmpty()
-        {
-            return replies.isEmpty();
-        }
-
-        protected void add(Message message)
-        {
-            replies.add(message);
-            signalAll();
-        }
-
-        public Rply pop()
-        {
-            return (Rply)replies.remove(0);
-        }
-    }
-
-    private class ConvergentDAMessageListener extends ConvergentMessageListener
-    {
         public void handle(MessageEvent event)
         {
             InetSocketAddress address = event.getSocketAddress();
@@ -518,16 +476,8 @@ public abstract class StandardAgentManager implements AgentManager
                 {
                     case Message.DA_ADVERT_TYPE:
                         if (logger.isLoggable(Level.FINE)) logger.fine("Convergent DA message listener " + this + " received reply message from " + address + ": " + message);
-                        lock();
-                        try
-                        {
-                            ((DAAdvert)message).setResponder(address.getAddress().getHostAddress());
-                            add(message);
-                        }
-                        finally
-                        {
-                            unlock();
-                        }
+                        ((DAAdvert)message).setResponder(address.getAddress().getHostAddress());
+                        add(message);
                         break;
                     default:
                         if (logger.isLoggable(Level.FINEST)) logger.finest("Convergent DA message listener " + this + " ignoring message received from " + address + ": " + message);
@@ -541,8 +491,12 @@ public abstract class StandardAgentManager implements AgentManager
         }
     }
 
-    private class ConvergentSAMessageListener extends ConvergentMessageListener
+    private class ConvergentSAMessageListener extends Converger
     {
+        public ConvergentSAMessageListener() throws SocketException
+        {
+        }
+
         public void handle(MessageEvent event)
         {
             InetSocketAddress address = event.getSocketAddress();

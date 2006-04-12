@@ -16,11 +16,11 @@
 package org.livetribe.slp.spi.da;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.spi.AgentManager;
 
 /**
@@ -30,11 +30,9 @@ public interface DirectoryAgentManager extends AgentManager
 {
     public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
-    public void unicastDAAdvert(InetAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void unicastDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
     public void unicastSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException;
 
     public void unicastSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
-
-    public boolean canReplyOnUnicastTo(InetAddress address);
 }

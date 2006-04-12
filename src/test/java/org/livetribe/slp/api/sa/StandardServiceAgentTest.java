@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
 import org.livetribe.slp.api.ua.StandardUserAgent;
@@ -242,34 +243,40 @@ public class StandardServiceAgentTest extends SLPAPITestCase
 
     public void testListenForDAAdverts() throws Exception
     {
-        StandardServiceAgent sa = new StandardServiceAgent();
-        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-        sa.setServiceAgentManager(saManager);
-        saManager.setMulticastConnector(new SocketMulticastConnector());
-        saManager.setUnicastConnector(new SocketUnicastConnector());
-        sa.setConfiguration(getDefaultConfiguration());
-        ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
-        sa.setServiceURL(serviceURL);
-        sa.start();
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
+        da.setDirectoryAgentManager(daManager);
+        daManager.setMulticastConnector(new SocketMulticastConnector());
+        daManager.setUnicastConnector(new SocketUnicastConnector());
+        da.setConfiguration(configuration);
 
         try
         {
-            sleep(500);
-
-            List das = sa.getCachedDirectoryAgents(sa.getScopes());
-            assertNotNull(das);
-            assertTrue(das.isEmpty());
-
-            StandardDirectoryAgent da = new StandardDirectoryAgent();
-            StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-            da.setDirectoryAgentManager(daManager);
-            daManager.setMulticastConnector(new SocketMulticastConnector());
-            daManager.setUnicastConnector(new SocketUnicastConnector());
-            da.setConfiguration(getDefaultConfiguration());
-            da.start();
+            StandardServiceAgent sa = new StandardServiceAgent();
+            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+            sa.setServiceAgentManager(saManager);
+            saManager.setMulticastConnector(new SocketMulticastConnector());
+            saManager.setUnicastConnector(new SocketUnicastConnector());
+            sa.setConfiguration(configuration);
+            ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
+            sa.setServiceURL(serviceURL);
+            sa.start();
 
             try
             {
+                // The multicast convergence should stop after 2 timeouts, but use 3 to be sure
+                long[] timeouts = configuration.getMulticastTimeouts();
+                long sleep = timeouts[0] + timeouts[1] + timeouts[2];
+                sleep(sleep);
+
+                List das = sa.getCachedDirectoryAgents(sa.getScopes());
+                assertNotNull(das);
+                assertTrue(das.isEmpty());
+
+                da.start();
+
                 // Allow unsolicited DAAdvert to arrive and SA to register with DA
                 sleep(500);
 
@@ -282,7 +289,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 ua.setUserAgentManager(uaManager);
                 uaManager.setMulticastConnector(new SocketMulticastConnector());
                 uaManager.setUnicastConnector(new SocketUnicastConnector());
-                ua.setConfiguration(getDefaultConfiguration());
+                ua.setConfiguration(configuration);
                 ua.start();
 
                 try
@@ -300,24 +307,26 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             }
             finally
             {
-                da.stop();
+                sa.stop();
             }
         }
         finally
         {
-            sa.stop();
+            // Stop DA last, so that the SA can deregister during stop()
+            da.stop();
         }
     }
 
-
     public void testDADiscoveryOnStartup() throws Exception
     {
+        Configuration configuration = getDefaultConfiguration();
+
         StandardDirectoryAgent da = new StandardDirectoryAgent();
         StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
         da.setDirectoryAgentManager(daManager);
         daManager.setMulticastConnector(new SocketMulticastConnector());
         daManager.setUnicastConnector(new SocketUnicastConnector());
-        da.setConfiguration(getDefaultConfiguration());
+        da.setConfiguration(configuration);
         da.start();
 
         try
@@ -329,7 +338,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             sa.setServiceAgentManager(saManager);
             saManager.setMulticastConnector(new SocketMulticastConnector());
             saManager.setUnicastConnector(new SocketUnicastConnector());
-            sa.setConfiguration(getDefaultConfiguration());
+            sa.setConfiguration(configuration);
             // Discover the DAs immediately
             sa.setDiscoveryStartWaitBound(0);
             ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
@@ -338,7 +347,10 @@ public class StandardServiceAgentTest extends SLPAPITestCase
 
             try
             {
-                sleep(500);
+                // The multicast convergence should stop after 2 timeouts, but use 3 to be sure
+                long[] timeouts = configuration.getMulticastTimeouts();
+                long sleep = timeouts[0] + timeouts[1] + timeouts[2];
+                sleep(sleep);
 
                 List das = sa.getCachedDirectoryAgents(sa.getScopes());
                 assertNotNull(das);

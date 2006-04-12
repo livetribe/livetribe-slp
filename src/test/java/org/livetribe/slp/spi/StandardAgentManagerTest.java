@@ -17,9 +17,11 @@ package org.livetribe.slp.spi;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.List;
 import java.util.Random;
 
@@ -60,16 +62,26 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             rqst.setServiceType(new ServiceType("service:test"));
 
             long start = System.currentTimeMillis();
-            List replies = agent.convergentMulticastSend(rqst, -1, new Listener());
-            long end = System.currentTimeMillis();
+            Listener converger = new Listener();
+            try
+            {
+                agent.addMessageListener(converger, true);
+                List replies = agent.convergentMulticastSend(rqst, -1, converger);
+                agent.removeMessageListener(converger, true);
+                long end = System.currentTimeMillis();
 
-            assertNotNull(replies);
-            assertEquals(0, replies.size());
-            long lowerBound = timeouts[0] + timeouts[1];
-            long upperBound = lowerBound + timeouts[2];
-            long elapsed = end - start;
-            assertTrue(elapsed >= lowerBound);
-            assertTrue(elapsed < upperBound);
+                assertNotNull(replies);
+                assertEquals(0, replies.size());
+                long lowerBound = timeouts[0] + timeouts[1];
+                long upperBound = lowerBound + timeouts[2];
+                long elapsed = end - start;
+                assertTrue(elapsed >= lowerBound);
+                assertTrue(elapsed < upperBound);
+            }
+            finally
+            {
+                converger.close();
+            }
         }
         finally
         {
@@ -96,19 +108,26 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             rqst.setServiceType(new ServiceType("service:test"));
 
             long start = System.currentTimeMillis();
-            Listener listener = new Listener();
-            agent.addMessageListener(listener, true);
-            List replies = agent.convergentMulticastSend(rqst, -1, listener);
-            agent.removeMessageListener(listener, true);
-            long end = System.currentTimeMillis();
+            Listener converger = new Listener();
+            try
+            {
+                agent.addMessageListener(converger, true);
+                List replies = agent.convergentMulticastSend(rqst, -1, converger);
+                agent.removeMessageListener(converger, true);
+                long end = System.currentTimeMillis();
 
-            assertNotNull(replies);
-            assertEquals(1, replies.size());
-            long lowerBound = timeouts[0] + timeouts[1];
-            long upperBound = lowerBound + timeouts[2];
-            long elapsed = end - start;
-            assertTrue(elapsed >= lowerBound);
-            assertTrue(elapsed < upperBound);
+                assertNotNull(replies);
+                assertEquals(1, replies.size());
+                long lowerBound = timeouts[0] + timeouts[1];
+                long upperBound = lowerBound + timeouts[2];
+                long elapsed = end - start;
+                assertTrue(elapsed >= lowerBound);
+                assertTrue(elapsed < upperBound);
+            }
+            finally
+            {
+                converger.close();
+            }
         }
         finally
         {
@@ -136,19 +155,26 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             rqst.setServiceType(new ServiceType("service:test"));
 
             long start = System.currentTimeMillis();
-            Listener listener = new Listener();
-            agent.addMessageListener(listener, true);
-            List replies = agent.convergentMulticastSend(rqst, -1, listener);
-            agent.removeMessageListener(listener, true);
-            long end = System.currentTimeMillis();
+            Listener converger = new Listener();
+            try
+            {
+                agent.addMessageListener(converger, true);
+                List replies = agent.convergentMulticastSend(rqst, -1, converger);
+                agent.removeMessageListener(converger, true);
+                long end = System.currentTimeMillis();
 
-            assertNotNull(replies);
-            assertEquals(1, replies.size());
-            long lowerBound = timeouts[1] + timeouts[2];
-            long upperBound = lowerBound + timeouts[3];
-            long elapsed = end - start;
-            assertTrue(elapsed >= lowerBound);
-            assertTrue(elapsed < upperBound);
+                assertNotNull(replies);
+                assertEquals(1, replies.size());
+                long lowerBound = timeouts[1] + timeouts[2];
+                long upperBound = lowerBound + timeouts[3];
+                long elapsed = end - start;
+                assertTrue(elapsed >= lowerBound);
+                assertTrue(elapsed < upperBound);
+            }
+            finally
+            {
+                converger.close();
+            }
         }
         finally
         {
@@ -175,19 +201,26 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             rqst.setServiceType(new ServiceType("service:test"));
 
             long start = System.currentTimeMillis();
-            Listener listener = new Listener();
-            agent.addMessageListener(listener, true);
-            List replies = agent.convergentMulticastSend(rqst, -1, listener);
-            agent.removeMessageListener(listener, true);
-            long end = System.currentTimeMillis();
+            Listener converger = new Listener();
+            try
+            {
+                agent.addMessageListener(converger, true);
+                List replies = agent.convergentMulticastSend(rqst, -1, converger);
+                agent.removeMessageListener(converger, true);
+                long end = System.currentTimeMillis();
 
-            assertNotNull(replies);
-            assertEquals(2, replies.size());
-            long lowerBound = timeouts[0] + timeouts[1];
-            long upperBound = lowerBound + timeouts[2];
-            long elapsed = end - start;
-            assertTrue(elapsed >= lowerBound);
-            assertTrue(elapsed < upperBound);
+                assertNotNull(replies);
+                assertEquals(2, replies.size());
+                long lowerBound = timeouts[0] + timeouts[1];
+                long upperBound = lowerBound + timeouts[2];
+                long elapsed = end - start;
+                assertTrue(elapsed >= lowerBound);
+                assertTrue(elapsed < upperBound);
+            }
+            finally
+            {
+                converger.close();
+            }
         }
         finally
         {
@@ -215,19 +248,26 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             rqst.setServiceType(new ServiceType("service:test"));
 
             long start = System.currentTimeMillis();
-            Listener listener = new Listener();
-            agent.addMessageListener(listener, true);
-            List replies = agent.convergentMulticastSend(rqst, -1, listener);
-            agent.removeMessageListener(listener, true);
-            long end = System.currentTimeMillis();
+            Listener converger = new Listener();
+            try
+            {
+                agent.addMessageListener(converger, true);
+                List replies = agent.convergentMulticastSend(rqst, -1, converger);
+                agent.removeMessageListener(converger, true);
+                long end = System.currentTimeMillis();
 
-            assertNotNull(replies);
-            assertEquals(2, replies.size());
-            long lowerBound = timeouts[1] + timeouts[2];
-            long upperBound = lowerBound + timeouts[3];
-            long elapsed = end - start;
-            assertTrue(elapsed >= lowerBound);
-            assertTrue(elapsed < upperBound);
+                assertNotNull(replies);
+                assertEquals(2, replies.size());
+                long lowerBound = timeouts[1] + timeouts[2];
+                long upperBound = lowerBound + timeouts[3];
+                long elapsed = end - start;
+                assertTrue(elapsed >= lowerBound);
+                assertTrue(elapsed < upperBound);
+            }
+            finally
+            {
+                converger.close();
+            }
         }
         finally
         {
@@ -267,7 +307,17 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         {
         }
 
-        public void send(byte[] bytes) throws IOException
+        public void accept(Runnable executor)
+        {
+            // Do nothing, receiving of messages is triggered by send()
+        }
+
+        public DatagramSocket unicastSend(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException
+        {
+            throw new AssertionError("BUG: this method should not be called");
+        }
+
+        public DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException
         {
             if (sent.getAndDecrement() > 0)
             {
@@ -293,6 +343,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                     }
                 }).start();
             }
+            return socket;
         }
     }
 
@@ -322,8 +373,12 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         }
     }
 
-    private class Listener extends StandardAgentManager.ConvergentMessageListener
+    private class Listener extends Converger
     {
+        public Listener() throws SocketException
+        {
+        }
+
         public void handle(MessageEvent event)
         {
             try
