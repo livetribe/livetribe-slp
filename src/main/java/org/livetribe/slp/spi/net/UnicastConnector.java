@@ -81,10 +81,10 @@ public abstract class UnicastConnector extends NetworkConnector
     public abstract byte[] receive(Socket socket) throws MessageTooBigException, SocketClosedException, IOException;
 
     /**
-     * Send the bytes containing an SLP message.
+     * Sends the bytes containing an SLP message.
      * @param messageBytes The bytes containing the SLP message
      * @param address The address to send the bytes to
-     * @param closeSocket True if the socket must be closed
+     * @param closeSocket True if the socket must be closed after the bytes have been sent
      * @return The socket used to send the bytes, or null if the socket has been closed
      * @throws ConnectException If the destination is not listening
      * @throws IOException In case of communication errors
