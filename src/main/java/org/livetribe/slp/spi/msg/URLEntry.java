@@ -72,7 +72,7 @@ public class URLEntry extends BytesBlock
     {
         int reservedByteslength = 1;
         int lifeTimeBytesLength = 2;
-        int urlLengthBytesLength = 3;
+        int urlLengthBytesLength = 2;
         byte[] urlBytes = stringToBytes(getURL());
         int urlBytesLength = urlBytes.length;
         int authBlocksCountBytesLength = 1;
@@ -128,7 +128,7 @@ public class URLEntry extends BytesBlock
         setLifetime(readInt(bytes, offset, lifeTimeBytesLength));
 
         offset += lifeTimeBytesLength;
-        int urlLengthBytesLength = 3;
+        int urlLengthBytesLength = 2;
         int urlLength = readInt(bytes, offset, urlLengthBytesLength);
 
         offset += urlLengthBytesLength;
