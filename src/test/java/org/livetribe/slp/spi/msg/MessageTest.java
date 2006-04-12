@@ -16,10 +16,12 @@
 package org.livetribe.slp.spi.msg;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.livetribe.slp.spi.SLPSPITestCase;
-import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.spi.SLPSPITestCase;
 
 /**
  * @version $Rev$ $Date$
@@ -32,7 +34,9 @@ public class MessageTest extends SLPSPITestCase
         original.setServiceType(new ServiceType("a:b"));
         String[] scopes = new String[]{"scope1", "scope2"};
         original.setScopes(scopes);
-        String[] previousResponders = new String[]{"1.2.3.4", "4.3.2.1"};
+        Set previousResponders = new HashSet();
+        previousResponders.add("1.2.3.4");
+        previousResponders.add("4.3.2.1");
         original.setPreviousResponders(previousResponders);
         original.setMulticast(true);
         original.setOverflow(true);
@@ -49,8 +53,9 @@ public class MessageTest extends SLPSPITestCase
         assertEquals(original.getServiceType(), deserialized.getServiceType());
         assertNotNull(deserialized.getScopes());
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
-        assertNotNull(previousResponders);
-        assertTrue(Arrays.equals(original.getPreviousResponders(), deserialized.getPreviousResponders()));
+        Set deserializedResponders = deserialized.getPreviousResponders();
+        assertNotNull(deserializedResponders);
+        assertEquals(previousResponders, deserializedResponders);
         assertTrue(deserialized.isMulticast());
         assertTrue(deserialized.isOverflow());
         assertTrue(deserialized.isFresh());
