@@ -169,8 +169,11 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         return new StandardServiceAgentManager();
     }
 
-    protected void doStop() throws IOException
+    protected void doStop() throws Exception
     {
+        // RFC 2608, 10.6, requires services to deregister when no longer available
+        deregister();
+
         if (scheduledExecutorService != null)
         {
             scheduledExecutorService.shutdown();
