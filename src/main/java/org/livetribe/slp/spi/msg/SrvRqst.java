@@ -15,6 +15,11 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 
@@ -50,7 +55,8 @@ public class SrvRqst extends Rqst
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        byte[] previousRespondersBytes = stringArrayToBytes(getPreviousResponders());
+        Set responders = getPreviousResponders();
+        byte[] previousRespondersBytes = responders == null ? EMPTY_BYTES : stringArrayToBytes((String[])responders.toArray(new String[responders.size()]));
         int previousRespondersLength = previousRespondersBytes.length;
         byte[] serviceTypeBytes = stringToBytes(getServiceType().toString());
         int serviceTypeLength = serviceTypeBytes.length;
@@ -106,7 +112,7 @@ public class SrvRqst extends Rqst
         int previousRespondersLength = readInt(bytes, offset, lengthBytes);
 
         offset += lengthBytes;
-        setPreviousResponders(readStringArray(bytes, offset, previousRespondersLength));
+        setPreviousResponders(new HashSet(Arrays.asList(readStringArray(bytes, offset, previousRespondersLength))));
 
         offset += previousRespondersLength;
         int serviceTypeLength = readInt(bytes, offset, lengthBytes);
@@ -186,11 +192,11 @@ public class SrvRqst extends Rqst
         StringBuffer result = new StringBuffer("[SrvRqst@").append(Integer.toHexString(hashCode()));
 
         result.append(" (");
-        String[] responders = getPreviousResponders();
-        for (int i = 0; i < responders.length; i++)
+        Set responders = getPreviousResponders();
+        for (Iterator iterator = responders.iterator(); iterator.hasNext();)
         {
-            if (i > 0) result.append(",");
-            result.append(responders[i]);
+            result.append(iterator.next());
+            if (iterator.hasNext()) result.append(",");
         }
         result.append(")");
 

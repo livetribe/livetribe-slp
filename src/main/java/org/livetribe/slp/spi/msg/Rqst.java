@@ -15,23 +15,25 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.Set;
+
 /**
  * @version $Rev$ $Date$
  */
 public abstract class Rqst extends Message
 {
-    private String[] previousResponders;
+    private Set previousResponders;
 
     /**
      * A comma separated list of IPv4 addresses of previous responders
      * in case this message has been multicasted.
      */
-    public String[] getPreviousResponders()
+    public Set getPreviousResponders()
     {
         return previousResponders;
     }
 
-    public void setPreviousResponders(String[] previousResponders)
+    public void setPreviousResponders(Set previousResponders)
     {
         this.previousResponders = previousResponders;
     }
