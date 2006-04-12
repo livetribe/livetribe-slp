@@ -19,13 +19,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.ConnectException;
 import java.util.logging.Level;
 
 /**
@@ -63,9 +63,6 @@ public class SocketUnicastConnector extends UnicastConnector
             serverSockets[i] = new ServerSocket();
             serverSockets[i].bind(bindAddress);
             if (logger.isLoggable(Level.FINE)) logger.fine("Bound server socket to " + bindAddress);
-
-            // TODO: handle timeouts ?
-//          serverSockets[i].setSoTimeout();
 
             acceptors[i] = new Acceptor(serverSockets[i]);
         }
@@ -107,7 +104,7 @@ public class SocketUnicastConnector extends UnicastConnector
         data.write(length3);
 
         int length = (length1 << 16) + (length2 << 8) + length3;
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Expecting unicast message of length " + length);
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Expecting incoming TCP unicast message of length " + length);
 
         int maxLength = getMaxUnicastMessageLength();
         if (length > maxLength) throw new MessageTooBigException("Message length " + length + " is greater than max allowed message length " + maxLength);
@@ -120,7 +117,7 @@ public class SocketUnicastConnector extends UnicastConnector
             int read = input.read(buffer, 0, count);
             if (read < 0) throw new SocketClosedException();
             totalRead += read;
-            if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + totalRead + " bytes of incoming unicast message");
+            if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + totalRead + " bytes of incoming TCP unicast message");
             data.write(buffer, 0, read);
         }
 
@@ -142,7 +139,7 @@ public class SocketUnicastConnector extends UnicastConnector
         }
         catch (IOException x)
         {
-            if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "", x);
+            if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "Unexpected IOException", x);
         }
     }
 
@@ -174,7 +171,7 @@ public class SocketUnicastConnector extends UnicastConnector
         OutputStream output = socket.getOutputStream();
         output.write(bytes);
         output.flush();
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Sent unicast message to " + socket);
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Sent TCP unicast message to " + socket.getRemoteSocketAddress());
     }
 
     private class Acceptor implements Runnable
@@ -211,7 +208,6 @@ public class SocketUnicastConnector extends UnicastConnector
                 catch (IOException x)
                 {
                     if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Unexpected IOException", x);
-                    // TODO: what to do here ?
                     break;
                 }
             }
