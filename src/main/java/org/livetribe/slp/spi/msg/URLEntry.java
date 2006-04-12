@@ -37,6 +37,10 @@ import org.livetribe.slp.ServiceURL;
  */
 public class URLEntry extends BytesBlock
 {
+    private static final int RESERVED_BYTES_LENGTH = 1;
+    private static final int LIFETIME_BYTES_LENGTH = 2;
+    private static final int URL_LENGTH_BYTES_LENGTH = 2;
+    private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
     private static final int MAX_LIFETIME = 65535;
 
     private int lifetime;
@@ -70,12 +74,8 @@ public class URLEntry extends BytesBlock
 
     public byte[] serialize() throws ServiceLocationException
     {
-        int reservedByteslength = 1;
-        int lifeTimeBytesLength = 2;
-        int urlLengthBytesLength = 2;
         byte[] urlBytes = stringToBytes(getURL());
         int urlBytesLength = urlBytes.length;
-        int authBlocksCountBytesLength = 1;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;
         byte[][] authBlocksBytes = new byte[authBlocksCount][];
@@ -87,25 +87,25 @@ public class URLEntry extends BytesBlock
             authBlockBytesSum += bytes.length;
         }
 
-        int bodyLength = reservedByteslength + lifeTimeBytesLength + urlLengthBytesLength + urlBytesLength + authBlocksCountBytesLength + authBlockBytesSum;
+        int bodyLength = RESERVED_BYTES_LENGTH + LIFETIME_BYTES_LENGTH + URL_LENGTH_BYTES_LENGTH + urlBytesLength + AUTH_BLOCKS_COUNT_BYTES_LENGTH + authBlockBytesSum;
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(0, result, offset, reservedByteslength);
+        writeInt(0, result, offset, RESERVED_BYTES_LENGTH);
 
-        offset += reservedByteslength;
-        writeInt(getLifetime(), result, offset, lifeTimeBytesLength);
+        offset += RESERVED_BYTES_LENGTH;
+        writeInt(getLifetime(), result, offset, LIFETIME_BYTES_LENGTH);
 
-        offset += lifeTimeBytesLength;
-        writeInt(urlBytesLength, result, offset, urlLengthBytesLength);
+        offset += LIFETIME_BYTES_LENGTH;
+        writeInt(urlBytesLength, result, offset, URL_LENGTH_BYTES_LENGTH);
 
-        offset += urlLengthBytesLength;
+        offset += URL_LENGTH_BYTES_LENGTH;
         System.arraycopy(urlBytes, 0, result, offset, urlBytesLength);
 
         offset += urlBytesLength;
-        writeInt(authBlocksCount, result, offset, authBlocksCountBytesLength);
+        writeInt(authBlocksCount, result, offset, AUTH_BLOCKS_COUNT_BYTES_LENGTH);
 
-        offset += authBlocksCountBytesLength;
+        offset += AUTH_BLOCKS_COUNT_BYTES_LENGTH;
         for (int i = 0; i < authBlocksCount; ++i)
         {
             byte[] bytes = authBlocksBytes[i];
@@ -120,25 +120,21 @@ public class URLEntry extends BytesBlock
     public int deserialize(byte[] bytes, int originalOffset) throws ServiceLocationException
     {
         int offset = originalOffset;
-        int reservedByteslength = 1;
-        readInt(bytes, offset, reservedByteslength);
+        readInt(bytes, offset, RESERVED_BYTES_LENGTH);
 
-        offset += reservedByteslength;
-        int lifeTimeBytesLength = 2;
-        setLifetime(readInt(bytes, offset, lifeTimeBytesLength));
+        offset += RESERVED_BYTES_LENGTH;
+        setLifetime(readInt(bytes, offset, LIFETIME_BYTES_LENGTH));
 
-        offset += lifeTimeBytesLength;
-        int urlLengthBytesLength = 2;
-        int urlLength = readInt(bytes, offset, urlLengthBytesLength);
+        offset += LIFETIME_BYTES_LENGTH;
+        int urlLength = readInt(bytes, offset, URL_LENGTH_BYTES_LENGTH);
 
-        offset += urlLengthBytesLength;
+        offset += URL_LENGTH_BYTES_LENGTH;
         setURL(readString(bytes, offset, urlLength));
 
         offset += urlLength;
-        int authBlocksCountBytesLength = 1;
-        int authBlocksCount = readInt(bytes, offset, authBlocksCountBytesLength);
+        int authBlocksCount = readInt(bytes, offset, AUTH_BLOCKS_COUNT_BYTES_LENGTH);
 
-        offset += authBlocksCountBytesLength;
+        offset += AUTH_BLOCKS_COUNT_BYTES_LENGTH;
         if (authBlocksCount > 0)
         {
             AuthenticationBlock[] blocks = new AuthenticationBlock[authBlocksCount];

@@ -34,13 +34,14 @@ import org.livetribe.slp.ServiceLocationException;
  */
 public class SrvRply extends Rply
 {
+    private static final int ERROR_CODE_BYTES_LENGTH = 2;
+    private static final int URL_ENTRIES_COUNT_BYTES_LENGTH = 2;
+
     private int errorCode;
     private URLEntry[] urlEntries;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        int errorCodeBytesLength = 2;
-        int urlEntriesCountBytesLength = 2;
         URLEntry[] urls = getURLEntries();
         int urlEntriesCount = urls == null ? 0 : urls.length;
         byte[][] urlEntriesBytes = new byte[urlEntriesCount][];
@@ -52,15 +53,15 @@ public class SrvRply extends Rply
             urlEntriesBytesSum += bytes.length;
         }
 
-        byte[] result = new byte[errorCodeBytesLength + urlEntriesCountBytesLength + urlEntriesBytesSum];
+        byte[] result = new byte[ERROR_CODE_BYTES_LENGTH + URL_ENTRIES_COUNT_BYTES_LENGTH + urlEntriesBytesSum];
 
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, errorCodeBytesLength);
+        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
 
-        offset += errorCodeBytesLength;
-        writeInt(urlEntriesCount, result, offset, urlEntriesCountBytesLength);
+        offset += ERROR_CODE_BYTES_LENGTH;
+        writeInt(urlEntriesCount, result, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
 
-        offset += urlEntriesCountBytesLength;
+        offset += URL_ENTRIES_COUNT_BYTES_LENGTH;
         for (int i = 0; i < urlEntriesCount; ++i)
         {
             byte[] bytes = urlEntriesBytes[i];
@@ -74,18 +75,16 @@ public class SrvRply extends Rply
 
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
-        int errorCodeBytesLength = 2;
         int offset = 0;
-        setErrorCode(readInt(bytes, offset, errorCodeBytesLength));
+        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
 
         // The message may be truncated if an error occurred (RFC 2608, Chapter 7)
-        if (getErrorCode() != 0 && bytes.length == errorCodeBytesLength) return;
+        if (getErrorCode() != 0 && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
 
-        int urlEntryCountBytesLength = 2;
-        offset += errorCodeBytesLength;
-        int urlEntryCount = readInt(bytes, offset, urlEntryCountBytesLength);
+        offset += ERROR_CODE_BYTES_LENGTH;
+        int urlEntryCount = readInt(bytes, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
 
-        offset += urlEntryCountBytesLength;
+        offset += URL_ENTRIES_COUNT_BYTES_LENGTH;
         URLEntry[] urls = new URLEntry[urlEntryCount];
         for (int i = 0; i < urlEntryCount; ++i)
         {

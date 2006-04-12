@@ -15,9 +15,9 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.Attributes;
 
 /**
  * The RFC 2608 SrvReg message body is the following:
@@ -42,6 +42,11 @@ import org.livetribe.slp.Attributes;
  */
 public class SrvReg extends Message
 {
+    private static final int SERVICE_TYPE_LENGTH_BYTES_LENGTH = 2;
+    private static final int SCOPES_LENGTH_BYTES_LENGTH = 2;
+    private static final int ATTRIBUTES_LENGTH_BYTES_LENGTH = 2;
+    private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
+
     private URLEntry urlEntry;
     private ServiceType serviceType;
     private String[] scopes;
@@ -52,16 +57,12 @@ public class SrvReg extends Message
     {
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
-        int serviceTypeLengthBytesLength = 2;
         byte[] serviceTypeBytes = stringToBytes(getServiceType().toString());
         int serviceTypeLength = serviceTypeBytes.length;
-        int scopesLengthBytesLength = 2;
         byte[] scopesBytes = stringArrayToBytes(getScopes());
         int scopesLength = scopesBytes.length;
-        int attrsLengthBytesLength = 2;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsLength = attrsBytes.length;
-        int authBlocksCountBytesLength = 1;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;
         byte[][] authBlocksBytes = new byte[authBlocksCount][];
@@ -73,35 +74,35 @@ public class SrvReg extends Message
             authBlockBytesSum += bytes.length;
         }
 
-        int bodyLength = urlLength + serviceTypeLengthBytesLength + serviceTypeLength + scopesLengthBytesLength;
-        bodyLength += scopesLength + attrsLengthBytesLength + attrsLength + authBlocksCountBytesLength + authBlockBytesSum;
+        int bodyLength = urlLength + SERVICE_TYPE_LENGTH_BYTES_LENGTH + serviceTypeLength + SCOPES_LENGTH_BYTES_LENGTH;
+        bodyLength += scopesLength + ATTRIBUTES_LENGTH_BYTES_LENGTH + attrsLength + AUTH_BLOCKS_COUNT_BYTES_LENGTH + authBlockBytesSum;
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
         System.arraycopy(urlBytes, 0, result, offset, urlLength);
 
         offset += urlLength;
-        writeInt(serviceTypeLength, result, offset, serviceTypeLengthBytesLength);
+        writeInt(serviceTypeLength, result, offset, SERVICE_TYPE_LENGTH_BYTES_LENGTH);
 
-        offset += serviceTypeLengthBytesLength;
+        offset += SERVICE_TYPE_LENGTH_BYTES_LENGTH;
         System.arraycopy(serviceTypeBytes, 0, result, offset, serviceTypeLength);
 
         offset += serviceTypeLength;
-        writeInt(scopesLength, result, offset, scopesLengthBytesLength);
+        writeInt(scopesLength, result, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += scopesLengthBytesLength;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         System.arraycopy(scopesBytes, 0, result, offset, scopesLength);
 
         offset += scopesLength;
-        writeInt(attrsLength, result, offset, attrsLengthBytesLength);
+        writeInt(attrsLength, result, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
 
-        offset += attrsLengthBytesLength;
+        offset += ATTRIBUTES_LENGTH_BYTES_LENGTH;
         System.arraycopy(attrsBytes, 0, result, offset, attrsLength);
 
         offset += attrsLength;
-        writeInt(authBlocksCount, result, offset, authBlocksCountBytesLength);
+        writeInt(authBlocksCount, result, offset, AUTH_BLOCKS_COUNT_BYTES_LENGTH);
 
-        offset += authBlocksCountBytesLength;
+        offset += AUTH_BLOCKS_COUNT_BYTES_LENGTH;
         for (int i = 0; i < authBlocksCount; ++i)
         {
             byte[] bytes = authBlocksBytes[i];
@@ -121,31 +122,27 @@ public class SrvReg extends Message
         offset += url.deserialize(bytes, offset);
         setURLEntry(url);
 
-        int serviceTypeLengthBytesLength = 2;
-        int serviceTypeLength = readInt(bytes, offset, serviceTypeLengthBytesLength);
+        int serviceTypeLength = readInt(bytes, offset, SERVICE_TYPE_LENGTH_BYTES_LENGTH);
 
-        offset += serviceTypeLengthBytesLength;
+        offset += SERVICE_TYPE_LENGTH_BYTES_LENGTH;
         setServiceType(new ServiceType(readString(bytes, offset, serviceTypeLength)));
 
         offset += serviceTypeLength;
-        int scopesLengthBytesLength = 2;
-        int scopesLength = readInt(bytes, offset, scopesLengthBytesLength);
+        int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += scopesLengthBytesLength;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         setScopes(readStringArray(bytes, offset, scopesLength));
 
         offset += scopesLength;
-        int attrsLengthBytesLength = 2;
-        int attrsLength = readInt(bytes, offset, attrsLengthBytesLength);
+        int attrsLength = readInt(bytes, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
 
-        offset += attrsLengthBytesLength;
+        offset += ATTRIBUTES_LENGTH_BYTES_LENGTH;
         setAttributes(new Attributes(readString(bytes, offset, attrsLength)));
 
         offset += attrsLength;
-        int authBlocksCountBytesLength = 1;
-        int authBlocksCount = readInt(bytes, offset, authBlocksCountBytesLength);
+        int authBlocksCount = readInt(bytes, offset, AUTH_BLOCKS_COUNT_BYTES_LENGTH);
 
-        offset += authBlocksCountBytesLength;
+        offset += AUTH_BLOCKS_COUNT_BYTES_LENGTH;
         if (authBlocksCount > 0)
         {
             AuthenticationBlock[] blocks = new AuthenticationBlock[authBlocksCount];

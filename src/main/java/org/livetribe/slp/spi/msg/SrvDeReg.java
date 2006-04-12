@@ -15,8 +15,8 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceLocationException;
 
 /**
  * The RFC 2608 SrvDeReg message body is the following:
@@ -37,37 +37,38 @@ import org.livetribe.slp.Attributes;
  */
 public class SrvDeReg extends Message
 {
+    private static final int SCOPES_LENGTH_BYTES_LENGTH = 2;
+    private static final int TAGS_LENGTH_BYTES_LENGTH = 2;
+
     private String[] scopes;
     private URLEntry urlEntry;
     private Attributes tags;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        int scopesLengthBytesLength = 2;
         byte[] scopesBytes = stringArrayToBytes(getScopes());
         int scopesLength = scopesBytes.length;
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
-        int tagsLengthBytesLength = 2;
         byte[] tagsBytes = attributesToBytes(getTags());
         int tagsLength = tagsBytes.length;
 
-        int bodyLength = scopesLengthBytesLength + scopesLength + urlLength + tagsLengthBytesLength + tagsLength;
+        int bodyLength = SCOPES_LENGTH_BYTES_LENGTH + scopesLength + urlLength + TAGS_LENGTH_BYTES_LENGTH + tagsLength;
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(scopesLength, result, offset, scopesLengthBytesLength);
+        writeInt(scopesLength, result, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += scopesLengthBytesLength;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         System.arraycopy(scopesBytes, 0, result, offset, scopesLength);
 
         offset += scopesLength;
         System.arraycopy(urlBytes, 0, result, offset, urlLength);
 
         offset += urlLength;
-        writeInt(tagsLength, result, offset, tagsLengthBytesLength);
+        writeInt(tagsLength, result, offset, TAGS_LENGTH_BYTES_LENGTH);
 
-        offset += tagsLengthBytesLength;
+        offset += TAGS_LENGTH_BYTES_LENGTH;
         System.arraycopy(tagsBytes, 0, result, offset, tagsLength);
 
         return result;
@@ -76,10 +77,9 @@ public class SrvDeReg extends Message
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        int scopesLengthBytesLength = 2;
-        int scopesLength = readInt(bytes, offset, scopesLengthBytesLength);
+        int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += scopesLengthBytesLength;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         setScopes(readStringArray(bytes, offset, scopesLength));
 
         offset += scopesLength;
@@ -87,10 +87,9 @@ public class SrvDeReg extends Message
         offset += url.deserialize(bytes, offset);
         setURLEntry(url);
 
-        int tagsLengthBytesLength = 2;
-        int tagsLength = readInt(bytes, offset, tagsLengthBytesLength);
+        int tagsLength = readInt(bytes, offset, TAGS_LENGTH_BYTES_LENGTH);
 
-        offset += tagsLengthBytesLength;
+        offset += TAGS_LENGTH_BYTES_LENGTH;
         setTags(new Attributes(readString(bytes, offset, tagsLength)));
     }
 

@@ -32,22 +32,22 @@ import org.livetribe.slp.ServiceLocationException;
  */
 public class SrvAck extends Message
 {
+    private static final int ERROR_CODE_BYTES_LENGTH = 2;
+
     private int errorCode;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        int errorCodeBytesLength = 2;
-        byte[] result = new byte[errorCodeBytesLength];
+        byte[] result = new byte[ERROR_CODE_BYTES_LENGTH];
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, errorCodeBytesLength);
+        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
         return result;
     }
 
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
-        int errorCodeBytesLength = 2;
         int offset = 0;
-        setErrorCode(readInt(bytes, offset, errorCodeBytesLength));
+        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
     }
 
     public byte getMessageType()

@@ -15,8 +15,8 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceLocationException;
 
 /**
  * The RFC 2608 DAAdvert message body is the following:
@@ -45,6 +45,14 @@ import org.livetribe.slp.Attributes;
  */
 public class DAAdvert extends Rply
 {
+    private static final int ERROR_CODE_BYTES_LENGTH = 2;
+    private static final int BOOT_TIME_BYTES_LENGTH = 4;
+    private static final int URL_LENGTH_BYTES_LENGTH = 2;
+    private static final int SCOPES_LENGTH_BYTES_LENGTH = 2;
+    private static final int ATTRIBUTES_LENGTH_BYTES_LENGTH = 2;
+    private static final int SPI_LENGTH_BYTES_LENGTH = 2;
+    private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
+
     private int errorCode;
     private long bootTime;
     private String url;
@@ -60,21 +68,14 @@ public class DAAdvert extends Rply
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        int errorCodeBytesLength = 2;
-        int bootTimeBytesLength = 4;
-        int urlLengthBytesLength = 2;
         byte[] urlBytes = stringToBytes(getURL());
         int urlBytesLength = urlBytes.length;
-        int scopesLengthBytesLength = 2;
         byte[] scopesBytes = stringArrayToBytes(getScopes());
         int scopesBytesLength = scopesBytes.length;
-        int attrsLengthBytesLength = 2;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
-        int securityParamsLengthBytesLength = 2;
         byte[] securityParamsBytes = stringArrayToBytes(getSecurityParamIndexes());
         int securityParamsBytesLength = securityParamsBytes.length;
-        int authBlocksCountBytesLength = 1;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;
         byte[][] authBlocksBytes = new byte[authBlocksCount][];
@@ -86,44 +87,44 @@ public class DAAdvert extends Rply
             authBlockBytesSum += bytes.length;
         }
 
-        int bodyLength = errorCodeBytesLength + bootTimeBytesLength + urlLengthBytesLength + urlBytesLength + scopesLengthBytesLength + scopesBytesLength;
-        bodyLength += attrsLengthBytesLength + attrsBytesLength + securityParamsLengthBytesLength + securityParamsBytesLength + authBlocksCountBytesLength + authBlockBytesSum;
+        int bodyLength = ERROR_CODE_BYTES_LENGTH + BOOT_TIME_BYTES_LENGTH + URL_LENGTH_BYTES_LENGTH + urlBytesLength + SCOPES_LENGTH_BYTES_LENGTH + scopesBytesLength;
+        bodyLength += ATTRIBUTES_LENGTH_BYTES_LENGTH + attrsBytesLength + SPI_LENGTH_BYTES_LENGTH + securityParamsBytesLength + AUTH_BLOCKS_COUNT_BYTES_LENGTH + authBlockBytesSum;
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, errorCodeBytesLength);
+        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
 
-        offset += errorCodeBytesLength;
-        writeInt((int)(getBootTime() / 1000), result, offset, bootTimeBytesLength);
+        offset += ERROR_CODE_BYTES_LENGTH;
+        writeInt((int)(getBootTime() / 1000), result, offset, BOOT_TIME_BYTES_LENGTH);
 
-        offset += bootTimeBytesLength;
-        writeInt(urlBytesLength, result, offset, urlLengthBytesLength);
+        offset += BOOT_TIME_BYTES_LENGTH;
+        writeInt(urlBytesLength, result, offset, URL_LENGTH_BYTES_LENGTH);
 
-        offset += urlLengthBytesLength;
+        offset += URL_LENGTH_BYTES_LENGTH;
         System.arraycopy(urlBytes, 0, result, offset, urlBytesLength);
 
         offset += urlBytesLength;
-        writeInt(scopesBytesLength, result, offset, scopesLengthBytesLength);
+        writeInt(scopesBytesLength, result, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += scopesLengthBytesLength;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         System.arraycopy(scopesBytes, 0, result, offset, scopesBytesLength);
 
         offset += scopesBytesLength;
-        writeInt(attrsBytesLength, result, offset, attrsLengthBytesLength);
+        writeInt(attrsBytesLength, result, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
 
-        offset += attrsLengthBytesLength;
+        offset += ATTRIBUTES_LENGTH_BYTES_LENGTH;
         System.arraycopy(attrsBytes, 0, result, offset, attrsBytesLength);
 
         offset += attrsBytesLength;
-        writeInt(securityParamsBytesLength, result, offset, securityParamsLengthBytesLength);
+        writeInt(securityParamsBytesLength, result, offset, SPI_LENGTH_BYTES_LENGTH);
 
-        offset += securityParamsLengthBytesLength;
+        offset += SPI_LENGTH_BYTES_LENGTH;
         System.arraycopy(securityParamsBytes, 0, result, offset, securityParamsBytesLength);
 
         offset += securityParamsBytesLength;
-        writeInt(authBlocksCount, result, offset, authBlocksCountBytesLength);
+        writeInt(authBlocksCount, result, offset, AUTH_BLOCKS_COUNT_BYTES_LENGTH);
 
-        offset += authBlocksCountBytesLength;
+        offset += AUTH_BLOCKS_COUNT_BYTES_LENGTH;
         for (int i = 0; i < authBlocksCount; ++i)
         {
             byte[] bytes = authBlocksBytes[i];
@@ -138,46 +139,39 @@ public class DAAdvert extends Rply
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        int errorCodeBytesLength = 2;
-        setErrorCode(readInt(bytes, offset, errorCodeBytesLength));
+        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
 
-        offset += errorCodeBytesLength;
-        int bootTimeBytesLength = 4;
-        setBootTime(readInt(bytes, offset, bootTimeBytesLength) * 1000L);
+        offset += ERROR_CODE_BYTES_LENGTH;
+        setBootTime(readInt(bytes, offset, BOOT_TIME_BYTES_LENGTH) * 1000L);
 
-        offset += bootTimeBytesLength;
-        int urlLengthBytesLength = 2;
-        int urlLength = readInt(bytes, offset, urlLengthBytesLength);
+        offset += BOOT_TIME_BYTES_LENGTH;
+        int urlLength = readInt(bytes, offset, URL_LENGTH_BYTES_LENGTH);
 
-        offset += urlLengthBytesLength;
+        offset += URL_LENGTH_BYTES_LENGTH;
         setURL(readString(bytes, offset, urlLength));
 
         offset += urlLength;
-        int scopesLengthBytesLength = 2;
-        int scopesLength = readInt(bytes, offset, scopesLengthBytesLength);
+        int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += scopesLengthBytesLength;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         setScopes(readStringArray(bytes, offset, scopesLength));
 
         offset += scopesLength;
-        int attrsLengthBytesLength = 2;
-        int attrsLength = readInt(bytes, offset, attrsLengthBytesLength);
+        int attrsLength = readInt(bytes, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
 
-        offset += attrsLengthBytesLength;
+        offset += ATTRIBUTES_LENGTH_BYTES_LENGTH;
         setAttributes(new Attributes(readString(bytes, offset, attrsLength)));
 
         offset += attrsLength;
-        int securityParamsLengthBytesLength = 2;
-        int securityParamsLength = readInt(bytes, offset, securityParamsLengthBytesLength);
+        int securityParamsLength = readInt(bytes, offset, SPI_LENGTH_BYTES_LENGTH);
 
-        offset += securityParamsLengthBytesLength;
+        offset += SPI_LENGTH_BYTES_LENGTH;
         setSecurityParamIndexes(readStringArray(bytes, offset, securityParamsLength));
 
         offset += securityParamsLength;
-        int authBlocksCountBytesLength = 1;
-        int authBlocksCount = readInt(bytes, offset, authBlocksCountBytesLength);
+        int authBlocksCount = readInt(bytes, offset, AUTH_BLOCKS_COUNT_BYTES_LENGTH);
 
-        offset += authBlocksCountBytesLength;
+        offset += AUTH_BLOCKS_COUNT_BYTES_LENGTH;
         if (authBlocksCount > 0)
         {
             AuthenticationBlock[] blocks = new AuthenticationBlock[authBlocksCount];

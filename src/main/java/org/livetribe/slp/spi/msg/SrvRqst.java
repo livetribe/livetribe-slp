@@ -48,6 +48,12 @@ import org.livetribe.slp.ServiceType;
  */
 public class SrvRqst extends Rqst
 {
+    private static final int RESPONDERS_LENGTH_BYTES_LENGTH = 2;
+    private static final int SERVICE_TYPE_LENGTH_BYTES_LENGTH = 2;
+    private static final int SCOPES_LENGTH_BYTES_LENGTH = 2;
+    private static final int FILTER_LENGTH_BYTES_LENGTH = 2;
+    private static final int SPI_LENGTH_BYTES_LENGTH = 2;
+
     private ServiceType serviceType;
     private String[] scopes;
     private String filter;
@@ -67,38 +73,38 @@ public class SrvRqst extends Rqst
         byte[] securityParameterIndexBytes = stringToBytes(getSecurityParameterIndex());
         int securityParameterIndexLength = securityParameterIndexBytes.length;
 
-        int lengthBytes = 2;
-
-        byte[] result = new byte[lengthBytes * 5 + previousRespondersLength + serviceTypeLength + scopesLength + filterLength + securityParameterIndexLength];
+        int bodyLength = RESPONDERS_LENGTH_BYTES_LENGTH + previousRespondersLength + SERVICE_TYPE_LENGTH_BYTES_LENGTH + serviceTypeLength;
+        bodyLength += SCOPES_LENGTH_BYTES_LENGTH + scopesLength + FILTER_LENGTH_BYTES_LENGTH + filterLength + SPI_LENGTH_BYTES_LENGTH + securityParameterIndexLength;
+        byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(previousRespondersLength, result, offset, lengthBytes);
+        writeInt(previousRespondersLength, result, offset, RESPONDERS_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += RESPONDERS_LENGTH_BYTES_LENGTH;
         System.arraycopy(previousRespondersBytes, 0, result, offset, previousRespondersLength);
 
         offset += previousRespondersLength;
-        writeInt(serviceTypeLength, result, offset, lengthBytes);
+        writeInt(serviceTypeLength, result, offset, SERVICE_TYPE_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += SERVICE_TYPE_LENGTH_BYTES_LENGTH;
         System.arraycopy(serviceTypeBytes, 0, result, offset, serviceTypeLength);
 
         offset += serviceTypeLength;
-        writeInt(scopesLength, result, offset, lengthBytes);
+        writeInt(scopesLength, result, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         System.arraycopy(scopesBytes, 0, result, offset, scopesLength);
 
         offset += scopesLength;
-        writeInt(filterLength, result, offset, lengthBytes);
+        writeInt(filterLength, result, offset, FILTER_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += FILTER_LENGTH_BYTES_LENGTH;
         System.arraycopy(filterBytes, 0, result, offset, filterLength);
 
         offset += filterLength;
-        writeInt(securityParameterIndexLength, result, offset, lengthBytes);
+        writeInt(securityParameterIndexLength, result, offset, SPI_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += SPI_LENGTH_BYTES_LENGTH;
         System.arraycopy(securityParameterIndexBytes, 0, result, offset, securityParameterIndexLength);
 
         return result;
@@ -106,36 +112,34 @@ public class SrvRqst extends Rqst
 
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
-        int lengthBytes = 2;
-
         int offset = 0;
-        int previousRespondersLength = readInt(bytes, offset, lengthBytes);
+        int previousRespondersLength = readInt(bytes, offset, RESPONDERS_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += RESPONDERS_LENGTH_BYTES_LENGTH;
         setPreviousResponders(new HashSet(Arrays.asList(readStringArray(bytes, offset, previousRespondersLength))));
 
         offset += previousRespondersLength;
-        int serviceTypeLength = readInt(bytes, offset, lengthBytes);
+        int serviceTypeLength = readInt(bytes, offset, SERVICE_TYPE_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += SERVICE_TYPE_LENGTH_BYTES_LENGTH;
         setServiceType(new ServiceType(readString(bytes, offset, serviceTypeLength)));
 
         offset += serviceTypeLength;
-        int scopesLength = readInt(bytes, offset, lengthBytes);
+        int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += SCOPES_LENGTH_BYTES_LENGTH;
         setScopes(readStringArray(bytes, offset, scopesLength));
 
         offset += scopesLength;
-        int filterLength = readInt(bytes, offset, lengthBytes);
+        int filterLength = readInt(bytes, offset, FILTER_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += FILTER_LENGTH_BYTES_LENGTH;
         setFilter(readString(bytes, offset, filterLength));
 
         offset += filterLength;
-        int securityParameterIndexLength = readInt(bytes, offset, lengthBytes);
+        int securityParameterIndexLength = readInt(bytes, offset, SPI_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
+        offset += SPI_LENGTH_BYTES_LENGTH;
         setSecurityParameterIndex(readString(bytes, offset, securityParameterIndexLength));
     }
 

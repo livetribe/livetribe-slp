@@ -15,8 +15,8 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceLocationException;
 
 /**
  * The RFC 2608 message header is the following:
@@ -50,6 +50,13 @@ public abstract class Message extends BytesBlock
     public static final byte SRV_TYPE_RPLY_TYPE = 10;
     public static final byte SA_ADVERT_TYPE = 11;
 
+    private static final int VERSION_BYTES_LENGTH = 1;
+    private static final int MESSAGE_TYPE_BYTES_LENGTH = 1;
+    private static final int MESSAGE_LENGTH_BYTES_LENGTH = 3;
+    private static final int FLAGS_BYTES_LENGTH = 2;
+    private static final int EXTENSION_BYTES_LENGTH = 3;
+    private static final int XID_BYTES_LENGTH = 2;
+    private static final int LANGUAGE_LENGTH_BYTES_LENGTH = 2;
     private static final byte SLP_VERSION = 2;
 
     private boolean overflow;
@@ -119,41 +126,37 @@ public abstract class Message extends BytesBlock
         byte[] body = serializeBody();
 
         byte[] languageBytes = stringToBytes(getLanguage());
-        int headerLength = 14 + languageBytes.length;
+        int headerLength = VERSION_BYTES_LENGTH + MESSAGE_TYPE_BYTES_LENGTH + MESSAGE_LENGTH_BYTES_LENGTH + FLAGS_BYTES_LENGTH;
+        headerLength += EXTENSION_BYTES_LENGTH + XID_BYTES_LENGTH + LANGUAGE_LENGTH_BYTES_LENGTH + languageBytes.length;
         byte[] result = new byte[headerLength + body.length];
 
         int offset = 0;
-        result[0] = SLP_VERSION;
+        result[offset] = SLP_VERSION;
 
-        ++offset;
-        result[1] = getMessageType();
+        offset += VERSION_BYTES_LENGTH;
+        result[offset] = getMessageType();
 
-        ++offset;
-        int lengthBytes = 3;
-        writeInt(result.length, result, offset, lengthBytes);
+        offset += MESSAGE_TYPE_BYTES_LENGTH;
+        writeInt(result.length, result, offset, MESSAGE_LENGTH_BYTES_LENGTH);
 
-        offset += lengthBytes;
-        int flagsBytes = 2;
+        offset += MESSAGE_LENGTH_BYTES_LENGTH;
         int flags = 0;
         if (isOverflow()) flags |= 0x8000;
         if (isFresh()) flags |= 0x4000;
         if (isMulticast()) flags |= 0x2000;
-        writeInt(flags, result, offset, flagsBytes);
+        writeInt(flags, result, offset, FLAGS_BYTES_LENGTH);
 
         // Ignore extensions, for now
-        offset += flagsBytes;
-        int extensionBytes = 3;
-        writeInt(0, result, offset, extensionBytes);
+        offset += FLAGS_BYTES_LENGTH;
+        writeInt(0, result, offset, EXTENSION_BYTES_LENGTH);
 
-        offset += extensionBytes;
-        int xidBytes = 2;
-        writeInt(getXID(), result, offset, xidBytes);
+        offset += EXTENSION_BYTES_LENGTH;
+        writeInt(getXID(), result, offset, XID_BYTES_LENGTH);
 
-        offset += xidBytes;
-        int languageLengthBytes = 2;
-        writeInt(languageBytes.length, result, offset, languageLengthBytes);
+        offset += XID_BYTES_LENGTH;
+        writeInt(languageBytes.length, result, offset, LANGUAGE_LENGTH_BYTES_LENGTH);
 
-        offset += languageLengthBytes;
+        offset += LANGUAGE_LENGTH_BYTES_LENGTH;
         System.arraycopy(languageBytes, 0, result, offset, languageBytes.length);
 
         offset += languageBytes.length;
@@ -175,41 +178,36 @@ public abstract class Message extends BytesBlock
             if (version != SLP_VERSION)
                 throw new ServiceLocationException("Unsupported SLP version " + version + ", only version " + SLP_VERSION + " is supported", ServiceLocationException.PARSE_ERROR);
 
-            ++offset;
+            offset += VERSION_BYTES_LENGTH;
             byte messageType = bytes[offset];
 
-            ++offset;
-            int lengthBytes = 3;
-            int length = readInt(bytes, offset, lengthBytes);
+            offset += MESSAGE_TYPE_BYTES_LENGTH;
+            int length = readInt(bytes, offset, MESSAGE_LENGTH_BYTES_LENGTH);
             if (bytes.length != length)
                 throw new ServiceLocationException("Expected message length is " + length + ", got instead " + bytes.length, ServiceLocationException.PARSE_ERROR);
 
-            offset += lengthBytes;
-            int flagsBytes = 2;
-            int flags = readInt(bytes, offset, flagsBytes);
+            offset += MESSAGE_LENGTH_BYTES_LENGTH;
+            int flags = readInt(bytes, offset, FLAGS_BYTES_LENGTH);
 
             // Ignore extensions, for now
-            offset += flagsBytes;
-            int extensionBytes = 3;
-            readInt(bytes, offset, extensionBytes);
+            offset += FLAGS_BYTES_LENGTH;
+            readInt(bytes, offset, EXTENSION_BYTES_LENGTH);
 
-            offset += extensionBytes;
-            int xidBytes = 2;
-            int xid = readInt(bytes, offset, xidBytes);
+            offset += EXTENSION_BYTES_LENGTH;
+            int xid = readInt(bytes, offset, XID_BYTES_LENGTH);
 
-            offset += xidBytes;
-            int languageLengthBytes = 2;
-            int languageLength = readInt(bytes, offset, languageLengthBytes);
+            offset += XID_BYTES_LENGTH;
+            int languageLength = readInt(bytes, offset, LANGUAGE_LENGTH_BYTES_LENGTH);
 
-            offset += languageLengthBytes;
+            offset += LANGUAGE_LENGTH_BYTES_LENGTH;
             String language = readString(bytes, offset, languageLength);
 
             Message message = createMessage(messageType);
             message.setOverflow((flags & 0x8000) == 0x8000);
             message.setFresh((flags & 0x4000) == 0x4000);
             message.setMulticast((flags & 0x2000) == 0x2000);
-            message.xid = xid;
-            message.language = language;
+            message.setXID(xid);
+            message.setLanguage(language);
 
             offset += languageLength;
             byte[] body = new byte[length - offset];
