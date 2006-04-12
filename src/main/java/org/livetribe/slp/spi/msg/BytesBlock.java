@@ -44,6 +44,7 @@ public class BytesBlock
         reservedChars['~'] = '~';
     }
     protected static final byte[] EMPTY_BYTES = new byte[0];
+    protected static final String[] EMPTY_STRINGS = new String[0];
 
     /**
      * Reads an integer from <code>bytes</code> in network byte order.
@@ -97,7 +98,7 @@ public class BytesBlock
     protected static String[] readStringArray(byte[] bytes, int offset, int length) throws ServiceLocationException
     {
         String commaList = readString(bytes, offset, length);
-        if (commaList == null) return new String[0];
+        if (commaList == null) return EMPTY_STRINGS;
         return commaList.split(",", -1);
     }
 
