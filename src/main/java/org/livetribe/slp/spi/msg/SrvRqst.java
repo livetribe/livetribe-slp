@@ -196,12 +196,15 @@ public class SrvRqst extends Rqst
 
         result.append(" ").append(getServiceType());
 
-        result.append(" ");
         String[] scopes = getScopes();
-        for (int i = 0; i < scopes.length; i++)
+        if (scopes != null)
         {
-            if (i > 0) result.append(",");
-            result.append(scopes[i]);
+            result.append(" ");
+            for (int i = 0; i < scopes.length; i++)
+            {
+                if (i > 0) result.append(",");
+                result.append(scopes[i]);
+            }
         }
 
         result.append(" ").append(getFilter());
