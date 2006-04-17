@@ -15,9 +15,9 @@
  */
 package org.livetribe.slp;
 
-import java.io.Serializable;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 
 /**
  * @version $Rev$ $Date$
@@ -98,6 +98,11 @@ public class ServiceURL implements Serializable
     {
         ois.defaultReadObject();
         parse(url);
+    }
+
+    public String toString()
+    {
+        return getURL();
     }
 
     private void parse(String serviceURL)

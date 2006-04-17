@@ -63,4 +63,9 @@ public class ServiceLocationException extends Exception
     {
         return errorCode;
     }
+
+    public String toString()
+    {
+        return super.toString() + ", error " + getErrorCode();
+    }
 }
