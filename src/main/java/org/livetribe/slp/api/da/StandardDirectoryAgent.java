@@ -247,6 +247,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     protected void handleUnicastSrvReg(SrvReg message, Socket socket)
     {
+        // TODO: check that the scopes match
+
         int errorCode = message.isFresh() ? registerService(message, true) : updateService(message);
         try
         {
@@ -261,6 +263,10 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     private int registerService(SrvReg message, boolean notifyListeners)
     {
+        // RFC 2608, 7.0
+        if (message.getLanguage() == null) return ServiceLocationException.INVALID_REGISTRATION;
+        if (message.getURLEntry().getLifetime() <= 0) return ServiceLocationException.INVALID_REGISTRATION;
+
         int result = 0;
         servicesLock.lock();
         try

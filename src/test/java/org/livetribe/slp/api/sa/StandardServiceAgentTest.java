@@ -3,6 +3,7 @@ package org.livetribe.slp.api.sa;
 import java.util.List;
 import java.util.Locale;
 
+import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.SLPAPITestCase;
@@ -262,6 +263,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             sa.setConfiguration(configuration);
             ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
             sa.setServiceURL(serviceURL);
+            sa.setLanguage(Locale.getDefault().getLanguage());
             sa.start();
 
             try
@@ -343,6 +345,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             sa.setDiscoveryStartWaitBound(0);
             ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
             sa.setServiceURL(serviceURL);
+            sa.setLanguage(Locale.getDefault().getLanguage());
             sa.start();
 
             try
@@ -359,6 +362,72 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             finally
             {
                 sa.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    public void testRegistrationFailureNoLanguage() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        da.setConfiguration(configuration);
+        da.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardServiceAgent sa = new StandardServiceAgent();
+            sa.setConfiguration(configuration);
+            sa.setLanguage(null);
+            ServiceURL serviceURL = new ServiceURL("service:http://host", ServiceURL.LIFETIME_PERMANENT);
+            sa.setServiceURL(serviceURL);
+            try
+            {
+                sa.start();
+                fail();
+            }
+            catch (ServiceLocationException x)
+            {
+                assertEquals(ServiceLocationException.INVALID_REGISTRATION, x.getErrorCode());
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    public void testRegistrationFailureNoLifetime() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        da.setConfiguration(configuration);
+        da.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardServiceAgent sa = new StandardServiceAgent();
+            sa.setConfiguration(configuration);
+            sa.setLanguage(Locale.getDefault().getLanguage());
+            ServiceURL serviceURL = new ServiceURL("service:http://host", 0);
+            sa.setServiceURL(serviceURL);
+            try
+            {
+                sa.start();
+                fail();
+            }
+            catch (ServiceLocationException x)
+            {
+                assertEquals(ServiceLocationException.INVALID_REGISTRATION, x.getErrorCode());
             }
         }
         finally
