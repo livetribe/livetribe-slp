@@ -16,6 +16,7 @@
 package org.livetribe.slp;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.sa.ServiceAgent;
@@ -38,7 +39,7 @@ import org.livetribe.slp.api.ua.UserAgent;
  * <li>SrvDeReg</li>
  * <li>SrvRply</li>
  * </ul>
- * Since OpenSLP runs on standard SLP port (427), this class must be run as superuser in Unix-like
+ * Since OpenSLP runs on the standard SLP port (427), this class must be run as superuser in Unix-like
  * operative systems.
  *
  * @version $Rev$ $Date$
@@ -56,25 +57,34 @@ public class OpenSLPInteroperability
         configuration.setMulticastTimeouts(new long[]{3000L, 3000L, 3000L, 3000L, 3000L});
 
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
+
+        System.out.println("Service Agent: discovering DA and registering service " + serviceURL);
         ServiceAgent sa = new StandardServiceAgent();
         sa.setConfiguration(configuration);
         sa.setServiceURL(serviceURL);
+        sa.setLanguage(Locale.ITALY.getLanguage());
         sa.start();
+        System.out.println("Service Agent: registered service " + serviceURL);
 
         try
         {
+            System.out.println("User Agent: discovering DA");
             UserAgent ua = new StandardUserAgent();
             ua.setConfiguration(configuration);
             ua.start();
 
             try
             {
-                List serviceURLs = ua.findServices(serviceURL.getServiceType(), new String[]{"default"}, null);
+                ServiceType serviceType = serviceURL.getServiceType();
+                System.out.println("User Agent: finding service of type " + serviceType);
+                List serviceURLs = ua.findServices(serviceType, new String[]{"default"}, null);
                 if (serviceURLs.isEmpty()) throw new AssertionError("Expected at least one service registered");
 
-                System.out.println("serviceURLs = " + serviceURLs);
+                System.out.println("User Agent: found services " + serviceURLs);
                 ServiceURL registered = (ServiceURL)serviceURLs.get(0);
                 if (!registered.equals(serviceURL)) throw new AssertionError("Expecting " + serviceURL + " got instead " + registered);
+
+                System.out.println("Interoperability with OpenSLP successful");
             }
             finally
             {
