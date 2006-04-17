@@ -69,7 +69,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             String[] scopes = new String[]{"scope1", "scope2"};
             sa.setServiceURL(serviceURL);
             sa.setScopes(scopes);
-            sa.setLanguage(Locale.getDefault().getCountry());
+            sa.setLanguage(Locale.getDefault().getLanguage());
             sa.start();
 
             try
@@ -131,7 +131,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             sa.setConfiguration(getDefaultConfiguration());
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
             String[] scopes = new String[]{"scope1", "scope2"};
-            String language = Locale.getDefault().getCountry();
+            String language = Locale.getDefault().getLanguage();
             sa.setServiceURL(serviceURL);
             sa.setScopes(scopes);
             sa.setLanguage(language);
@@ -194,7 +194,7 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             String[] scopes = new String[]{"scope1", "scope2"};
             sa.setServiceURL(serviceURL);
             sa.setScopes(scopes);
-            sa.setLanguage(Locale.getDefault().getCountry());
+            sa.setLanguage(Locale.getDefault().getLanguage());
             sa.start();
 
             try

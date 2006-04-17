@@ -349,7 +349,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
                 String[] scopes = new String[]{"scope1", "scope2"};
 
-                String language = Locale.getDefault().getCountry();
+                String language = Locale.getDefault().getLanguage();
 
                 ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, language, true);
                 SrvAck ack = saManager.unicastSrvReg(localhost, info);
@@ -409,7 +409,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getCountry(), false);
+                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getLanguage(), false);
                 SrvAck ack = saManager.unicastSrvReg(localhost, info);
 
                 assertNotNull(ack);
@@ -452,7 +452,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
                 String[] scopes = new String[]{"scope1", "scope2"};
 
-                String language = Locale.getDefault().getCountry();
+                String language = Locale.getDefault().getLanguage();
                 ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, language, true);
                 SrvAck ack = saManager.unicastSrvReg(localhost, info);
                 assertNotNull(ack);

@@ -85,7 +85,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, Locale.getDefault().getCountry(), true);
+                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, Locale.getDefault().getLanguage(), true);
                 SrvAck ack = saManager.unicastSrvReg(localhost, info);
 
                 assertNotNull(ack);

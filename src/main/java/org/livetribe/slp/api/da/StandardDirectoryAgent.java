@@ -156,7 +156,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
 
         // DirectoryAgents send a DAAdvert on shutdown with bootTime == 0 (RFC 2608, 12.1)
-        manager.multicastDAAdvert(0, getScopes(), null, null, Locale.getDefault().getCountry());
+        manager.multicastDAAdvert(0, getScopes(), null, null, Locale.getDefault().getLanguage());
         manager.removeMessageListener(multicastListener, true);
         manager.removeMessageListener(unicastListener, false);
         manager.stop();
@@ -482,7 +482,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         {
             try
             {
-                manager.multicastDAAdvert(getBootTime(), getScopes(), null, new Integer(0), Locale.getDefault().getCountry());
+                manager.multicastDAAdvert(getBootTime(), getScopes(), null, new Integer(0), Locale.getDefault().getLanguage());
             }
             catch (Exception x)
             {

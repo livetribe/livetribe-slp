@@ -87,7 +87,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
     private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter)
     {
         SrvRqst request = new SrvRqst();
-        request.setLanguage(Locale.getDefault().getCountry());
+        request.setLanguage(Locale.getDefault().getLanguage());
         request.setXID(generateXID());
         request.setServiceType(serviceType);
         request.setScopes(scopes);
