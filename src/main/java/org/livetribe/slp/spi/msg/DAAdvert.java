@@ -15,6 +15,9 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.Date;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 
@@ -74,7 +77,7 @@ public class DAAdvert extends Rply
         int scopesBytesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
-        byte[] securityParamsBytes = stringArrayToBytes(getSecurityParamIndexes());
+        byte[] securityParamsBytes = stringArrayToBytes(getSecurityParameterIndexes());
         int securityParamsBytesLength = securityParamsBytes.length;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;
@@ -235,7 +238,7 @@ public class DAAdvert extends Rply
         this.attributes = attributes;
     }
 
-    public String[] getSecurityParamIndexes()
+    public String[] getSecurityParameterIndexes()
     {
         return securityParamIndexes;
     }
@@ -253,5 +256,44 @@ public class DAAdvert extends Rply
     public void setAuthenticationBlocks(AuthenticationBlock[] authenticationBlocks)
     {
         this.authenticationBlocks = authenticationBlocks;
+    }
+
+    public String toString()
+    {
+        StringBuffer result = new StringBuffer("[DAAdvert@").append(Integer.toHexString(hashCode()));
+
+        result.append(" (");
+        String responder = getResponder();
+        if (responder != null) result.append(responder);
+        result.append(")");
+
+        result.append(" ").append(getErrorCode());
+
+        result.append(" ").append(new Date(getBootTime()));
+
+        result.append(" ").append(getURL());
+
+        String[] scopes = getScopes();
+        if (scopes != null)
+        {
+            result.append(" ");
+            for (int i = 0; i < scopes.length; i++)
+            {
+                if (i > 0) result.append(",");
+                result.append(scopes[i]);
+            }
+        }
+
+        result.append(" {");
+        Attributes attrs = getAttributes();
+        if (attrs != null) result.append(attrs);
+        result.append("}");
+
+        String[] spis = getSecurityParameterIndexes();
+        if (spis != null) result.append(" ").append(Arrays.asList(spis));
+
+        result.append("]");
+
+        return result.toString();
     }
 }
