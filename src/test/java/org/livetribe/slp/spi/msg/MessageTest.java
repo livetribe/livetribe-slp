@@ -116,7 +116,7 @@ public class MessageTest extends SLPSPITestCase
         assertEquals(original.getURL(), deserialized.getURL());
         assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
         assertEquals(original.getAttributes(), deserialized.getAttributes());
-        assertTrue(Arrays.equals(original.getSecurityParamIndexes(), deserialized.getSecurityParamIndexes()));
+        assertTrue(Arrays.equals(original.getSecurityParameterIndexes(), deserialized.getSecurityParameterIndexes()));
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));
     }
