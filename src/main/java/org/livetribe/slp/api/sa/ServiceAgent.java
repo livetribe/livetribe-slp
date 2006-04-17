@@ -36,6 +36,8 @@ public interface ServiceAgent extends Agent
 
     public void setScopes(String[] scopes);
 
+    public void setLanguage(String language);
+
     public void register() throws IOException, ServiceLocationException;
 
     public void deregister() throws IOException, ServiceLocationException;
