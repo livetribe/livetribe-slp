@@ -264,8 +264,16 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     private int registerService(SrvReg message, boolean notifyListeners)
     {
         // RFC 2608, 7.0
-        if (message.getLanguage() == null) return ServiceLocationException.INVALID_REGISTRATION;
-        if (message.getURLEntry().getLifetime() <= 0) return ServiceLocationException.INVALID_REGISTRATION;
+        if (message.getLanguage() == null)
+        {
+            if (logger.isLoggable(Level.FINE)) logger.fine("Could not register service " + message.getURLEntry().toServiceURL() + ", missing language");
+            return ServiceLocationException.INVALID_REGISTRATION;
+        }
+        if (message.getURLEntry().getLifetime() <= 0)
+        {
+            if (logger.isLoggable(Level.FINE)) logger.fine("Could not register service " + message.getURLEntry().toServiceURL() + ", invalid lifetime ");
+            return ServiceLocationException.INVALID_REGISTRATION;
+        }
 
         int result = 0;
         servicesLock.lock();
