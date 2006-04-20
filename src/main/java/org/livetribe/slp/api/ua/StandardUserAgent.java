@@ -132,7 +132,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         manager.stop();
     }
 
-    public List findServices(ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException
+    public List findServices(ServiceType serviceType, String[] scopes, String filter, String language) throws IOException, ServiceLocationException
     {
         List result = new ArrayList();
 
@@ -142,7 +142,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         {
             DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
             InetAddress address = InetAddress.getByName(info.getHost());
-            SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter);
+            SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter, language);
             URLEntry[] entries = srvRply.getURLEntries();
             for (int j = 0; j < entries.length; ++j)
             {
@@ -187,7 +187,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     protected List discoverDirectoryAgents(String[] scopes) throws IOException
     {
         List result = new ArrayList();
-        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, -1);
+        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, null, -1);
         for (int i = 0; i < daAdverts.length; ++i)
         {
             DAAdvert daAdvert = daAdverts[i];

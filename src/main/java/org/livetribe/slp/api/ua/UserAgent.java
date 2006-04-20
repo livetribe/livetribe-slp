@@ -15,13 +15,13 @@
  */
 package org.livetribe.slp.api.ua;
 
-import java.util.List;
 import java.io.IOException;
+import java.util.List;
 
+import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Agent;
 import org.livetribe.slp.spi.ua.UserAgentManager;
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceLocationException;
 
 /**
  * @version $Rev$ $Date$
@@ -30,5 +30,5 @@ public interface UserAgent extends Agent
 {
     public void setUserAgentManager(UserAgentManager manager);
 
-    public List findServices(ServiceType serviceType, String[] scopes, String filter) throws IOException, ServiceLocationException;
+    public List findServices(ServiceType serviceType, String[] scopes, String filter, String language) throws IOException, ServiceLocationException;
 }

@@ -18,7 +18,6 @@ package org.livetribe.slp.spi.sa;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Locale;
 
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -38,17 +37,17 @@ import org.livetribe.slp.spi.net.UnicastConnector;
  */
 public class StandardServiceAgentManager extends StandardAgentManager implements ServiceAgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException
+    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException
     {
-        SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter);
+        SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter, language);
         request.setMulticast(true);
         return convergentDASrvRqst(request, timeframe);
     }
 
-    private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter)
+    private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter, String language)
     {
         SrvRqst request = new SrvRqst();
-        request.setLanguage(Locale.getDefault().getLanguage());
+        request.setLanguage(language);
         request.setXID(generateXID());
         request.setServiceType(serviceType);
         request.setScopes(scopes);

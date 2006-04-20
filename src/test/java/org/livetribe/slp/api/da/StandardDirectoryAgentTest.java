@@ -235,7 +235,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             {
                 sleep(500);
 
-                DAAdvert[] replies = uaManager.multicastDASrvRqst(new String[]{"DEFAULT"}, null, -1);
+                DAAdvert[] replies = uaManager.multicastDASrvRqst(new String[]{"DEFAULT"}, null, null, -1);
 
                 assertNotNull(replies);
                 assertEquals(1, replies.length);
@@ -282,7 +282,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, null, true);
+                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, Locale.getDefault().getLanguage(), true);
                 SrvAck ack = saManager.unicastSrvReg(localhost, info);
 
                 assertNotNull(ack);
@@ -296,7 +296,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
 
                 try
                 {
-                    SrvRply srvRply = uaManager.unicastSrvRqst(localhost, serviceURL.getServiceType(), scopes, null);
+                    SrvRply srvRply = uaManager.unicastSrvRqst(localhost, serviceURL.getServiceType(), scopes, null, null);
 
                     assertNotNull(srvRply);
                     assertEquals(0, srvRply.getErrorCode());

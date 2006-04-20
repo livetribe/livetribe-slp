@@ -29,9 +29,9 @@ import org.livetribe.slp.spi.msg.SrvRply;
  */
 public interface UserAgentManager extends AgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException;
+    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException;
 
-    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException;
+    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, String language, int timeframe) throws IOException;
 
-    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException;
+    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException;
 }

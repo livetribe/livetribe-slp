@@ -101,7 +101,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
 
                 try
                 {
-                    List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null);
+                    List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
 
                     assertNotNull(serviceURLs);
                     assertEquals(1, serviceURLs.size());

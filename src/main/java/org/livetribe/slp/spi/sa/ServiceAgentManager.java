@@ -27,7 +27,7 @@ import org.livetribe.slp.spi.msg.SrvAck;
  */
 public interface ServiceAgentManager extends AgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException;
+    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException;
 
     public SrvAck unicastSrvReg(InetAddress address, ServiceAgentInfo info) throws IOException;
 

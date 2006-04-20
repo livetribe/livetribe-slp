@@ -18,7 +18,6 @@ package org.livetribe.slp.spi.ua;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Locale;
 
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -43,24 +42,24 @@ import org.livetribe.slp.spi.net.UnicastConnector;
  */
 public class StandardUserAgentManager extends StandardAgentManager implements UserAgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, long timeframe) throws IOException
+    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException
     {
-        SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter);
+        SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter, language);
         request.setMulticast(true);
         return convergentDASrvRqst(request, timeframe);
     }
 
-    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, int timeframe) throws IOException
+    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, String language, int timeframe) throws IOException
     {
-        SrvRqst request = createSrvRqst(new ServiceType("service:service-agent"), scopes, filter);
+        SrvRqst request = createSrvRqst(new ServiceType("service:service-agent"), scopes, filter, language);
         request.setMulticast(true);
         UnicastConnector unicast = getUnicastConnector();
         return convergentSASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
     }
 
-    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter) throws IOException
+    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException
     {
-        SrvRqst request = createSrvRqst(serviceType, scopes, filter);
+        SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);
         byte[] requestBytes = serializeMessage(request);
 
         UnicastConnector unicast = getUnicastConnector();
@@ -84,10 +83,10 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         }
     }
 
-    private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter)
+    private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter, String language)
     {
         SrvRqst request = new SrvRqst();
-        request.setLanguage(Locale.getDefault().getLanguage());
+        request.setLanguage(language);
         request.setXID(generateXID());
         request.setServiceType(serviceType);
         request.setScopes(scopes);
