@@ -15,15 +15,15 @@
  */
 package org.livetribe.slp.spi.da;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
  * A thread-safe class that handles caching of {@link DirectoryAgentInfo}, and
@@ -53,12 +53,19 @@ public class DirectoryAgentCache
         lock.lock();
         try
         {
-            List scopesList = Arrays.asList(scopes);
             List result = new ArrayList();
-            for (Iterator infos = cache.iterator(); infos.hasNext();)
+            if (scopes == null)
             {
-                DirectoryAgentInfo info = (DirectoryAgentInfo)infos.next();
-                if (info.matchScopes(scopesList)) result.add(info);
+                result.addAll(cache);
+            }
+            else
+            {
+                List scopesList = Arrays.asList(scopes);
+                for (Iterator infos = cache.iterator(); infos.hasNext();)
+                {
+                    DirectoryAgentInfo info = (DirectoryAgentInfo)infos.next();
+                    if (info.matchScopes(scopesList)) result.add(info);
+                }
             }
             return result;
         }
