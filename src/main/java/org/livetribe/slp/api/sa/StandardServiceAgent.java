@@ -19,8 +19,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
@@ -28,7 +31,8 @@ import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
-import org.livetribe.slp.Attributes;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
@@ -52,11 +56,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 {
     private int discoveryStartWaitBound;
     private long discoveryPeriod;
-    private ServiceType serviceType;
-    private ServiceURL serviceURL;
-    private Attributes attributes;
-    private String language;
     private ServiceAgentManager manager;
+    private final Set services = new HashSet();
+    private final Lock servicesLock = new ReentrantLock();
     private MessageListener multicastListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
     private ScheduledExecutorService scheduledExecutorService;
@@ -103,50 +105,59 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         this.discoveryPeriod = discoveryPeriod;
     }
 
-    public ServiceType getServiceType()
+    public void register(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        return serviceType;
+        if (isRunning()) registerService(service);
+        addService(service);
     }
 
-    public void setServiceType(ServiceType serviceType)
+    public void deregister(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        this.serviceType = serviceType;
+        if (isRunning()) deregisterService(service);
+        removeService(service);
     }
 
-    public ServiceURL getServiceURL()
+    private boolean addService(ServiceInfo service)
     {
-        return serviceURL;
+        servicesLock.lock();
+        try
+        {
+            return services.add(service);
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
     }
 
-    public void setServiceURL(ServiceURL serviceURL)
+    private boolean removeService(ServiceInfo service)
     {
-        this.serviceURL = serviceURL;
+        servicesLock.lock();
+        try
+        {
+            return services.remove(service);
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
     }
 
-    public Attributes getAttributes()
+    private boolean hasServices()
     {
-        return attributes;
-    }
-
-    public void setAttributes(Attributes attributes)
-    {
-        this.attributes = attributes;
-    }
-
-    public String getLanguage()
-    {
-        return language;
-    }
-
-    public void setLanguage(String language)
-    {
-        this.language = language;
+        servicesLock.lock();
+        try
+        {
+            return !services.isEmpty();
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
     }
 
     protected void doStart() throws Exception
     {
-        if (getServiceURL() == null) throw new IllegalStateException("Could not start ServiceAgent " + this + ", its ServiceURL has not been set");
-
         if (manager == null)
         {
             manager = createServiceAgentManager();
@@ -161,7 +172,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
         scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L, TimeUnit.MILLISECONDS);
 
-        register();
+        registerServices();
     }
 
     protected ServiceAgentManager createServiceAgentManager()
@@ -172,7 +183,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     protected void doStop() throws Exception
     {
         // RFC 2608, 10.6, requires services to deregister when no longer available
-        deregister();
+        deregisterServices();
 
         if (scheduledExecutorService != null)
         {
@@ -184,77 +195,129 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         manager.stop();
     }
 
-    public void register() throws IOException, ServiceLocationException
+    private void registerServices() throws IOException, ServiceLocationException
     {
-        List das = findDirectoryAgents(getScopes());
-
-        for (int i = 0; i < das.size(); ++i)
+        servicesLock.lock();
+        try
         {
-            DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
-            register(info);
+            for (Iterator servs = services.iterator(); servs.hasNext();)
+            {
+                ServiceInfo service = (ServiceInfo)servs.next();
+                registerService(service);
+            }
+        }
+        finally
+        {
+            servicesLock.unlock();
         }
     }
 
-    private void register(DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    private void registerServices(DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
-        ServiceURL su = getServiceURL();
+        servicesLock.lock();
+        try
+        {
+            for (Iterator servs = services.iterator(); servs.hasNext();)
+            {
+                ServiceInfo service = (ServiceInfo)servs.next();
+                registerService(service, da);
+            }
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+    }
 
-        ServiceType st = getServiceType();
+    private void registerService(ServiceInfo service) throws IOException, ServiceLocationException
+    {
+        List das = findDirectoryAgents(service.getScopes());
+        for (int i = 0; i < das.size(); ++i)
+        {
+            DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
+            registerService(service, directory);
+        }
+    }
+
+    private void registerService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    {
+        ServiceURL su = service.getServiceURL();
+
+        ServiceType st = service.getServiceType();
         if (st == null) st = su.getServiceType();
 
+        String[] sc = service.getScopes();
+        if (sc == null) sc = getScopes();
+
         InetAddress address = InetAddress.getByName(da.getHost());
-        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, getScopes(), getAttributes(), getLanguage(), true);
+        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, sc, service.getAttributes(), service.getLanguage(), true);
         SrvAck srvAck = manager.unicastSrvReg(address, sa);
         int errorCode = srvAck.getErrorCode();
-        if (errorCode != 0) throw new ServiceLocationException("Could not register service " + serviceURL + " to DirectoryAgent " + address, errorCode);
-        if (logger.isLoggable(Level.FINE)) logger.fine("Registered service " + serviceURL + " to DirectoryAgent " + address);
+        if (errorCode != 0)
+            throw new ServiceLocationException("Could not register service " + su + " to DirectoryAgent " + address, errorCode);
+        if (logger.isLoggable(Level.FINE)) logger.fine("Registered service " + su + " to DirectoryAgent " + address);
 
         long renewalPeriod = calculateRenewalPeriod(sa);
         long renewalDelay = calculateRenewalDelay(sa);
-        if (renewalPeriod > 0) scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
+        if (renewalPeriod > 0)
+            scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
     }
 
-    private long calculateRenewalPeriod(ServiceAgentInfo info)
+    private long calculateRenewalPeriod(ServiceAgentInfo sa)
     {
-        long lifetime = info.getServiceURL().getLifetime();
+        long lifetime = sa.getServiceURL().getLifetime();
         if (lifetime < ServiceURL.LIFETIME_NONE) lifetime = ServiceURL.LIFETIME_MAXIMUM;
         // Convert from seconds to milliseconds
         lifetime *= 1000L;
         return lifetime;
     }
 
-    private long calculateRenewalDelay(ServiceAgentInfo info)
+    private long calculateRenewalDelay(ServiceAgentInfo sa)
     {
-        long lifetime = calculateRenewalPeriod(info);
-        // Renew when 80% of the lifetime is passed
-        return lifetime - (lifetime >> 3);
+        long lifetime = calculateRenewalPeriod(sa);
+        // Renew when 75% of the lifetime is elapsed
+        return lifetime - (lifetime >> 2);
     }
 
-    public void deregister() throws IOException, ServiceLocationException
+    private void deregisterServices() throws IOException, ServiceLocationException
     {
-        List das = findDirectoryAgents(getScopes());
-
-        for (int i = 0; i < das.size(); ++i)
+        servicesLock.lock();
+        for (Iterator servs = services.iterator(); servs.hasNext();)
         {
-            DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
-            deregister(info);
+            ServiceInfo service = (ServiceInfo)servs.next();
+            deregisterService(service);
         }
     }
 
-    private void deregister(DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    private void deregisterService(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        ServiceURL su = getServiceURL();
+        List das = findDirectoryAgents(service.getScopes());
+        for (int i = 0; i < das.size(); ++i)
+        {
+            DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
+            deregisterService(service, directory);
+        }
+    }
 
-        ServiceType st = getServiceType();
+    private void deregisterService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    {
+        ServiceURL su = service.getServiceURL();
+
+        ServiceType st = service.getServiceType();
         if (st == null) st = su.getServiceType();
 
+        String[] sc = service.getScopes();
+        if (sc == null) sc = getScopes();
+
         InetAddress address = InetAddress.getByName(da.getHost());
-        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, getScopes(), null, null, true);
+        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, sc, null, null, true);
 
         SrvAck srvAck = manager.unicastSrvDeReg(address, sa);
         int errorCode = srvAck.getErrorCode();
-        if (errorCode != 0) throw new ServiceLocationException("Could not deregister service " + serviceURL + " from DirectoryAgent " + address, errorCode);
-        if (logger.isLoggable(Level.FINE)) logger.fine("Deregistered service " + serviceURL + " from DirectoryAgent " + address);
+        if (errorCode != 0)
+            throw new ServiceLocationException("Could not deregister service " + su + " from DirectoryAgent " + address, errorCode);
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("Deregistered service " + su + " from DirectoryAgent " + address);
     }
 
     protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
@@ -291,7 +354,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     protected List discoverDirectoryAgents(String[] scopes) throws IOException
     {
         List result = new ArrayList();
-        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, -1);
+        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, null, -1);
         for (int i = 0; i < daAdverts.length; ++i)
         {
             DAAdvert daAdvert = daAdverts[i];
@@ -312,28 +375,31 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             return;
         }
 
-        DirectoryAgentInfo info = DirectoryAgentInfo.from(message);
+        DirectoryAgentInfo da = DirectoryAgentInfo.from(message);
         if (message.getBootTime() == 0L)
         {
-            uncacheDirectoryAgent(info);
+            // DA is shutting down
+            uncacheDirectoryAgent(da);
         }
         else
         {
-            boolean isNew = cacheDirectoryAgent(info);
+            boolean isNew = cacheDirectoryAgent(da);
             if (isNew)
             {
                 try
                 {
                     // TODO: RFC 2608, 12.2.2 requires to wait some time before registering
-                    register(info);
+                    registerServices(da);
                 }
                 catch (IOException x)
                 {
-                    if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "ServiceAgent " + this + " dropping message " + message + ": could not register service to DA " + info, x);
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "ServiceAgent " + this + " dropping message " + message + ": could not register service to DA " + da, x);
                 }
                 catch (ServiceLocationException x)
                 {
-                    if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "ServiceAgent " + this + " dropping message " + message + ": could not register service to DA " + info, x);
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "ServiceAgent " + this + " dropping message " + message + ": could not register service to DA " + da, x);
                 }
             }
         }
@@ -389,18 +455,20 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      */
     private class RegistrationRenewal implements Runnable
     {
-        private final DirectoryAgentInfo da;
+        private final ServiceInfo service;
+        private final DirectoryAgentInfo directory;
 
-        public RegistrationRenewal(DirectoryAgentInfo da)
+        public RegistrationRenewal(ServiceInfo service, DirectoryAgentInfo directory)
         {
-            this.da = da;
+            this.service = service;
+            this.directory = directory;
         }
 
         public void run()
         {
             try
             {
-                register(da);
+                registerService(service, directory);
             }
             catch (Exception x)
             {

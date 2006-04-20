@@ -20,6 +20,7 @@ import java.util.Locale;
 
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.sa.ServiceAgent;
+import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.api.sa.StandardServiceAgent;
 import org.livetribe.slp.api.ua.StandardUserAgent;
 import org.livetribe.slp.api.ua.UserAgent;
@@ -61,8 +62,8 @@ public class OpenSLPInteroperability
         System.out.println("Service Agent: discovering DA and registering service " + serviceURL);
         ServiceAgent sa = new StandardServiceAgent();
         sa.setConfiguration(configuration);
-        sa.setServiceURL(serviceURL);
-        sa.setLanguage(Locale.ITALY.getLanguage());
+        ServiceInfo service = new ServiceInfo(null, serviceURL, null, null, Locale.ITALY.getLanguage());
+        sa.register(service);
         sa.start();
         System.out.println("Service Agent: registered service " + serviceURL);
 
@@ -77,7 +78,7 @@ public class OpenSLPInteroperability
             {
                 ServiceType serviceType = serviceURL.getServiceType();
                 System.out.println("User Agent: finding service of type " + serviceType);
-                List serviceURLs = ua.findServices(serviceType, new String[]{"default"}, null);
+                List serviceURLs = ua.findServices(serviceType, new String[]{"default"}, null, null);
                 if (serviceURLs.isEmpty()) throw new AssertionError("Expected at least one service registered");
 
                 System.out.println("User Agent: found services " + serviceURLs);
