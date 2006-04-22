@@ -29,40 +29,52 @@ public class AttributesTest extends SLPTestCase
 
         String attributeList = "(a=1,2),foo,(b=1),(separator=\\2c)";
         attributes = new Attributes(attributeList);
-        assertTrue(Arrays.equals(new String[]{"1", "2"}, attributes.getValues("a")));
-        assertEquals("foo", attributes.getValue("foo"));
-        assertEquals("1", attributes.getValue("b"));
+        assertTrue(Arrays.equals(new Object[]{new Long(1), new Long(2)}, attributes.getValues("a")));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
+        assertEquals(new Long(1), attributes.getValue("b"));
         assertEquals(",", attributes.getValue("separator"));
 
         attributeList = "bar,(a=1,2),foo,(b=1),(separator=\\2c)";
         attributes = new Attributes(attributeList);
-        assertEquals("bar", attributes.getValue("bar"));
-        assertTrue(Arrays.equals(new String[]{"1", "2"}, attributes.getValues("a")));
-        assertEquals("foo", attributes.getValue("foo"));
-        assertEquals("1", attributes.getValue("b"));
+        assertTrue(attributes.isTagPresent("bar"));
+        assertEquals(null, attributes.getValue("bar"));
+        assertTrue(Arrays.equals(new Object[]{new Long(1), new Long(2)}, attributes.getValues("a")));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
+        assertEquals(new Long(1), attributes.getValue("b"));
         assertEquals(",", attributes.getValue("separator"));
 
         attributeList = "foo, bar";
         attributes = new Attributes(attributeList);
-        assertEquals("bar", attributes.getValue("bar"));
-        assertEquals("foo", attributes.getValue("foo"));
+        assertTrue(attributes.isTagPresent("bar"));
+        assertEquals(null, attributes.getValue("bar"));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
 
         attributeList = "foo, bar, ";
         attributes = new Attributes(attributeList);
-        assertEquals("bar", attributes.getValue("bar"));
-        assertEquals("foo", attributes.getValue("foo"));
+        assertTrue(attributes.isTagPresent("bar"));
+        assertEquals(null, attributes.getValue("bar"));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
 
         attributeList = "foo, (a =1 ), bar, (b = true ) ";
         attributes = new Attributes(attributeList);
-        assertEquals("foo", attributes.getValue("foo"));
-        assertEquals("1", attributes.getValue("a"));
-        assertEquals("bar", attributes.getValue("bar"));
-        assertEquals("true", attributes.getValue("b"));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
+        assertEquals(new Long(1), attributes.getValue("a"));
+        assertTrue(attributes.isTagPresent("bar"));
+        assertEquals(null, attributes.getValue("bar"));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
+        assertEquals(Boolean.TRUE, attributes.getValue("b"));
 
         attributeList = "foo, (a =bar ,baz ), (b = \\FF\\00 ) ";
         attributes = new Attributes(attributeList);
-        assertEquals("foo", attributes.getValue("foo"));
-        assertTrue(Arrays.equals(new String[]{"bar", "baz"}, attributes.getValues("a")));
+        assertTrue(attributes.isTagPresent("foo"));
+        assertEquals(null, attributes.getValue("foo"));
+        assertTrue(Arrays.equals(new Object[]{"bar", "baz"}, attributes.getValues("a")));
         assertEquals("\\FF\\00", attributes.getValue("b"));
     }
 

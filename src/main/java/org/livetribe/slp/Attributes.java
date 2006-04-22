@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
  * SLP attributes are defined in RFC 2608, 5.0.
@@ -51,41 +54,54 @@ public class Attributes
 
     public Attributes(String attributeList) throws ServiceLocationException
     {
-        parse(attributeList, attributes);
+        parse(attributeList);
     }
 
     public void put(String tag)
     {
-        attributes.put(tag, tag);
+        attributes.put(tag, new Entry(null, Entry.PRESENCE));
     }
 
     public void put(String tag, String value)
     {
-        attributes.put(tag, value);
+        attributes.put(tag, entryFromString(value));
     }
 
     public void put(String tag, String[] values)
     {
-        String[] copies = new String[values.length];
-        System.arraycopy(values, 0, copies, 0, values.length);
-        attributes.put(tag, copies);
+        attributes.put(tag, entryFromStringArray(values));
     }
 
-    public String getValue(String tag)
+    public Entry getEntry(String tag)
     {
-        Object result = attributes.get(tag);
-        if (result instanceof String[]) return ((String[])result)[0];
-        return (String)result;
+        return (Entry)attributes.get(tag);
     }
 
-    public String[] getValues(String tag)
+    public Object getValue(String tag)
     {
-        Object result = attributes.get(tag);
-        if (result instanceof String[]) return (String[])result;
-        return new String[]{getValue(tag)};
+        Entry entry = getEntry(tag);
+        if (entry == null) return null;
+        return entry.getValue();
     }
 
-    private void parse(String attributeList, Map result) throws ServiceLocationException
+    public Object[] getValues(String tag)
+    {
+        Entry entry = getEntry(tag);
+        if (entry == null) return null;
+        return entry.getValues();
+    }
+
+    public boolean isEmpty()
+    {
+        return attributes.isEmpty();
+    }
+
+    public boolean isTagPresent(String tag)
+    {
+        return attributes.containsKey(tag);
+    }
+
+    private void parse(String attributeList) throws ServiceLocationException
     {
         if (attributeList == null) return;
 
@@ -107,7 +123,7 @@ public class Attributes
                     throw new ServiceLocationException("Missing ')' in attribute list " + attributeList, ServiceLocationException.PARSE_ERROR);
                 nonPairs.append(attributeList.substring(start, open));
                 String pair = attributeList.substring(open, close + 1);
-                parseAttribute(pair, result, attributeList);
+                parseAttribute(pair, attributeList);
                 start = close + 1;
             }
         }
@@ -117,11 +133,11 @@ public class Attributes
         for (int i = 0; i < attributes.length; ++i)
         {
             String attribute = attributes[i].trim();
-            if (attribute.length() > 0) parseAttribute(attribute, result, attributeList);
+            if (attribute.length() > 0) parseAttribute(attribute, attributeList);
         }
     }
 
-    private void parseAttribute(String attribute, Map attributes, String attributeList) throws ServiceLocationException
+    private void parseAttribute(String attribute, String attributeList) throws ServiceLocationException
     {
         if (attribute == null) return;
         attribute = attribute.trim();
@@ -147,19 +163,19 @@ public class Attributes
                 if (values.length > 0)
                 {
                     for (int i = 0; i < values.length; ++i) values[i] = checkAndUnescapeValue(values[i]);
-                    attributes.put(unescapedTag, values);
+                    put(unescapedTag, values);
                 }
             }
             else
             {
                 value = checkAndUnescapeValue(value);
-                attributes.put(unescapedTag, value);
+                put(unescapedTag, value);
             }
         }
         else
         {
             attribute = checkAndUnescapeTag(attribute);
-            attributes.put(attribute, attribute);
+            put(attribute);
         }
     }
 
@@ -189,7 +205,7 @@ public class Attributes
         escaped = escaped.trim();
 
         // Special case: the value is opaque
-        if (escaped.startsWith("\\FF")) return escaped;
+        if (isOpaque(escaped)) return escaped;
 
         // Check that the escaped value does not contain reserved characters
         checkEscaped(escaped);
@@ -222,7 +238,7 @@ public class Attributes
         if (value == null) return null;
 
         // Do not escape already escaped sequence of bytes
-        if (value.startsWith("\\FF")) return value;
+        if (isOpaque(value)) return value;
 
         StringBuffer result = new StringBuffer();
         for (int i = 0; i < value.length(); ++i)
@@ -292,28 +308,28 @@ public class Attributes
         StringBuffer result = new StringBuffer();
         for (Iterator entries = orderedAttributes.entrySet().iterator(); entries.hasNext();)
         {
-            Map.Entry entry = (Map.Entry)entries.next();
-            String tag = (String)entry.getKey();
-            Object value = entry.getValue();
-            if (tag == value)
+            Map.Entry mapEntry = (Map.Entry)entries.next();
+            String tag = (String)mapEntry.getKey();
+            Entry entry = (Entry)mapEntry.getValue();
+            if (entry.isPresenceType())
             {
                 result.append(escape(tag));
             }
             else
             {
                 result.append("(").append(escape(tag)).append("=");
-                if (value instanceof String[])
+                if (entry.valueIsArray)
                 {
-                    String[] values = (String[])value;
+                    Object[] values = entry.getValues();
                     for (int i = 0; i < values.length; ++i)
                     {
                         if (i > 0) result.append(",");
-                        result.append(escape(values[i]));
+                        result.append(escape(String.valueOf(values[i])));
                     }
                 }
                 else
                 {
-                    result.append(escape((String)value));
+                    result.append(escape(String.valueOf(entry.getValue())));
                 }
                 result.append(")");
             }
@@ -327,8 +343,155 @@ public class Attributes
         return asString();
     }
 
-    public boolean isEmpty()
+    private Entry entryFromString(String value)
     {
-        return attributes.isEmpty();
+        // Is it opaque ?
+        if (isOpaque(value)) return new Entry(value, Entry.OPAQUE);
+
+        // Is it a number ?
+        if (isNaturalNumber(value)) return new Entry(Long.valueOf(value), Entry.LONG);
+
+        // Is it a boolean ?
+        if (isBoolean(value)) return new Entry(Boolean.valueOf(value), Entry.BOOLEAN);
+
+        // Then it's a string
+        return new Entry(value, Entry.STRING);
+    }
+
+    private boolean isBoolean(String value)
+    {
+        return "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
+    }
+
+    private boolean isNaturalNumber(String value)
+    {
+        return Pattern.matches("[0-9]+", value);
+    }
+
+    private boolean isOpaque(String value)
+    {
+        return value.startsWith("\\FF");
+    }
+
+    private Entry entryFromStringArray(String[] values)
+    {
+        Entry[] entries = new Entry[values.length];
+        boolean homogeneus = true;
+        for (int i = 0; i < values.length; ++i)
+        {
+            entries[i] = entryFromString(values[i]);
+            homogeneus &= entries[0].getType() == entries[i].getType();
+        }
+
+        if (homogeneus)
+        {
+            Object[] entryValues = new Object[entries.length];
+            for (int i = 0; i < entries.length; ++i)
+            {
+                Entry entry = entries[i];
+                entryValues[i] = entry.getValue();
+            }
+            return new Entry(entryValues, entries[0].getType());
+        }
+        else
+        {
+            Object[] entryValues = new Object[values.length];
+            System.arraycopy(values, 0, entryValues, 0, values.length);
+            return new Entry(entryValues, Entry.STRING);
+        }
+    }
+
+    public static class Entry
+    {
+        private static final int STRING = 1;
+        private static final int LONG = 2;
+        private static final int BOOLEAN = 3;
+        private static final int OPAQUE = 4;
+        private static final int PRESENCE = 5;
+
+        private final Object value;
+        private final int type;
+        private final boolean valueIsArray;
+
+        private Entry(Object value, int type)
+        {
+            this.value = value;
+            this.type = type;
+            this.valueIsArray = value instanceof Object[];
+        }
+
+        private int getType()
+        {
+            return type;
+        }
+
+        public boolean isStringType()
+        {
+            return type == STRING;
+        }
+
+        public boolean isLongType()
+        {
+            return type == LONG;
+        }
+
+        public boolean isBooleanType()
+        {
+            return type == BOOLEAN;
+        }
+
+        public boolean isOpaqueType()
+        {
+            return type == OPAQUE;
+        }
+
+        public boolean isPresenceType()
+        {
+            return type == PRESENCE;
+        }
+
+        public Object getValue()
+        {
+            if (valueIsArray) return ((Object[])value)[0];
+            return value;
+        }
+
+        public Object[] getValues()
+        {
+            if (valueIsArray) return (Object[])value;
+            return new Object[]{value};
+        }
+
+        public boolean equals(Object obj)
+        {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            final Entry that = (Entry)obj;
+            if (type != that.type) return false;
+            if (valueIsArray != that.valueIsArray) return false;
+            if (valueIsArray)
+            {
+                return Arrays.equals((Object[])value, (Object[])that.value);
+            }
+            else
+            {
+                return value == null ? that.value == null : value.equals(that.value);
+            }
+        }
+
+        public int hashCode()
+        {
+            int result = type;
+            result = 29 * result + (valueIsArray ? 1 : 0);
+            if (valueIsArray)
+            {
+                result = 29 * result + Arrays.hashCode((Object[])value);
+            }
+            else
+            {
+                result = 29 * result + (value == null ? 0 : value.hashCode());
+            }
+            return result;
+        }
     }
 }
