@@ -74,7 +74,7 @@ public class URLEntry extends BytesBlock
 
     public byte[] serialize() throws ServiceLocationException
     {
-        byte[] urlBytes = stringToBytes(getURL());
+        byte[] urlBytes = writeString(getURL());
         int urlBytesLength = urlBytes.length;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;

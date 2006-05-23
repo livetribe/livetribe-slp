@@ -51,9 +51,9 @@ public class SAAdvert extends Rply
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        byte[] urlBytes = stringToBytes(getURL());
+        byte[] urlBytes = writeString(getURL());
         int urlBytesLength = urlBytes.length;
-        byte[] scopesBytes = stringArrayToBytes(getScopes());
+        byte[] scopesBytes = writeStringArray(getScopes());
         int scopesBytesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;

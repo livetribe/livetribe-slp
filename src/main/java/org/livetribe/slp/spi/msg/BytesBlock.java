@@ -85,40 +85,35 @@ public class BytesBlock
     protected static String readString(byte[] bytes, int offset, int length) throws ServiceLocationException
     {
         if (length == 0) return null;
-        try
-        {
-            return new String(bytes, offset, length, "UTF-8");
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new ServiceLocationException(x, ServiceLocationException.PARSE_ERROR);
-        }
+        String escaped = utf8BytesToString(bytes, offset, length);
+        return unescape(escaped);
+    }
+
+    protected static byte[] writeString(String value) throws ServiceLocationException
+    {
+        if (value == null || value.length() == 0) return EMPTY_BYTES;
+        String escaped = escape(value);
+        return stringToUTF8Bytes(escaped);
     }
 
     protected static String[] readStringArray(byte[] bytes, int offset, int length) throws ServiceLocationException
     {
-        String commaList = readString(bytes, offset, length);
+        String commaList = utf8BytesToString(bytes, offset, length);
         if (commaList == null) return EMPTY_STRINGS;
-        return commaList.split(",", -1);
+        String[] result = commaList.split(",", -1);
+        for (int i = 0; i < result.length; ++i) result[i] = unescape(result[i]);
+        return result;
     }
 
-    protected static byte[] stringToBytes(String value) throws ServiceLocationException
-    {
-        if (value == null || value.length() == 0) return EMPTY_BYTES;
-        return stringToUTF8Bytes(escape(value));
-    }
-
-    protected static byte[] stringArrayToBytes(String[] value) throws ServiceLocationException
+    protected static byte[] writeStringArray(String[] value) throws ServiceLocationException
     {
         if (value == null || value.length == 0) return EMPTY_BYTES;
-
         StringBuffer buffer = new StringBuffer();
         for (int i = 0; i < value.length; ++i)
         {
             if (i > 0) buffer.append(",");
             buffer.append(escape(value[i]));
         }
-
         return stringToUTF8Bytes(buffer.toString());
     }
 
@@ -127,6 +122,19 @@ public class BytesBlock
         try
         {
             return value.getBytes("UTF-8");
+        }
+        catch (UnsupportedEncodingException x)
+        {
+            throw new ServiceLocationException(x, ServiceLocationException.PARSE_ERROR);
+        }
+    }
+
+    protected static String utf8BytesToString(byte[] bytes, int offset, int length) throws ServiceLocationException
+    {
+        if (length == 0) return null;
+        try
+        {
+            return new String(bytes, offset, length, "UTF-8");
         }
         catch (UnsupportedEncodingException x)
         {

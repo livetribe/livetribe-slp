@@ -18,6 +18,7 @@ package org.livetribe.slp.api.sa;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,6 +34,7 @@ import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
@@ -43,6 +45,7 @@ import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
@@ -54,14 +57,20 @@ import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
  */
 public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 {
+    private Attributes attributes;
+    private String language;
     private int discoveryStartWaitBound;
     private long discoveryPeriod;
+    private InetAddress address;
+    private InetAddress localhost;
     private ServiceAgentManager manager;
+    private ScheduledExecutorService scheduledExecutorService;
+    private ServiceAgentInfo serviceAgent;
+    private MessageListener multicastListener;
+    private MessageListener unicastListener;
     private final Set services = new HashSet();
     private final Lock servicesLock = new ReentrantLock();
-    private MessageListener multicastListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
-    private ScheduledExecutorService scheduledExecutorService;
 
     public void setServiceAgentManager(ServiceAgentManager manager)
     {
@@ -81,9 +90,24 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         this.scheduledExecutorService = scheduledExecutorService;
     }
 
-    public int getDiscoveryStartWaitBound()
+    public void setAttributes(Attributes attributes)
     {
-        return discoveryStartWaitBound;
+        this.attributes = attributes;
+    }
+
+    public Attributes getAttributes()
+    {
+        return attributes;
+    }
+
+    public void setLanguage(String language)
+    {
+        this.language = language;
+    }
+
+    public String getLanguage()
+    {
+        return language;
     }
 
     /**
@@ -95,14 +119,29 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         this.discoveryStartWaitBound = discoveryStartWaitBound;
     }
 
-    public long getDiscoveryPeriod()
+    public int getDiscoveryStartWaitBound()
     {
-        return discoveryPeriod;
+        return discoveryStartWaitBound;
     }
 
     public void setDiscoveryPeriod(long discoveryPeriod)
     {
         this.discoveryPeriod = discoveryPeriod;
+    }
+
+    public long getDiscoveryPeriod()
+    {
+        return discoveryPeriod;
+    }
+
+    public void setInetAddress(InetAddress address)
+    {
+        this.address = address;
+    }
+
+    public InetAddress getInetAddress()
+    {
+        return address;
     }
 
     public void register(ServiceInfo service) throws IOException, ServiceLocationException
@@ -143,21 +182,19 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    private boolean hasServices()
-    {
-        servicesLock.lock();
-        try
-        {
-            return !services.isEmpty();
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
-    }
-
     protected void doStart() throws Exception
     {
+        InetAddress agentAddr = getInetAddress();
+        if (agentAddr == null) agentAddr = InetAddress.getLocalHost();
+        if (agentAddr.isLoopbackAddress())
+        {
+            if (logger.isLoggable(Level.WARNING))
+                logger.warning("ServiceAgent " + this + " starting on loopback address; this is normally wrong, check your hosts configuration");
+        }
+        localhost = agentAddr;
+
+        serviceAgent = new ServiceAgentInfo(getAttributes(), getLanguage(), getScopes(), "service:service-agent://" + localhost);
+
         if (manager == null)
         {
             manager = createServiceAgentManager();
@@ -166,7 +203,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         manager.start();
 
         multicastListener = new MulticastListener();
+        unicastListener = new UnicastListener();
         manager.addMessageListener(multicastListener, true);
+        manager.addMessageListener(unicastListener, false);
 
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
@@ -191,6 +230,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             scheduledExecutorService = null;
         }
 
+        manager.removeMessageListener(unicastListener, false);
         manager.removeMessageListener(multicastListener, true);
         manager.stop();
     }
@@ -200,9 +240,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         servicesLock.lock();
         try
         {
-            for (Iterator servs = services.iterator(); servs.hasNext();)
+            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
             {
-                ServiceInfo service = (ServiceInfo)servs.next();
+                ServiceInfo service = (ServiceInfo)serviceInfos.next();
                 registerService(service);
             }
         }
@@ -217,9 +257,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         servicesLock.lock();
         try
         {
-            for (Iterator servs = services.iterator(); servs.hasNext();)
+            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
             {
-                ServiceInfo service = (ServiceInfo)servs.next();
+                ServiceInfo service = (ServiceInfo)serviceInfos.next();
                 registerService(service, da);
             }
         }
@@ -241,40 +281,31 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private void registerService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
-        ServiceURL su = service.getServiceURL();
-
-        ServiceType st = service.getServiceType();
-        if (st == null) st = su.getServiceType();
-
-        String[] sc = service.getScopes();
-        if (sc == null) sc = getScopes();
-
         InetAddress address = InetAddress.getByName(da.getHost());
-        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, sc, service.getAttributes(), service.getLanguage(), true);
-        SrvAck srvAck = manager.unicastSrvReg(address, sa);
+        SrvAck srvAck = manager.unicastSrvReg(address, service, serviceAgent, true);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != 0)
-            throw new ServiceLocationException("Could not register service " + su + " to DirectoryAgent " + address, errorCode);
-        if (logger.isLoggable(Level.FINE)) logger.fine("Registered service " + su + " to DirectoryAgent " + address);
+            throw new ServiceLocationException("Could not register service " + service.getServiceURL() + " to DirectoryAgent " + address, errorCode);
+        if (logger.isLoggable(Level.FINE)) logger.fine("Registered service " + service.getServiceURL() + " to DirectoryAgent " + address);
 
-        long renewalPeriod = calculateRenewalPeriod(sa);
-        long renewalDelay = calculateRenewalDelay(sa);
+        long renewalPeriod = calculateRenewalPeriod(service);
+        long renewalDelay = calculateRenewalDelay(service);
         if (renewalPeriod > 0)
             scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
     }
 
-    private long calculateRenewalPeriod(ServiceAgentInfo sa)
+    private long calculateRenewalPeriod(ServiceInfo service)
     {
-        long lifetime = sa.getServiceURL().getLifetime();
+        long lifetime = service.getServiceURL().getLifetime();
         if (lifetime < ServiceURL.LIFETIME_NONE) lifetime = ServiceURL.LIFETIME_MAXIMUM;
         // Convert from seconds to milliseconds
         lifetime *= 1000L;
         return lifetime;
     }
 
-    private long calculateRenewalDelay(ServiceAgentInfo sa)
+    private long calculateRenewalDelay(ServiceInfo service)
     {
-        long lifetime = calculateRenewalPeriod(sa);
+        long lifetime = calculateRenewalPeriod(service);
         // Renew when 75% of the lifetime is elapsed
         return lifetime - (lifetime >> 2);
     }
@@ -282,10 +313,17 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private void deregisterServices() throws IOException, ServiceLocationException
     {
         servicesLock.lock();
-        for (Iterator servs = services.iterator(); servs.hasNext();)
+        try
         {
-            ServiceInfo service = (ServiceInfo)servs.next();
-            deregisterService(service);
+            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
+            {
+                ServiceInfo service = (ServiceInfo)serviceInfos.next();
+                deregisterService(service);
+            }
+        }
+        finally
+        {
+            servicesLock.unlock();
         }
     }
 
@@ -301,23 +339,13 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private void deregisterService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
-        ServiceURL su = service.getServiceURL();
-
-        ServiceType st = service.getServiceType();
-        if (st == null) st = su.getServiceType();
-
-        String[] sc = service.getScopes();
-        if (sc == null) sc = getScopes();
-
         InetAddress address = InetAddress.getByName(da.getHost());
-        ServiceAgentInfo sa = new ServiceAgentInfo(st, su, sc, null, null, true);
-
-        SrvAck srvAck = manager.unicastSrvDeReg(address, sa);
+        SrvAck srvAck = manager.unicastSrvDeReg(address, service, serviceAgent);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != 0)
-            throw new ServiceLocationException("Could not deregister service " + su + " from DirectoryAgent " + address, errorCode);
+            throw new ServiceLocationException("Could not deregister service " + service.getServiceURL() + " from DirectoryAgent " + address, errorCode);
         if (logger.isLoggable(Level.FINE))
-            logger.fine("Deregistered service " + su + " from DirectoryAgent " + address);
+            logger.fine("Deregistered service " + service.getServiceURL() + " from DirectoryAgent " + address);
     }
 
     protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
@@ -364,6 +392,48 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         return result;
     }
 
+    protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address)
+    {
+        ServiceType serviceType = message.getServiceType();
+        if (serviceType.isAbstractType() || !"service-agent".equals(serviceType.getPrincipleTypeName()))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": expected service type 'service-agent', got " + serviceType);
+            return;
+        }
+
+        List scopesList = Arrays.asList(getScopes());
+        List messageScopes = Arrays.asList(message.getScopes());
+        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopes))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + scopesList + " and message scopes " + messageScopes);
+            return;
+        }
+
+        Set prevResponders = message.getPreviousResponders();
+        String responder = localhost.getHostAddress();
+        if (prevResponders.contains(responder))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": already contains responder " + responder);
+            return;
+        }
+
+        // Replies must have the same language and XID as the request (RFC 2608, 8.0)
+        try
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + address);
+            manager.unicastSAAdvert(address, getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+        }
+        catch (IOException x)
+        {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "ServiceAgent " + this + " cannot send reply to " + address, x);
+        }
+    }
+
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
         List scopesList = Arrays.asList(getScopes());
@@ -405,11 +475,72 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
+    protected void handleUnicastSrvRqst(SrvRqst message, Socket socket)
+    {
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("ServiceAgent " + this + " queried for services of type " + message.getServiceType());
+
+        List matchingServices = matchServices(message.getServiceType(), message.getFilter(), message.getScopes(), message.getLanguage());
+        ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
+
+        try
+        {
+            manager.unicastSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
+        }
+        catch (IOException x)
+        {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
+        }
+    }
+
+    private List matchServices(ServiceType serviceType, String filter, String[] scopes, String language)
+    {
+        servicesLock.lock();
+        try
+        {
+            List result = new ArrayList();
+            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
+            {
+                ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.next();
+                ServiceType registeredServiceType = serviceInfo.getServiceType();
+                if (registeredServiceType == null) registeredServiceType = serviceInfo.getServiceURL().getServiceType();
+                if (registeredServiceType.matches(serviceType))
+                {
+                    // TODO: match the other parameters
+/*
+                    if (filter != null)
+                    {
+                        Attributes registeredAttributes = serviceInfo.getAttributes();
+                        if (registeredAttributes != null)
+                        {
+                            Attributes attributes = new Attributes(filter);
+                            if (registeredAttributes.match(attributes))
+                            {
+
+                            }
+                        }
+                    }
+*/
+                    result.add(serviceInfo.getServiceURL());
+                }
+            }
+            return result;
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+    }
+
     /**
      * ServiceAgents listen for multicast messages that may arrive.
      * They are interested in:
      * <ul>
-     * <li>DAAdverts, from DAs that boot or shutdown</li>
+     * <li>SrvRqst, from UAs that want to discover ServiceURLs in absence of DAs; the reply is a SAAdvert</li>
+     * <li>DAAdverts, from DAs that boot or shutdown; no reply, just update of internal caches</li>
      * </ul>
      */
     private class MulticastListener implements MessageListener
@@ -432,6 +563,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
                 switch (message.getMessageType())
                 {
+                    case  Message.SRV_RQST_TYPE:
+                        handleMulticastSrvRqst((SrvRqst)message, address);
+                        break;
                     case Message.DA_ADVERT_TYPE:
                         handleMulticastDAAdvert((DAAdvert)message, address);
                         break;
@@ -445,6 +579,49 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "ServiceAgent " + this + " received bad multicast message from: " + address + ", ignoring", x);
+            }
+        }
+    }
+
+    /**
+     * ServiceAgents listen for unicast messages from UAs.
+     * They are interested in:
+     * <ul>
+     * <li>SrvRqst, from UAs that want find ServiceURLs; the reply is a SrvRply</li>
+     * </ul>
+     */
+    private class UnicastListener implements MessageListener
+    {
+        public void handle(MessageEvent event)
+        {
+            try
+            {
+                Message message = Message.deserialize(event.getMessageBytes());
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("ServiceAgent unicast message listener received message " + message);
+
+                if (message.isMulticast())
+                {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("ServiceAgent " + this + " dropping message " + message + ": expected multicast flag unset");
+                    return;
+                }
+
+                switch (message.getMessageType())
+                {
+                    case Message.SRV_RQST_TYPE:
+                        handleUnicastSrvRqst((SrvRqst)message, (Socket)event.getSource());
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("ServiceAgent " + this + " dropping unicast message " + message + ": not handled by ServiceAgents");
+                        break;
+                }
+            }
+            catch (ServiceLocationException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "ServiceAgent " + this + " received bad unicast message from: " + event.getSocketAddress() + ", ignoring", x);
             }
         }
     }

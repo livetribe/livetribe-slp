@@ -17,24 +17,46 @@ package org.livetribe.slp.spi.sa;
 
 import java.util.List;
 
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.Attributes;
-import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.spi.msg.SAAdvert;
 
 /**
  * @version $Rev$ $Date$
  */
 public class ServiceAgentInfo
 {
-    private final ServiceType serviceType;
-    private final ServiceURL serviceURL;
-    private final List scopes;
     private final Attributes attributes;
+    private final List scopes;
     private final String language;
-    private final boolean fresh;
+    private final String url;
+    private final String host;
 
+    public static ServiceAgentInfo from(SAAdvert saAdvert)
+    {
+        return new ServiceAgentInfo(saAdvert.getAttributes(), saAdvert.getLanguage(), saAdvert.getScopes(), saAdvert.getURL());
+    }
+
+    public ServiceAgentInfo(Attributes attributes, String language, String[] scopes, String url)
+    {
+        this.attributes = attributes;
+        this.language = language;
+        this.scopes = scopes == null ? Collections.emptyList() : Arrays.asList(scopes);
+        this.url = url;
+        this.host = parseHost(url);
+    }
+
+    private String parseHost(String url)
+    {
+        String authoritySeparator = "://";
+        int index = url.indexOf(authoritySeparator);
+        if (index < 0) throw new IllegalArgumentException("ServiceAgent URL is malformed: " + url);
+        String host = url.substring(index + authoritySeparator.length());
+        if (host.trim().length() == 0) throw new IllegalArgumentException("ServiceAgent URL is malformed: " + url);
+        return host;
+    }
+/*
     public ServiceAgentInfo(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean fresh)
     {
         this.serviceType = serviceType;
@@ -44,17 +66,7 @@ public class ServiceAgentInfo
         this.language = language;
         this.fresh = fresh;
     }
-
-    public ServiceType getServiceType()
-    {
-        return serviceType;
-    }
-
-    public ServiceURL getServiceURL()
-    {
-        return serviceURL;
-    }
-
+*/
     public String[] getScopes()
     {
         return (String[])scopes.toArray(new String[scopes.size()]);
@@ -70,8 +82,21 @@ public class ServiceAgentInfo
         return language;
     }
 
-    public boolean isFresh()
+    public String getHost()
     {
-        return fresh;
+        return host;
+    }
+
+    public boolean equals(Object obj)
+    {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        final ServiceAgentInfo that = (ServiceAgentInfo)obj;
+        return url.equals(that.url);
+    }
+
+    public int hashCode()
+    {
+        return url.hashCode();
     }
 }

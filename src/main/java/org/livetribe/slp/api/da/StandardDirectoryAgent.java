@@ -554,7 +554,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
      * DirectoryAgents listen for unicast messages from UAs and SAs.
      * They are interested in:
      * <ul>
-     * <li>SrvRqst, from UAs and SAs that wants register a ServiceURL; the reply is a SrvAck</li>
+     * <li>SrvRqst, from UAs and SAs that want to find ServiceURLs; the reply is a SrvRply</li>
      * <li>SrvReg, from SAs that wants to register a ServiceURL; the reply is a SrvAck</li>
      * <li>SrvDeReg, from SAs that wants to unregister a ServiceURL; the reply is a SrvAck</li>
      * </ul>

@@ -36,7 +36,6 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.Rqst;
 import org.livetribe.slp.spi.msg.SAAdvert;
-import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
@@ -279,7 +278,7 @@ public abstract class StandardAgentManager implements AgentManager
         }
     }
 
-    protected SAAdvert[] convergentSASrvRqst(SrvRqst message, long timeframe, boolean repliesOnUnicast) throws IOException
+    protected SAAdvert[] convergentSASrvRqst(SrvRqst message, long timeframe) throws IOException
     {
         ConvergentSAMessageListener converger = new ConvergentSAMessageListener();
         try
@@ -506,12 +505,12 @@ public abstract class StandardAgentManager implements AgentManager
 
                 switch (message.getMessageType())
                 {
-                    case Message.SRV_RPLY_TYPE:
+                    case Message.SA_ADVERT_TYPE:
                         if (logger.isLoggable(Level.FINE)) logger.fine("Convergent SA message listener " + this + " received reply message from " + address + ": " + message);
                         lock();
                         try
                         {
-                            ((SrvRply)message).setResponder(address.getAddress().getHostAddress());
+                            ((SAAdvert)message).setResponder(address.getAddress().getHostAddress());
                             add(message);
                         }
                         finally

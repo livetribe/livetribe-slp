@@ -41,6 +41,7 @@ import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 import org.livetribe.slp.spi.ua.UserAgentManager;
 
@@ -137,17 +138,35 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         List result = new ArrayList();
 
         List das = findDirectoryAgents(scopes);
-
-        for (int i = 0; i < das.size(); ++i)
+        if (!das.isEmpty())
         {
-            DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
-            InetAddress address = InetAddress.getByName(info.getHost());
-            SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter, language);
-            URLEntry[] entries = srvRply.getURLEntries();
-            for (int j = 0; j < entries.length; ++j)
+            for (int i = 0; i < das.size(); ++i)
             {
-                URLEntry entry = entries[j];
-                result.add(entry.toServiceURL());
+                DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
+                InetAddress address = InetAddress.getByName(info.getHost());
+                SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter, language);
+                URLEntry[] entries = srvRply.getURLEntries();
+                for (int j = 0; j < entries.length; ++j)
+                {
+                    URLEntry entry = entries[j];
+                    result.add(entry.toServiceURL());
+                }
+            }
+        }
+        else
+        {
+            List sas = findServiceAgents(scopes);
+            for (int i = 0; i < sas.size(); ++i)
+            {
+                ServiceAgentInfo info = (ServiceAgentInfo)sas.get(i);
+                InetAddress address = InetAddress.getByName(info.getHost());
+                SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter, language);
+                URLEntry[] entries = srvRply.getURLEntries();
+                for (int j = 0; j < entries.length; ++j)
+                {
+                    URLEntry entry = entries[j];
+                    result.add(entry.toServiceURL());
+                }
             }
         }
         return result;
@@ -198,6 +217,25 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return result;
     }
 
+    protected List findServiceAgents(String[] scopes) throws IOException, ServiceLocationException
+    {
+        return discoverServiceAgents(scopes);
+    }
+
+    private List discoverServiceAgents(String[] scopes) throws IOException
+    {
+        List result = new ArrayList();
+        SAAdvert[] saAdverts = manager.multicastSASrvRqst(scopes, null, null, -1);
+        for (int i = 0; i < saAdverts.length; ++i)
+        {
+            SAAdvert saAdvert = saAdverts[i];
+            ServiceAgentInfo info = ServiceAgentInfo.from(saAdvert);
+            result.add(info);
+        }
+        if (logger.isLoggable(Level.FINE)) logger.fine("UserAgent " + this + " discovered SAs: " + result);
+        return result;
+    }
+
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
         List scopesList = Arrays.asList(getScopes());
@@ -224,17 +262,11 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
     }
 
-    protected void handleMulticastSAAdvert(SAAdvert message, InetSocketAddress address)
-    {
-        throw new AssertionError("Not Yet Implemented");
-    }
-
     /**
      * UserAgents listen for multicast messages that may arrive.
      * They are interested in:
      * <ul>
      * <li>DAAdverts, from DAs that boot or shutdown</li>
-     * <li>SAAdverts, from SAs that boot or shutdown</li>
      * </ul>
      */
     private class MulticastListener implements MessageListener
@@ -259,9 +291,6 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
                 {
                     case Message.DA_ADVERT_TYPE:
                         handleMulticastDAAdvert((DAAdvert)message, address);
-                        break;
-                    case Message.SA_ADVERT_TYPE:
-                        handleMulticastSAAdvert((SAAdvert)message, address);
                         break;
                     default:
                         if (logger.isLoggable(Level.FINE))

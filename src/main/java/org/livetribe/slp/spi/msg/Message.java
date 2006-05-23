@@ -125,7 +125,7 @@ public abstract class Message extends BytesBlock
     {
         byte[] body = serializeBody();
 
-        byte[] languageBytes = stringToBytes(getLanguage());
+        byte[] languageBytes = writeString(getLanguage());
         int headerLength = VERSION_BYTES_LENGTH + MESSAGE_TYPE_BYTES_LENGTH + MESSAGE_LENGTH_BYTES_LENGTH + FLAGS_BYTES_LENGTH;
         headerLength += EXTENSION_BYTES_LENGTH + XID_BYTES_LENGTH + LANGUAGE_LENGTH_BYTES_LENGTH + languageBytes.length;
         byte[] result = new byte[headerLength + body.length];

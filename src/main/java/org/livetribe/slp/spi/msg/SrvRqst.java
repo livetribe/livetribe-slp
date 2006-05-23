@@ -62,15 +62,15 @@ public class SrvRqst extends Rqst
     protected byte[] serializeBody() throws ServiceLocationException
     {
         Set responders = getPreviousResponders();
-        byte[] previousRespondersBytes = responders == null ? EMPTY_BYTES : stringArrayToBytes((String[])responders.toArray(new String[responders.size()]));
+        byte[] previousRespondersBytes = responders == null ? EMPTY_BYTES : writeStringArray((String[])responders.toArray(new String[responders.size()]));
         int previousRespondersLength = previousRespondersBytes.length;
-        byte[] serviceTypeBytes = stringToBytes(getServiceType().toString());
+        byte[] serviceTypeBytes = writeString(getServiceType().toString());
         int serviceTypeLength = serviceTypeBytes.length;
-        byte[] scopesBytes = stringArrayToBytes(getScopes());
+        byte[] scopesBytes = writeStringArray(getScopes());
         int scopesLength = scopesBytes.length;
-        byte[] filterBytes = stringToBytes(getFilter());
+        byte[] filterBytes = writeString(getFilter());
         int filterLength = filterBytes.length;
-        byte[] securityParameterIndexBytes = stringToBytes(getSecurityParameterIndex());
+        byte[] securityParameterIndexBytes = writeString(getSecurityParameterIndex());
         int securityParameterIndexLength = securityParameterIndexBytes.length;
 
         int bodyLength = RESPONDERS_LENGTH_BYTES_LENGTH + previousRespondersLength + SERVICE_TYPE_LENGTH_BYTES_LENGTH + serviceTypeLength;

@@ -57,9 +57,9 @@ public class SrvReg extends Message
     {
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
-        byte[] serviceTypeBytes = stringToBytes(getServiceType().toString());
+        byte[] serviceTypeBytes = writeString(getServiceType().toString());
         int serviceTypeLength = serviceTypeBytes.length;
-        byte[] scopesBytes = stringArrayToBytes(getScopes());
+        byte[] scopesBytes = writeStringArray(getScopes());
         int scopesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsLength = attrsBytes.length;

@@ -23,6 +23,7 @@ import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.SLPAPITestCase;
+import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
@@ -282,8 +283,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, Locale.getDefault().getLanguage(), true);
-                SrvAck ack = saManager.unicastSrvReg(localhost, info);
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
+                ServiceAgentInfo info = new ServiceAgentInfo(null, Locale.getDefault().getLanguage(), null, "service:service-agent://127.0.0.1");
+                SrvAck ack = saManager.unicastSrvReg(localhost, service, info, true);
 
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
@@ -351,26 +353,26 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
 
                 String language = Locale.getDefault().getLanguage();
 
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, language, true);
-                SrvAck ack = saManager.unicastSrvReg(localhost, info);
+                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, language, null, "service:service-agent://127.0.0.1");
+
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
+                SrvAck ack = saManager.unicastSrvReg(localhost, service, serviceAgent, true);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
                 // Re-registration with same information must replace service
-                info = new ServiceAgentInfo(null, serviceURL, scopes, null, language, true);
-                ack = saManager.unicastSrvReg(localhost, info);
+                ack = saManager.unicastSrvReg(localhost, service, serviceAgent, true);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
                 // Update with same information must pass
-                info = new ServiceAgentInfo(null, serviceURL, scopes, null, language, false);
-                ack = saManager.unicastSrvReg(localhost, info);
+                ack = saManager.unicastSrvReg(localhost, service, serviceAgent, false);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
                 // Update with different scope must fail
-                info = new ServiceAgentInfo(null, serviceURL, new String[]{"scope"}, null, language, false);
-                ack = saManager.unicastSrvReg(localhost, info);
+                service = new ServiceInfo(serviceURL, new String[]{"scope"}, null, null);
+                ack = saManager.unicastSrvReg(localhost, service, serviceAgent, false);
                 assertNotNull(ack);
                 assertEquals(ServiceLocationException.SCOPE_NOT_SUPPORTED, ack.getErrorCode());
             }
@@ -409,8 +411,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getLanguage(), false);
-                SrvAck ack = saManager.unicastSrvReg(localhost, info);
+                ServiceInfo service = new ServiceInfo(serviceURL, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getLanguage());
+                ServiceAgentInfo info = new ServiceAgentInfo(null, null, null, "service:service-agent://127.0.0.1");
+                SrvAck ack = saManager.unicastSrvReg(localhost, service, info, false);
 
                 assertNotNull(ack);
                 assertEquals(ServiceLocationException.INVALID_UPDATE, ack.getErrorCode());
@@ -453,15 +456,15 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 String[] scopes = new String[]{"scope1", "scope2"};
 
                 String language = Locale.getDefault().getLanguage();
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, language, true);
-                SrvAck ack = saManager.unicastSrvReg(localhost, info);
+                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, null, null, "service:service-agent://127.0.0.1");
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, language);
+                SrvAck ack = saManager.unicastSrvReg(localhost, service, serviceAgent, true);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
 
-                ack = saManager.unicastSrvDeReg(localhost, info);
+                ack = saManager.unicastSrvDeReg(localhost, service, serviceAgent);
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
-
             }
             finally
             {

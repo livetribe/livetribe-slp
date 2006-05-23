@@ -23,6 +23,8 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
+import org.livetribe.slp.api.sa.ServiceInfo;
+import org.livetribe.slp.api.sa.StandardServiceAgent;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.SocketMulticastConnector;
@@ -85,8 +87,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
-                ServiceAgentInfo info = new ServiceAgentInfo(null, serviceURL, scopes, null, Locale.getDefault().getLanguage(), true);
-                SrvAck ack = saManager.unicastSrvReg(localhost, info);
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
+                ServiceAgentInfo info = new ServiceAgentInfo(null, Locale.getDefault().getLanguage(), null, "service:service-agent://127.0.0.1");
+                SrvAck ack = saManager.unicastSrvReg(localhost, service, info, true);
 
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
@@ -105,10 +108,10 @@ public class StandardUserAgentTest extends SLPAPITestCase
 
                     assertNotNull(serviceURLs);
                     assertEquals(1, serviceURLs.size());
-                    ServiceURL service = (ServiceURL)serviceURLs.get(0);
-                    assertNotNull(service);
-                    assertEquals(serviceURL, service);
-                    assertEquals(serviceURL.getLifetime(), service.getLifetime());
+                    ServiceURL foundService = (ServiceURL)serviceURLs.get(0);
+                    assertNotNull(foundService);
+                    assertEquals(serviceURL, foundService);
+                    assertEquals(serviceURL.getLifetime(), foundService.getLifetime());
                 }
                 finally
                 {
@@ -217,6 +220,51 @@ public class StandardUserAgentTest extends SLPAPITestCase
         finally
         {
             da.stop();
+        }
+    }
+
+    public void testSADiscovery() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardServiceAgent sa = new StandardServiceAgent();
+        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+        sa.setServiceAgentManager(saManager);
+        SocketUnicastConnector unicastConnector = new SocketUnicastConnector();
+        unicastConnector.setUnicastListening(true);
+        saManager.setUnicastConnector(unicastConnector);
+        sa.setConfiguration(configuration);
+        ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
+        String language = Locale.ITALY.getLanguage();
+        ServiceInfo service = new ServiceInfo(serviceURL, null, null, language);
+        sa.register(service);
+        sa.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardUserAgent ua = new StandardUserAgent();
+            ua.setConfiguration(configuration);
+            ua.start();
+
+            try
+            {
+                sleep(500);
+
+                List services = ua.findServices(serviceURL.getServiceType(), null, null, language);
+                assertNotNull(services);
+                assertEquals(1, services.size());
+                assertEquals(serviceURL, services.get(0));
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
         }
     }
 }

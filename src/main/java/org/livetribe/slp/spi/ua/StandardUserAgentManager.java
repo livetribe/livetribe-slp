@@ -53,8 +53,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:service-agent"), scopes, filter, language);
         request.setMulticast(true);
-        UnicastConnector unicast = getUnicastConnector();
-        return convergentSASrvRqst(request, timeframe, unicast != null && unicast.isUnicastListening());
+        return convergentSASrvRqst(request, timeframe);
     }
 
     public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException

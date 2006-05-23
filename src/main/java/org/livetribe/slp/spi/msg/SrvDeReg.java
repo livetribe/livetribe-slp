@@ -46,7 +46,7 @@ public class SrvDeReg extends Message
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        byte[] scopesBytes = stringArrayToBytes(getScopes());
+        byte[] scopesBytes = writeStringArray(getScopes());
         int scopesLength = scopesBytes.length;
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;

@@ -39,6 +39,11 @@ public class ServiceURL implements Serializable
     private int port;
     private String path;
 
+    public ServiceURL(String url)
+    {
+        this(url, LIFETIME_DEFAULT);
+    }
+
     public ServiceURL(String url, int lifetime)
     {
         this.url = url;

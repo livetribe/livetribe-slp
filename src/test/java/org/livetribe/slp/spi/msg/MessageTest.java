@@ -80,7 +80,7 @@ public class MessageTest extends SLPSPITestCase
         original = new SrvRply();
         original.setErrorCode(0);
         URLEntry entry1 = new URLEntry();
-        entry1.setURL("url1");
+        entry1.setURL("url1=");
         entry1.setLifetime(123);
         URLEntry entry2 = new URLEntry();
         entry2.setURL("url2");

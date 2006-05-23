@@ -17,10 +17,10 @@ package org.livetribe.slp.spi.da;
 
 import java.util.List;
 
-import org.livetribe.slp.spi.msg.DAAdvert;
-import org.livetribe.slp.Attributes;
-import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.Arrays;
+import edu.emory.mathcs.backport.java.util.Collections;
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.spi.msg.DAAdvert;
 
 /**
  * A POJO that holds information about an SLP DirectoryAgent.
@@ -79,11 +79,6 @@ public class DirectoryAgentInfo
     public String[] getScopes()
     {
         return (String[])scopes.toArray(new String[scopes.size()]);
-    }
-
-    public String getUrl()
-    {
-        return url;
     }
 
     /**

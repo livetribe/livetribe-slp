@@ -71,13 +71,13 @@ public class DAAdvert extends Rply
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        byte[] urlBytes = stringToBytes(getURL());
+        byte[] urlBytes = writeString(getURL());
         int urlBytesLength = urlBytes.length;
-        byte[] scopesBytes = stringArrayToBytes(getScopes());
+        byte[] scopesBytes = writeStringArray(getScopes());
         int scopesBytesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
-        byte[] securityParamsBytes = stringArrayToBytes(getSecurityParameterIndexes());
+        byte[] securityParamsBytes = writeStringArray(getSecurityParameterIndexes());
         int securityParamsBytesLength = securityParamsBytes.length;
         AuthenticationBlock[] blocks = getAuthenticationBlocks();
         int authBlocksCount = blocks == null ? 0 : blocks.length;
