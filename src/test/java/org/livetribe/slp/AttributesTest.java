@@ -105,4 +105,27 @@ public class AttributesTest extends SLPTestCase
 
         assertEquals(original, copy);
     }
+
+    public void testValuesAreHomogeneus() throws Exception
+    {
+        String attributeList = "(a=true,\\FF\\00,string)";
+        try
+        {
+            new Attributes(attributeList);
+            fail();
+        }
+        catch (ServiceLocationException x)
+        {
+        }
+
+        try
+        {
+            Attributes attributes = new Attributes();
+            attributes.put("a", new String[]{"true", "\\FF\\00", "string"});
+            fail();
+        }
+        catch (ServiceLocationException e)
+        {
+        }
+    }
 }

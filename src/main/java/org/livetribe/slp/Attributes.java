@@ -67,7 +67,7 @@ public class Attributes
         attributes.put(tag, entryFromString(value));
     }
 
-    public void put(String tag, String[] values)
+    public void put(String tag, String[] values) throws ServiceLocationException
     {
         attributes.put(tag, entryFromStringArray(values));
     }
@@ -373,17 +373,19 @@ public class Attributes
         return value.startsWith("\\FF");
     }
 
-    private Entry entryFromStringArray(String[] values)
+    private Entry entryFromStringArray(String[] values) throws ServiceLocationException
     {
         Entry[] entries = new Entry[values.length];
-        boolean homogeneus = true;
+        boolean homogeneous = true;
+        boolean opaquePresent = false;
         for (int i = 0; i < values.length; ++i)
         {
             entries[i] = entryFromString(values[i]);
-            homogeneus &= entries[0].getType() == entries[i].getType();
+            homogeneous &= entries[0].getType() == entries[i].getType();
+            if (entries[i].isOpaqueType()) opaquePresent = true;
         }
 
-        if (homogeneus)
+        if (homogeneous)
         {
             Object[] entryValues = new Object[entries.length];
             for (int i = 0; i < entries.length; ++i)
@@ -395,6 +397,9 @@ public class Attributes
         }
         else
         {
+            // It's not homogeneous, and there is one opaque entry: RFC 2608, 5.0 says it's illegal.
+            if (opaquePresent) throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one entry is opaque: " + Arrays.asList(values), ServiceLocationException.PARSE_ERROR);
+
             Object[] entryValues = new Object[values.length];
             System.arraycopy(values, 0, entryValues, 0, values.length);
             return new Entry(entryValues, Entry.STRING);
