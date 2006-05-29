@@ -34,9 +34,9 @@ import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageTooBigException;
-import org.livetribe.slp.spi.net.MulticastConnector;
 import org.livetribe.slp.spi.net.SocketClosedException;
-import org.livetribe.slp.spi.net.UnicastConnector;
+import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -46,8 +46,8 @@ public class StandardAgentManagerTest extends SLPSPITestCase
     public void testMulticastConvergenceNoReplies() throws Exception
     {
         StandardAgentManager agent = new Agent();
-        agent.setMulticastConnector(new MCConnector(0, new long[]{20L}));
-        agent.setUnicastConnector(new UCConnector());
+        agent.setUDPConnector(new MCConnector(0, new long[]{20L}));
+        agent.setTCPConnector(new UCConnector());
         agent.setConfiguration(getDefaultConfiguration());
 
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
@@ -92,8 +92,8 @@ public class StandardAgentManagerTest extends SLPSPITestCase
     public void testMulticastConvergenceOneReply() throws Exception
     {
         StandardAgentManager agent = new Agent();
-        agent.setMulticastConnector(new MCConnector(1, new long[]{20L}));
-        agent.setUnicastConnector(new UCConnector());
+        agent.setUDPConnector(new MCConnector(1, new long[]{20L}));
+        agent.setTCPConnector(new UCConnector());
         agent.setConfiguration(getDefaultConfiguration());
 
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
@@ -140,8 +140,8 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
 
         StandardAgentManager agent = new Agent();
-        agent.setMulticastConnector(new MCConnector(1, new long[]{timeouts[0] + 20L}));
-        agent.setUnicastConnector(new UCConnector());
+        agent.setUDPConnector(new MCConnector(1, new long[]{timeouts[0] + 20L}));
+        agent.setTCPConnector(new UCConnector());
         agent.setConfiguration(getDefaultConfiguration());
 
         agent.setMulticastTimeouts(timeouts);
@@ -185,8 +185,8 @@ public class StandardAgentManagerTest extends SLPSPITestCase
     public void testMulticastConvergenceTwoReplies() throws Exception
     {
         StandardAgentManager agent = new Agent();
-        agent.setMulticastConnector(new MCConnector(2, new long[]{20L, 20L}));
-        agent.setUnicastConnector(new UCConnector());
+        agent.setUDPConnector(new MCConnector(2, new long[]{20L, 20L}));
+        agent.setTCPConnector(new UCConnector());
         agent.setConfiguration(getDefaultConfiguration());
 
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
@@ -233,8 +233,8 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
 
         StandardAgentManager agent = new Agent();
-        agent.setMulticastConnector(new MCConnector(2, new long[]{20L, timeouts[0] + 20L}));
-        agent.setUnicastConnector(new UCConnector());
+        agent.setUDPConnector(new MCConnector(2, new long[]{20L, timeouts[0] + 20L}));
+        agent.setTCPConnector(new UCConnector());
         agent.setConfiguration(getDefaultConfiguration());
 
         agent.setMulticastTimeouts(timeouts);
@@ -286,7 +286,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
     {
     }
 
-    private class MCConnector extends MulticastConnector
+    private class MCConnector extends UDPConnector
     {
         private final AtomicInteger sent;
         private final long[] waitTimes;
@@ -347,7 +347,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         }
     }
 
-    private class UCConnector extends UnicastConnector
+    private class UCConnector extends TCPConnector
     {
         protected Runnable[] createAcceptors() throws IOException
         {
@@ -379,7 +379,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         {
         }
 
-        public void send(MulticastConnector connector, byte[] bytes) throws IOException
+        public void send(UDPConnector connector, byte[] bytes) throws IOException
         {
             connector.multicastSend(getDatagramSocket(), bytes);
         }

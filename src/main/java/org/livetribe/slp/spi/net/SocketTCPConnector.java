@@ -31,13 +31,13 @@ import java.util.logging.Level;
 /**
  * @version $Rev$ $Date$
  */
-public class SocketUnicastConnector extends UnicastConnector
+public class SocketTCPConnector extends TCPConnector
 {
     private ServerSocket[] serverSockets;
 
     protected Runnable[] createAcceptors() throws IOException
     {
-        if (!isUnicastListening()) return null;
+        if (!isTCPListening()) return null;
 
         InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
@@ -72,7 +72,7 @@ public class SocketUnicastConnector extends UnicastConnector
 
     protected void destroyAcceptors() throws IOException
     {
-        if (!isUnicastListening()) return;
+        if (!isTCPListening()) return;
 
         for (int i = 0; i < serverSockets.length; ++i)
         {
@@ -106,7 +106,7 @@ public class SocketUnicastConnector extends UnicastConnector
         int length = (length1 << 16) + (length2 << 8) + length3;
         if (logger.isLoggable(Level.FINEST)) logger.finest("Expecting incoming TCP unicast message of length " + length);
 
-        int maxLength = getMaxUnicastMessageLength();
+        int maxLength = getMaxTCPMessageLength();
         if (length > maxLength) throw new MessageTooBigException("Message length " + length + " is greater than max allowed message length " + maxLength);
 
         byte[] buffer = new byte[32];
@@ -212,7 +212,7 @@ public class SocketUnicastConnector extends UnicastConnector
                 }
             }
 
-            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast acceptor thread exiting for " + serverSocket);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Socket acceptor thread exiting for " + serverSocket);
         }
     }
 
@@ -229,7 +229,7 @@ public class SocketUnicastConnector extends UnicastConnector
         {
             try
             {
-                socket.setSoTimeout(getUnicastReadTimeout());
+                socket.setSoTimeout(getTCPReadTimeout());
             }
             catch (SocketException ignored)
             {

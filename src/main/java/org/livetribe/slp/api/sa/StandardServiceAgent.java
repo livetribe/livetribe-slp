@@ -66,8 +66,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private ServiceAgentManager manager;
     private ScheduledExecutorService scheduledExecutorService;
     private ServiceAgentInfo serviceAgent;
-    private MessageListener multicastListener;
-    private MessageListener unicastListener;
+    private MessageListener udpListener;
+    private MessageListener tcpListener;
     private final Set services = new HashSet();
     private final Lock servicesLock = new ReentrantLock();
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
@@ -202,10 +202,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
         manager.start();
 
-        multicastListener = new MulticastListener();
-        unicastListener = new UnicastListener();
-        manager.addMessageListener(multicastListener, true);
-        manager.addMessageListener(unicastListener, false);
+        udpListener = new UDPMessageListener();
+        tcpListener = new TCPMessageListener();
+        manager.addMessageListener(udpListener, true);
+        manager.addMessageListener(tcpListener, false);
 
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
@@ -230,8 +230,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             scheduledExecutorService = null;
         }
 
-        manager.removeMessageListener(unicastListener, false);
-        manager.removeMessageListener(multicastListener, true);
+        manager.removeMessageListener(tcpListener, false);
+        manager.removeMessageListener(udpListener, true);
         manager.stop();
     }
 
@@ -282,7 +282,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private void registerService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
         InetAddress address = InetAddress.getByName(da.getHost());
-        SrvAck srvAck = manager.unicastSrvReg(address, service, serviceAgent, true);
+        SrvAck srvAck = manager.tcpSrvReg(address, service, serviceAgent, true);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != 0)
             throw new ServiceLocationException("Could not register service " + service.getServiceURL() + " to DirectoryAgent " + address, errorCode);
@@ -340,7 +340,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private void deregisterService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
         InetAddress address = InetAddress.getByName(da.getHost());
-        SrvAck srvAck = manager.unicastSrvDeReg(address, service, serviceAgent);
+        SrvAck srvAck = manager.tcpSrvDeReg(address, service, serviceAgent);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != 0)
             throw new ServiceLocationException("Could not deregister service " + service.getServiceURL() + " from DirectoryAgent " + address, errorCode);
@@ -425,7 +425,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + address);
-            manager.unicastSAAdvert(address, getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+            manager.udpSAAdvert(address, getScopes(), null, new Integer(message.getXID()), message.getLanguage());
         }
         catch (IOException x)
         {
@@ -485,7 +485,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
         try
         {
-            manager.unicastSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
         }
@@ -543,7 +543,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      * <li>DAAdverts, from DAs that boot or shutdown; no reply, just update of internal caches</li>
      * </ul>
      */
-    private class MulticastListener implements MessageListener
+    private class UDPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -552,7 +552,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             {
                 Message message = Message.deserialize(event.getMessageBytes());
                 if (logger.isLoggable(Level.FINEST))
-                    logger.finest("ServiceAgent multicast message listener received message " + message);
+                    logger.finest("ServiceAgent UDP message listener received message " + message);
 
                 if (!message.isMulticast())
                 {
@@ -590,7 +590,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      * <li>SrvRqst, from UAs that want find ServiceURLs; the reply is a SrvRply</li>
      * </ul>
      */
-    private class UnicastListener implements MessageListener
+    private class TCPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {

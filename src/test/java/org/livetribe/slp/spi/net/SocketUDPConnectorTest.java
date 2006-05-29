@@ -29,12 +29,12 @@ import org.livetribe.slp.spi.msg.URLEntry;
 /**
  * @version $Rev$ $Date$
  */
-public class SocketMulticastConnectorTest extends SLPSPITestCase
+public class SocketUDPConnectorTest extends SLPSPITestCase
 {
     public void testStartStop() throws Exception
     {
         Configuration config = getDefaultConfiguration();
-        SocketMulticastConnector connector = new SocketMulticastConnector();
+        SocketUDPConnector connector = new SocketUDPConnector();
         connector.setConfiguration(config);
         connector.start();
         assertTrue(connector.isRunning());
@@ -51,7 +51,7 @@ public class SocketMulticastConnectorTest extends SLPSPITestCase
     {
         Configuration config = getDefaultConfiguration();
 
-        SocketMulticastConnector connector = new SocketMulticastConnector();
+        SocketUDPConnector connector = new SocketUDPConnector();
         connector.setConfiguration(config);
 
         final AtomicReference message = new AtomicReference(null);
@@ -94,7 +94,7 @@ public class SocketMulticastConnectorTest extends SLPSPITestCase
     {
         Configuration config = getDefaultConfiguration();
 
-        SocketMulticastConnector connector = new SocketMulticastConnector();
+        SocketUDPConnector connector = new SocketUDPConnector();
         connector.setConfiguration(config);
 
         final AtomicReference message = new AtomicReference(null);

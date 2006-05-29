@@ -27,8 +27,8 @@ import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.api.sa.StandardServiceAgent;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.SrvAck;
-import org.livetribe.slp.spi.net.SocketMulticastConnector;
-import org.livetribe.slp.spi.net.SocketUnicastConnector;
+import org.livetribe.slp.spi.net.SocketTCPConnector;
+import org.livetribe.slp.spi.net.SocketUDPConnector;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
@@ -47,8 +47,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
     {
         StandardUserAgent ua = new StandardUserAgent();
         StandardUserAgentManager uaManager = new StandardUserAgentManager();
-        uaManager.setMulticastConnector(new SocketMulticastConnector());
-        uaManager.setUnicastConnector(new SocketUnicastConnector());
+        uaManager.setUDPConnector(new SocketUDPConnector());
+        uaManager.setTCPConnector(new SocketTCPConnector());
         ua.setUserAgentManager(uaManager);
         ua.setConfiguration(getDefaultConfiguration());
 
@@ -68,8 +68,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
         StandardDirectoryAgent da = new StandardDirectoryAgent();
         StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
         da.setDirectoryAgentManager(daManager);
-        daManager.setMulticastConnector(new SocketMulticastConnector());
-        daManager.setUnicastConnector(new SocketUnicastConnector());
+        daManager.setUDPConnector(new SocketUDPConnector());
+        daManager.setTCPConnector(new SocketTCPConnector());
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
@@ -78,8 +78,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
             InetAddress localhost = InetAddress.getLocalHost();
 
             StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            saManager.setMulticastConnector(new SocketMulticastConnector());
-            saManager.setUnicastConnector(new SocketUnicastConnector());
+            saManager.setUDPConnector(new SocketUDPConnector());
+            saManager.setTCPConnector(new SocketTCPConnector());
             saManager.setConfiguration(getDefaultConfiguration());
             saManager.start();
 
@@ -89,7 +89,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 String[] scopes = new String[]{"scope1", "scope2"};
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
                 ServiceAgentInfo info = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
-                SrvAck ack = saManager.unicastSrvReg(localhost, service, info, true);
+                SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
                 assertNotNull(ack);
                 assertEquals(0, ack.getErrorCode());
@@ -97,8 +97,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 StandardUserAgent ua = new StandardUserAgent();
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();
                 ua.setUserAgentManager(uaManager);
-                uaManager.setMulticastConnector(new SocketMulticastConnector());
-                uaManager.setUnicastConnector(new SocketUnicastConnector());
+                uaManager.setUDPConnector(new SocketUDPConnector());
+                uaManager.setTCPConnector(new SocketTCPConnector());
                 ua.setConfiguration(getDefaultConfiguration());
                 ua.start();
 
@@ -136,8 +136,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
         StandardUserAgent ua = new StandardUserAgent();
         StandardUserAgentManager uaManager = new StandardUserAgentManager();
         ua.setUserAgentManager(uaManager);
-        uaManager.setMulticastConnector(new SocketMulticastConnector());
-        uaManager.setUnicastConnector(new SocketUnicastConnector());
+        uaManager.setUDPConnector(new SocketUDPConnector());
+        uaManager.setTCPConnector(new SocketTCPConnector());
         ua.setConfiguration(configuration);
         ua.start();
 
@@ -150,8 +150,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
             StandardDirectoryAgent da = new StandardDirectoryAgent();
             StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
             da.setDirectoryAgentManager(daManager);
-            daManager.setMulticastConnector(new SocketMulticastConnector());
-            daManager.setUnicastConnector(new SocketUnicastConnector());
+            daManager.setUDPConnector(new SocketUDPConnector());
+            daManager.setTCPConnector(new SocketTCPConnector());
             da.setConfiguration(getDefaultConfiguration());
             da.start();
 
@@ -182,8 +182,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
         StandardDirectoryAgent da = new StandardDirectoryAgent();
         StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
         da.setDirectoryAgentManager(daManager);
-        daManager.setMulticastConnector(new SocketMulticastConnector());
-        daManager.setUnicastConnector(new SocketUnicastConnector());
+        daManager.setUDPConnector(new SocketUDPConnector());
+        daManager.setTCPConnector(new SocketTCPConnector());
         da.setConfiguration(configuration);
         da.start();
 
@@ -194,8 +194,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
             StandardUserAgent ua = new StandardUserAgent();
             StandardUserAgentManager uaManager = new StandardUserAgentManager();
             ua.setUserAgentManager(uaManager);
-            uaManager.setMulticastConnector(new SocketMulticastConnector());
-            uaManager.setUnicastConnector(new SocketUnicastConnector());
+            uaManager.setUDPConnector(new SocketUDPConnector());
+            uaManager.setTCPConnector(new SocketTCPConnector());
             ua.setConfiguration(configuration);
             // Discover the DAs immediately
             ua.setDiscoveryStartWaitBound(0);
@@ -230,9 +230,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
         StandardServiceAgent sa = new StandardServiceAgent();
         StandardServiceAgentManager saManager = new StandardServiceAgentManager();
         sa.setServiceAgentManager(saManager);
-        SocketUnicastConnector unicastConnector = new SocketUnicastConnector();
-        unicastConnector.setUnicastListening(true);
-        saManager.setUnicastConnector(unicastConnector);
+        SocketTCPConnector unicastConnector = new SocketTCPConnector();
+        unicastConnector.setTCPListening(true);
+        saManager.setTCPConnector(unicastConnector);
         sa.setConfiguration(configuration);
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
         String language = Locale.ITALY.getLanguage();

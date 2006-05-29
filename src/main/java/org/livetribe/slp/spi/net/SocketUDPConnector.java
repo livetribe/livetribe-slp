@@ -28,7 +28,7 @@ import java.util.logging.Level;
 /**
  * @version $Rev$ $Date$
  */
-public class SocketMulticastConnector extends MulticastConnector
+public class SocketUDPConnector extends UDPConnector
 {
     private MulticastSocket[] sockets;
 

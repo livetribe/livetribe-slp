@@ -36,7 +36,7 @@ import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.msg.URLEntry;
-import org.livetribe.slp.spi.net.UnicastConnector;
+import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -82,7 +82,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return convergentDASrvRqst(request, timeframe);
     }
 
-    public void unicastSAAdvert(InetSocketAddress address, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void udpSAAdvert(InetSocketAddress address, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         SAAdvert advert = new SAAdvert();
         advert.setLanguage(language);
@@ -94,10 +94,10 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + advert + " to " + address);
 
-        getMulticastConnector().unicastSend(null, address, bytes).close();
+        getUDPConnector().unicastSend(null, address, bytes).close();
     }
 
-    public SrvAck unicastSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException
+    public SrvAck tcpSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException
     {
         ServiceURL serviceURL = service.getServiceURL();
 
@@ -119,9 +119,9 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         byte[] requestBytes = serializeMessage(registration);
 
-        UnicastConnector unicast = getUnicastConnector();
-        Socket socket = unicast.send(requestBytes, address, false);
-        byte[] replyBytes = unicast.receive(socket);
+        TCPConnector connector = getTCPConnector();
+        Socket socket = connector.send(requestBytes, address, false);
+        byte[] replyBytes = connector.receive(socket);
         try
         {
             Message message = Message.deserialize(replyBytes);
@@ -153,7 +153,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return scopes;
     }
 
-    public SrvAck unicastSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException
+    public SrvAck tcpSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException
     {
         ServiceURL serviceURL = service.getServiceURL();
 
@@ -170,9 +170,9 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         byte[] requestBytes = serializeMessage(deregistration);
 
-        UnicastConnector unicast = getUnicastConnector();
-        Socket socket = unicast.send(requestBytes, address, false);
-        byte[] replyBytes = unicast.receive(socket);
+        TCPConnector connector = getTCPConnector();
+        Socket socket = connector.send(requestBytes, address, false);
+        byte[] replyBytes = connector.receive(socket);
         try
         {
             Message message = Message.deserialize(replyBytes);
@@ -190,7 +190,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         }
     }
 
-    public void unicastSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
+    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
     {
         SrvRply srvRply = new SrvRply();
         srvRply.setXID(xid == null ? generateXID() : xid.intValue());
@@ -208,8 +208,8 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         srvRply.setURLEntries(entries);
         byte[] bytes = serializeMessage(srvRply);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
+        if (logger.isLoggable(Level.FINEST)) logger.finest("TCP unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
 
-        getUnicastConnector().reply(socket, bytes);
+        getTCPConnector().reply(socket, bytes);
     }
 }

@@ -27,7 +27,7 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
-import org.livetribe.slp.spi.net.UnicastConnector;
+import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * An SLP User Agent (UA) can discover SLP ServiceAgents (SAs) and SLP DirectoryAgents(DAs).
@@ -61,9 +61,9 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);
         byte[] requestBytes = serializeMessage(request);
 
-        UnicastConnector unicast = getUnicastConnector();
-        Socket socket = unicast.send(requestBytes, address, false);
-        byte[] replyBytes = unicast.receive(socket);
+        TCPConnector connector = getTCPConnector();
+        Socket socket = connector.send(requestBytes, address, false);
+        byte[] replyBytes = connector.receive(socket);
         try
         {
             Message message = Message.deserialize(replyBytes);
@@ -90,7 +90,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
 
         this.convergentMulticastSend(request, -1, )
 
-        MulticastConnector datagram = getMulticastConnector();
+        UDPConnector connector = getMulticastConnector();
         DatagramSocket socket = datagram.unicastSend(null, new InetSocketAddress(address, getPort()), requestBytes);
         datagram.accept();
 */

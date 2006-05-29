@@ -29,7 +29,7 @@ import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
-import org.livetribe.slp.spi.net.UnicastConnector;
+import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -43,8 +43,8 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
     {
         super.setConfiguration(configuration);
         // By default, DirectoryAgent listens to TCP also
-        UnicastConnector unicast = getUnicastConnector();
-        if (unicast != null) unicast.setUnicastListening(true);
+        TCPConnector connector = getTCPConnector();
+        if (connector != null) connector.setTCPListening(true);
     }
 
     public InetAddress getInetAddress()
@@ -71,11 +71,11 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         localhost = agentAddr;
     }
 
-    protected UnicastConnector createUnicastConnector()
+    protected TCPConnector createTCPConnector()
     {
-        UnicastConnector result = super.createUnicastConnector();
+        TCPConnector result = super.createTCPConnector();
         // By default, DirectoryAgent listens to TCP also
-        result.setUnicastListening(true);
+        result.setTCPListening(true);
         return result;
     }
 
@@ -86,18 +86,18 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Multicasting " + daAdvert);
 
-        getMulticastConnector().multicastSend(null, bytes).close();
+        getUDPConnector().multicastSend(null, bytes).close();
     }
 
-    public void unicastDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void udpDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         daAdvert.setMulticast(false);
         byte[] bytes = serializeMessage(daAdvert);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + daAdvert + " to " + address);
+        if (logger.isLoggable(Level.FINEST)) logger.finest("UDP unicasting " + daAdvert + " to " + address);
 
-        getMulticastConnector().unicastSend(null, address, bytes).close();
+        getUDPConnector().unicastSend(null, address, bytes).close();
     }
 
     private DAAdvert createDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language)
@@ -113,7 +113,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         return daAdvert;
     }
 
-    public void unicastSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException
+    public void tcpSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException
     {
         SrvAck srvAck = new SrvAck();
         srvAck.setXID(xid == null ? generateXID() : xid.intValue());
@@ -121,12 +121,12 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         srvAck.setErrorCode(errorCode);
         byte[] bytes = serializeMessage(srvAck);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvAck + " to " + socket.getRemoteSocketAddress());
+        if (logger.isLoggable(Level.FINEST)) logger.finest("TCP unicasting " + srvAck + " to " + socket.getRemoteSocketAddress());
 
-        getUnicastConnector().reply(socket, bytes);
+        getTCPConnector().reply(socket, bytes);
     }
 
-    public void unicastSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
+    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
     {
         SrvRply srvRply = new SrvRply();
         srvRply.setXID(xid == null ? generateXID() : xid.intValue());
@@ -144,8 +144,8 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         srvRply.setURLEntries(entries);
         byte[] bytes = serializeMessage(srvRply);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
+        if (logger.isLoggable(Level.FINEST)) logger.finest("TCP unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
 
-        getUnicastConnector().reply(socket, bytes);
+        getTCPConnector().reply(socket, bytes);
     }
 }

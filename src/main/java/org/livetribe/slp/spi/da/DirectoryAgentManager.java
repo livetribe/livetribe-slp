@@ -30,9 +30,9 @@ public interface DirectoryAgentManager extends AgentManager
 {
     public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
-    public void unicastDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void udpDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
-    public void unicastSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException;
+    public void tcpSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException;
 
-    public void unicastSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
+    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
 }

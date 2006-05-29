@@ -38,10 +38,10 @@ import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
-import org.livetribe.slp.spi.net.MulticastConnector;
-import org.livetribe.slp.spi.net.SocketMulticastConnector;
-import org.livetribe.slp.spi.net.SocketUnicastConnector;
-import org.livetribe.slp.spi.net.UnicastConnector;
+import org.livetribe.slp.spi.net.SocketTCPConnector;
+import org.livetribe.slp.spi.net.SocketUDPConnector;
+import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Rev$ $Date$
@@ -56,8 +56,8 @@ public abstract class StandardAgentManager implements AgentManager
     private int maxTransmissionUnit;
     private int port;
     private volatile boolean running;
-    private MulticastConnector multicastConnector;
-    private UnicastConnector unicastConnector;
+    private UDPConnector udpConnector;
+    private TCPConnector tcpConnector;
     private final Random random = new Random(System.currentTimeMillis());
 
     public void setConfiguration(Configuration configuration) throws IOException
@@ -67,8 +67,8 @@ public abstract class StandardAgentManager implements AgentManager
         setMulticastTimeouts(configuration.getMulticastTimeouts());
         setMaxTransmissionUnit(configuration.getMTU());
         setPort(configuration.getPort());
-        if (multicastConnector != null) multicastConnector.setConfiguration(configuration);
-        if (unicastConnector != null) unicastConnector.setConfiguration(configuration);
+        if (udpConnector != null) udpConnector.setConfiguration(configuration);
+        if (tcpConnector != null) tcpConnector.setConfiguration(configuration);
     }
 
     protected Configuration getConfiguration()
@@ -116,47 +116,47 @@ public abstract class StandardAgentManager implements AgentManager
         this.port = port;
     }
 
-    public void setMulticastConnector(MulticastConnector connector)
+    public void setUDPConnector(UDPConnector connector)
     {
-        this.multicastConnector = connector;
+        this.udpConnector = connector;
     }
 
-    protected MulticastConnector getMulticastConnector()
+    protected UDPConnector getUDPConnector()
     {
-        return multicastConnector;
+        return udpConnector;
     }
 
-    public void setUnicastConnector(UnicastConnector unicastConnector)
+    public void setTCPConnector(TCPConnector tcpConnector)
     {
-        this.unicastConnector = unicastConnector;
+        this.tcpConnector = tcpConnector;
     }
 
-    protected UnicastConnector getUnicastConnector()
+    protected TCPConnector getTCPConnector()
     {
-        return unicastConnector;
+        return tcpConnector;
     }
 
-    public void addMessageListener(MessageListener listener, boolean multicast)
+    public void addMessageListener(MessageListener listener, boolean udp)
     {
-        if (multicast)
+        if (udp)
         {
-            if (multicastConnector != null) multicastConnector.addMessageListener(listener);
+            if (udpConnector != null) udpConnector.addMessageListener(listener);
         }
         else
         {
-            if (unicastConnector != null) unicastConnector.addMessageListener(listener);
+            if (tcpConnector != null) tcpConnector.addMessageListener(listener);
         }
     }
 
-    public void removeMessageListener(MessageListener listener, boolean multicast)
+    public void removeMessageListener(MessageListener listener, boolean udp)
     {
-        if (multicast)
+        if (udp)
         {
-            if (multicastConnector != null) multicastConnector.removeMessageListener(listener);
+            if (udpConnector != null) udpConnector.removeMessageListener(listener);
         }
         else
         {
-            if (unicastConnector != null) unicastConnector.removeMessageListener(listener);
+            if (tcpConnector != null) tcpConnector.removeMessageListener(listener);
         }
     }
 
@@ -176,15 +176,15 @@ public abstract class StandardAgentManager implements AgentManager
         if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " starting...");
 
         Configuration config = getConfiguration();
-        if (multicastConnector == null)
+        if (udpConnector == null)
         {
-            multicastConnector = createMulticastConnector();
-            multicastConnector.setConfiguration(config);
+            udpConnector = createUDPConnector();
+            udpConnector.setConfiguration(config);
         }
-        if (unicastConnector == null)
+        if (tcpConnector == null)
         {
-            unicastConnector = createUnicastConnector();
-            unicastConnector.setConfiguration(config);
+            tcpConnector = createTCPConnector();
+            tcpConnector.setConfiguration(config);
         }
 
         doStart();
@@ -196,18 +196,18 @@ public abstract class StandardAgentManager implements AgentManager
 
     protected void doStart() throws IOException
     {
-        multicastConnector.start();
-        unicastConnector.start();
+        udpConnector.start();
+        tcpConnector.start();
     }
 
-    protected MulticastConnector createMulticastConnector()
+    protected UDPConnector createUDPConnector()
     {
-        return new SocketMulticastConnector();
+        return new SocketUDPConnector();
     }
 
-    protected UnicastConnector createUnicastConnector()
+    protected TCPConnector createTCPConnector()
     {
-        return new SocketUnicastConnector();
+        return new SocketTCPConnector();
     }
 
     public void stop() throws IOException
@@ -229,8 +229,8 @@ public abstract class StandardAgentManager implements AgentManager
 
     protected void doStop() throws IOException
     {
-        if (multicastConnector != null) multicastConnector.stop();
-        if (unicastConnector != null) unicastConnector.stop();
+        if (udpConnector != null) udpConnector.stop();
+        if (tcpConnector != null) tcpConnector.stop();
     }
 
     protected int generateXID()
@@ -334,7 +334,7 @@ public abstract class StandardAgentManager implements AgentManager
         List result = new ArrayList();
         Set previousResponders = new HashSet();
 
-        multicastConnector.accept(converger);
+        udpConnector.accept(converger);
 
         int noReplies = 0;
         int timeoutIndex = 0;
@@ -360,7 +360,7 @@ public abstract class StandardAgentManager implements AgentManager
             }
 
             if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence sending " + message);
-            converger.send(multicastConnector, messageBytes);
+            converger.send(udpConnector, messageBytes);
 
             // Wait for the convergence timeout at timeoutIndex
             converger.lock();
@@ -461,7 +461,7 @@ public abstract class StandardAgentManager implements AgentManager
         {
         }
 
-        public void send(MulticastConnector connector, byte[] bytes) throws IOException
+        public void send(UDPConnector connector, byte[] bytes) throws IOException
         {
             connector.multicastSend(getDatagramSocket(), bytes);
         }
@@ -499,7 +499,7 @@ public abstract class StandardAgentManager implements AgentManager
         {
         }
 
-        public void send(MulticastConnector connector, byte[] bytes) throws IOException
+        public void send(UDPConnector connector, byte[] bytes) throws IOException
         {
             connector.multicastSend(getDatagramSocket(), bytes);
         }

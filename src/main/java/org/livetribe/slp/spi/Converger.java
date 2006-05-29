@@ -33,12 +33,12 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
-import org.livetribe.slp.spi.net.MulticastConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Rev$ $Date$
  */
-public abstract class Converger extends MulticastConnector.Acceptor implements MessageListener
+public abstract class Converger extends UDPConnector.Acceptor implements MessageListener
 {
     private final DatagramSocket socket;
     private final List replies = new LinkedList();
@@ -55,7 +55,7 @@ public abstract class Converger extends MulticastConnector.Acceptor implements M
         return socket;
     }
 
-    public abstract void send(MulticastConnector connector, byte[] bytes) throws IOException;
+    public abstract void send(UDPConnector connector, byte[] bytes) throws IOException;
 
     public void close()
     {

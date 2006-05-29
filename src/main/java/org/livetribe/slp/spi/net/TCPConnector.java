@@ -25,47 +25,47 @@ import org.livetribe.slp.api.Configuration;
 /**
  * @version $Rev$ $Date$
  */
-public abstract class UnicastConnector extends NetworkConnector
+public abstract class TCPConnector extends NetworkConnector
 {
-    private boolean unicastListening;
-    private int unicastReadTimeout;
-    private int maxUnicastMessageLength;
+    private boolean tcpListening;
+    private int tcpReadTimeout;
+    private int maxTCPMessageLength;
 
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setUnicastReadTimeout(configuration.getUnicastReadTimeout());
-        setMaxUnicastMessageLength(configuration.getUnicastMaxMessageLength());
+        setTCPReadTimeout(configuration.getUnicastReadTimeout());
+        setMaxTCPMessageLength(configuration.getUnicastMaxMessageLength());
     }
 
-    public boolean isUnicastListening()
+    public boolean isTCPListening()
     {
-        return unicastListening;
+        return tcpListening;
     }
 
-    public void setUnicastListening(boolean unicastListening)
+    public void setTCPListening(boolean unicastListening)
     {
-        this.unicastListening = unicastListening;
+        this.tcpListening = unicastListening;
     }
 
-    public int getUnicastReadTimeout()
+    public int getTCPReadTimeout()
     {
-        return unicastReadTimeout;
+        return tcpReadTimeout;
     }
 
-    public void setUnicastReadTimeout(int unicastReadTimeout)
+    public void setTCPReadTimeout(int tcpReadTimeout)
     {
-        this.unicastReadTimeout = unicastReadTimeout;
+        this.tcpReadTimeout = tcpReadTimeout;
     }
 
-    public int getMaxUnicastMessageLength()
+    public int getMaxTCPMessageLength()
     {
-        return maxUnicastMessageLength;
+        return maxTCPMessageLength;
     }
 
-    public void setMaxUnicastMessageLength(int maxUnicastMessageLength)
+    public void setMaxTCPMessageLength(int maxTCPMessageLength)
     {
-        this.maxUnicastMessageLength = maxUnicastMessageLength;
+        this.maxTCPMessageLength = maxTCPMessageLength;
     }
 
     /**
@@ -73,7 +73,7 @@ public abstract class UnicastConnector extends NetworkConnector
      * @param socket The socket to read the message from
      * @return The bytes containing the SLP message
      * @throws MessageTooBigException If the message length (as read from the SLP message header) is greater than
-     * the {@link #getMaxUnicastMessageLength() maximum message length}
+     * the {@link #getMaxTCPMessageLength() maximum message length}
      * @throws SocketClosedException If the socket is closed by the client before the reading of all message
      * bytes is completed
      * @throws IOException In case of communication errors

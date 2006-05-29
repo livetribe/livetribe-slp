@@ -39,7 +39,7 @@ public class SocketUnicastConnectorTest extends SLPSPITestCase
     public void testStartStop() throws Exception
     {
         Configuration config = getDefaultConfiguration();
-        SocketUnicastConnector connector = new SocketUnicastConnector();
+        SocketTCPConnector connector = new SocketTCPConnector();
         connector.setConfiguration(config);
         connector.start();
         assertTrue(connector.isRunning());
@@ -56,9 +56,9 @@ public class SocketUnicastConnectorTest extends SLPSPITestCase
     {
         Configuration config = getDefaultConfiguration();
 
-        SocketUnicastConnector connector = new SocketUnicastConnector();
+        SocketTCPConnector connector = new SocketTCPConnector();
         connector.setConfiguration(config);
-        connector.setUnicastListening(true);
+        connector.setTCPListening(true);
 
         final AtomicReference message = new AtomicReference(null);
         connector.addMessageListener(new MessageListener()
@@ -97,9 +97,9 @@ public class SocketUnicastConnectorTest extends SLPSPITestCase
     {
         Configuration config = getDefaultConfiguration();
 
-        SocketUnicastConnector connector = new SocketUnicastConnector();
+        SocketTCPConnector connector = new SocketTCPConnector();
         connector.setConfiguration(config);
-        connector.setUnicastListening(true);
+        connector.setTCPListening(true);
 
         final AtomicReference message = new AtomicReference(null);
         connector.addMessageListener(new MessageListener()
@@ -142,9 +142,9 @@ public class SocketUnicastConnectorTest extends SLPSPITestCase
     {
         Configuration config = getDefaultConfiguration();
 
-        SocketUnicastConnector connector = new SocketUnicastConnector();
+        SocketTCPConnector connector = new SocketTCPConnector();
         connector.setConfiguration(config);
-        connector.setUnicastListening(true);
+        connector.setTCPListening(true);
 
         final AtomicReference message = new AtomicReference(null);
         connector.addMessageListener(new MessageListener()
@@ -195,9 +195,9 @@ public class SocketUnicastConnectorTest extends SLPSPITestCase
     {
         Configuration config = getDefaultConfiguration();
 
-        SocketUnicastConnector connector = new SocketUnicastConnector();
+        SocketTCPConnector connector = new SocketTCPConnector();
         connector.setConfiguration(config);
-        connector.setUnicastListening(true);
+        connector.setTCPListening(true);
 
         final AtomicReference message = new AtomicReference(null);
         connector.addMessageListener(new MessageListener()

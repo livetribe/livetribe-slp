@@ -33,7 +33,7 @@ public interface AgentManager
 
     public void stop() throws IOException;
 
-    public void addMessageListener(MessageListener listener, boolean multicast);
+    public void addMessageListener(MessageListener listener, boolean udp);
 
-    public void removeMessageListener(MessageListener listener, boolean multicast);
+    public void removeMessageListener(MessageListener listener, boolean udp);
 }

@@ -54,7 +54,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     private int discoveryStartWaitBound;
     private long discoveryPeriod;
     private UserAgentManager manager;
-    private MessageListener multicastListener;
+    private MessageListener udpListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
     private ScheduledExecutorService scheduledExecutorService;
 
@@ -109,8 +109,8 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
         manager.start();
 
-        multicastListener = new MulticastListener();
-        manager.addMessageListener(multicastListener, true);
+        udpListener = new UDPMessageListener();
+        manager.addMessageListener(udpListener, true);
 
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
@@ -130,7 +130,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             scheduledExecutorService = null;
         }
 
-        manager.removeMessageListener(multicastListener, true);
+        manager.removeMessageListener(udpListener, true);
         manager.stop();
     }
 
@@ -274,13 +274,13 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     }
 
     /**
-     * UserAgents listen for multicast messages that may arrive.
+     * UserAgents listen for multicast UDP messages that may arrive.
      * They are interested in:
      * <ul>
      * <li>DAAdverts, from DAs that boot or shutdown</li>
      * </ul>
      */
-    private class MulticastListener implements MessageListener
+    private class UDPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {

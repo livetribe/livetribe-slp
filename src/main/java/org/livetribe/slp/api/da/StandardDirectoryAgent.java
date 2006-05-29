@@ -63,8 +63,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     private ScheduledExecutorService scheduledExecutorService;
     private long bootTime;
     private InetAddress localhost;
-    private MessageListener multicastListener;
-    private MessageListener unicastListener;
+    private MessageListener udpListener;
+    private MessageListener tcpListener;
     private final Lock servicesLock = new ReentrantLock();
     private final Map services = new HashMap();
     private final List listeners = new LinkedList();
@@ -132,10 +132,10 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
         manager.start();
 
-        multicastListener = new MulticastMessageListener();
-        unicastListener = new UnicastMessageListener();
-        manager.addMessageListener(multicastListener, true);
-        manager.addMessageListener(unicastListener, false);
+        udpListener = new UDPMessageListener();
+        tcpListener = new TCPMessageListener();
+        manager.addMessageListener(udpListener, true);
+        manager.addMessageListener(tcpListener, false);
 
         // DirectoryAgents send unsolicited DAAdverts every heartBeat seconds (RFC 2608, 12.2)
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -157,8 +157,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
         // DirectoryAgents send a DAAdvert on shutdown with bootTime == 0 (RFC 2608, 12.1)
         manager.multicastDAAdvert(0, getScopes(), null, null, Locale.getDefault().getLanguage());
-        manager.removeMessageListener(multicastListener, true);
-        manager.removeMessageListener(unicastListener, false);
+        manager.removeMessageListener(udpListener, true);
+        manager.removeMessageListener(tcpListener, false);
         manager.stop();
     }
 
@@ -236,7 +236,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " sending UDP unicast reply to " + address);
-            manager.unicastDAAdvert(address, getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+            manager.udpDAAdvert(address, getBootTime(), getScopes(), null, new Integer(message.getXID()), message.getLanguage());
         }
         catch (IOException x)
         {
@@ -245,14 +245,14 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    protected void handleUnicastSrvReg(SrvReg message, Socket socket)
+    protected void handleTCPSrvReg(SrvReg message, Socket socket)
     {
         // TODO: check that the scopes match
 
         int errorCode = message.isFresh() ? registerService(message, true) : updateService(message);
         try
         {
-            manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
+            manager.tcpSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
         }
         catch (IOException x)
         {
@@ -364,7 +364,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    protected void handleUnicastSrvDeReg(SrvDeReg message, Socket socket)
+    protected void handleTCPSrvDeReg(SrvDeReg message, Socket socket)
     {
         int errorCode = 0;
 
@@ -401,7 +401,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
         try
         {
-            manager.unicastSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
+            manager.tcpSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
         }
         catch (IOException x)
         {
@@ -439,7 +439,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    protected void handleUnicastSrvRqst(SrvRqst message, Socket socket)
+    protected void handleTCPSrvRqst(SrvRqst message, Socket socket)
     {
         if (logger.isLoggable(Level.FINE))
             logger.fine("DirectoryAgent " + this + " queried for services of type " + message.getServiceType());
@@ -449,7 +449,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
         try
         {
-            manager.unicastSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
         }
@@ -507,13 +507,13 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     }
 
     /**
-     * DirectoryAgents listen for multicast messages that may arrive.
+     * DirectoryAgents listen for multicast UDP messages that may arrive.
      * They are interested in:
      * <ul>
      * <li>SrvRqst, from UAs and SAs that wants to discover DAs; the reply is a DAAdvert</li>
      * </ul>
      */
-    private class MulticastMessageListener implements MessageListener
+    private class UDPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -522,7 +522,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             {
                 Message message = Message.deserialize(event.getMessageBytes());
                 if (logger.isLoggable(Level.FINEST))
-                    logger.finest("DirectoryAgent multicast message listener received message " + message);
+                    logger.finest("DirectoryAgent UDP message listener received message " + message);
 
                 if (!message.isMulticast())
                 {
@@ -559,7 +559,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
      * <li>SrvDeReg, from SAs that wants to unregister a ServiceURL; the reply is a SrvAck</li>
      * </ul>
      */
-    private class UnicastMessageListener implements MessageListener
+    private class TCPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -579,15 +579,15 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
                 switch (message.getMessageType())
                 {
                     case Message.SRV_RQST_TYPE:
-                        handleUnicastSrvRqst((SrvRqst)message, (Socket)event.getSource());
+                        handleTCPSrvRqst((SrvRqst)message, (Socket)event.getSource());
                         break;
 
                     case Message.SRV_REG_TYPE:
-                        handleUnicastSrvReg((SrvReg)message, (Socket)event.getSource());
+                        handleTCPSrvReg((SrvReg)message, (Socket)event.getSource());
                         break;
 
                     case Message.SRV_DEREG_TYPE:
-                        handleUnicastSrvDeReg((SrvDeReg)message, (Socket)event.getSource());
+                        handleTCPSrvDeReg((SrvDeReg)message, (Socket)event.getSource());
                         break;
 
                     default:

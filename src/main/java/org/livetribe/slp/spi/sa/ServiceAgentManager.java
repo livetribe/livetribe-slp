@@ -34,11 +34,11 @@ public interface ServiceAgentManager extends AgentManager
 {
     public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException;
 
-    public void unicastSAAdvert(InetSocketAddress address, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void udpSAAdvert(InetSocketAddress address, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
-    public SrvAck unicastSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException;
+    public SrvAck tcpSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException;
 
-    public SrvAck unicastSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException;
+    public SrvAck tcpSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException;
 
-    public void unicastSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
+    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
 }

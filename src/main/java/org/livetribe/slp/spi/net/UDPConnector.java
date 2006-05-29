@@ -26,7 +26,7 @@ import org.livetribe.slp.api.Configuration;
 /**
  * @version $Rev$ $Date$
  */
-public abstract class MulticastConnector extends NetworkConnector
+public abstract class UDPConnector extends NetworkConnector
 {
     private int multicastTimeToLive;
     private int maxTransmissionUnit;
@@ -99,21 +99,21 @@ public abstract class MulticastConnector extends NetworkConnector
     {
         protected final Logger logger = Logger.getLogger(getClass().getName());
 
-        private MulticastConnector multicastConnector;
+        private UDPConnector udpConnector;
 
-        private void setMulticastConnector(MulticastConnector multicastConnector)
+        private void setMulticastConnector(UDPConnector udpConnector)
         {
-            this.multicastConnector = multicastConnector;
+            this.udpConnector = udpConnector;
         }
 
         protected int getMaxTransmissionUnit()
         {
-            return multicastConnector.getMaxTransmissionUnit();
+            return udpConnector.getMaxTransmissionUnit();
         }
 
         protected void handle(Runnable executor)
         {
-            multicastConnector.handle(executor);
+            udpConnector.handle(executor);
         }
     }
 }
