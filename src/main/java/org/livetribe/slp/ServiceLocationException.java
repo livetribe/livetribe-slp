@@ -24,9 +24,13 @@ public class ServiceLocationException extends Exception
     public static final int PARSE_ERROR = 2;
     public static final int INVALID_REGISTRATION = 3;
     public static final int SCOPE_NOT_SUPPORTED = 4;
+    public static final int AUTHENTICATION_UNKNOWN = 5;
     public static final int AUTHENTICATION_ABSENT = 6;
     public static final int AUTHENTICATION_FAILED = 7;
+    public static final int VERSION_NOT_SUPPORTED = 9;
+    public static final int INTERNAL_ERROR = 10;
     public static final int INVALID_UPDATE = 13;
+    public static final int MESSAGE_NOT_SUPPORTED = 14;
     public static final int REFRESH_REJECTED = 15;
     public static final int NOT_IMPLEMENTED = 16;
     public static final int NETWORK_INIT_FAILED = 17;
