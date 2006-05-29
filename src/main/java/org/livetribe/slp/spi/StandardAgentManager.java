@@ -16,7 +16,6 @@
 package org.livetribe.slp.spi;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -335,7 +334,6 @@ public abstract class StandardAgentManager implements AgentManager
         List result = new ArrayList();
         Set previousResponders = new HashSet();
 
-        DatagramSocket socket = converger.getDatagramSocket();
         multicastConnector.accept(converger);
 
         int noReplies = 0;
@@ -362,7 +360,7 @@ public abstract class StandardAgentManager implements AgentManager
             }
 
             if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence sending " + message);
-            multicastConnector.multicastSend(socket, messageBytes);
+            converger.send(multicastConnector, messageBytes);
 
             // Wait for the convergence timeout at timeoutIndex
             converger.lock();
@@ -463,6 +461,11 @@ public abstract class StandardAgentManager implements AgentManager
         {
         }
 
+        public void send(MulticastConnector connector, byte[] bytes) throws IOException
+        {
+            connector.multicastSend(getDatagramSocket(), bytes);
+        }
+
         public void handle(MessageEvent event)
         {
             InetSocketAddress address = event.getSocketAddress();
@@ -494,6 +497,11 @@ public abstract class StandardAgentManager implements AgentManager
     {
         public ConvergentSAMessageListener() throws SocketException
         {
+        }
+
+        public void send(MulticastConnector connector, byte[] bytes) throws IOException
+        {
+            connector.multicastSend(getDatagramSocket(), bytes);
         }
 
         public void handle(MessageEvent event)

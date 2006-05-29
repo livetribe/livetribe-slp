@@ -193,7 +193,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
         localhost = agentAddr;
 
-        serviceAgent = new ServiceAgentInfo(getAttributes(), getLanguage(), getScopes(), "service:service-agent://" + localhost);
+        serviceAgent = new ServiceAgentInfo("service:service-agent://" + localhost, getScopes(), getAttributes(), getLanguage());
 
         if (manager == null)
         {

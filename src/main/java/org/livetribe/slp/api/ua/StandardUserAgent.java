@@ -28,6 +28,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Configuration;
@@ -144,7 +145,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             {
                 DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
                 InetAddress address = InetAddress.getByName(info.getHost());
-                SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter, language);
+                SrvRply srvRply = manager.tcpSrvRqst(address, serviceType, scopes, filter, language);
                 URLEntry[] entries = srvRply.getURLEntries();
                 for (int j = 0; j < entries.length; ++j)
                 {
@@ -160,7 +161,17 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             {
                 ServiceAgentInfo info = (ServiceAgentInfo)sas.get(i);
                 InetAddress address = InetAddress.getByName(info.getHost());
-                SrvRply srvRply = manager.unicastSrvRqst(address, serviceType, scopes, filter, language);
+                Attributes attributes = info.getAttributes();
+                String protocol = (String)attributes.getValue(ServiceAgentInfo.PROTOCOL_TAG);
+                SrvRply srvRply = null;
+                if ("udp".equalsIgnoreCase(protocol))
+                {
+                    srvRply = manager.udpSrvRqst(address, serviceType, scopes, filter, language);
+                }
+                else
+                {
+                    srvRply = manager.tcpSrvRqst(address, serviceType, scopes, filter, language);
+                }
                 URLEntry[] entries = srvRply.getURLEntries();
                 for (int j = 0; j < entries.length; ++j)
                 {

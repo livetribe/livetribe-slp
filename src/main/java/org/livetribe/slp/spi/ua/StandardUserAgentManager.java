@@ -56,7 +56,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         return convergentSASrvRqst(request, timeframe);
     }
 
-    public SrvRply unicastSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException
+    public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException
     {
         SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);
         byte[] requestBytes = serializeMessage(request);
@@ -80,6 +80,21 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         {
             closeNoExceptions(socket);
         }
+    }
+
+    public SrvRply udpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException
+    {
+/*
+        SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);
+        byte[] requestBytes = serializeMessage(request);
+
+        this.convergentMulticastSend(request, -1, )
+
+        MulticastConnector datagram = getMulticastConnector();
+        DatagramSocket socket = datagram.unicastSend(null, new InetSocketAddress(address, getPort()), requestBytes);
+        datagram.accept();
+*/
+        return null;
     }
 
     private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter, String language)

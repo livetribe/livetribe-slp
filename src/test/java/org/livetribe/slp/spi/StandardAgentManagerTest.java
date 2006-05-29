@@ -379,6 +379,11 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         {
         }
 
+        public void send(MulticastConnector connector, byte[] bytes) throws IOException
+        {
+            connector.multicastSend(getDatagramSocket(), bytes);
+        }
+
         public void handle(MessageEvent event)
         {
             try

@@ -27,18 +27,20 @@ import org.livetribe.slp.spi.msg.SAAdvert;
  */
 public class ServiceAgentInfo
 {
-    private final Attributes attributes;
-    private final List scopes;
-    private final String language;
+    public static final String PROTOCOL_TAG = "srvrqst-protocol";
+
     private final String url;
+    private final List scopes;
+    private final Attributes attributes;
+    private final String language;
     private final String host;
 
     public static ServiceAgentInfo from(SAAdvert saAdvert)
     {
-        return new ServiceAgentInfo(saAdvert.getAttributes(), saAdvert.getLanguage(), saAdvert.getScopes(), saAdvert.getURL());
+        return new ServiceAgentInfo(saAdvert.getURL(), saAdvert.getScopes(), saAdvert.getAttributes(), saAdvert.getLanguage());
     }
 
-    public ServiceAgentInfo(Attributes attributes, String language, String[] scopes, String url)
+    public ServiceAgentInfo(String url, String[] scopes, Attributes attributes, String language)
     {
         this.attributes = attributes;
         this.language = language;
@@ -56,17 +58,7 @@ public class ServiceAgentInfo
         if (host.trim().length() == 0) throw new IllegalArgumentException("ServiceAgent URL is malformed: " + url);
         return host;
     }
-/*
-    public ServiceAgentInfo(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean fresh)
-    {
-        this.serviceType = serviceType;
-        this.serviceURL = serviceURL;
-        this.scopes = scopes == null ? Collections.emptyList() : Arrays.asList(scopes);
-        this.attributes = attributes;
-        this.language = language;
-        this.fresh = fresh;
-    }
-*/
+
     public String[] getScopes()
     {
         return (String[])scopes.toArray(new String[scopes.size()]);

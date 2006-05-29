@@ -50,10 +50,12 @@ public abstract class Converger extends MulticastConnector.Acceptor implements M
         this.socket = new DatagramSocket();
     }
 
-    public DatagramSocket getDatagramSocket()
+    protected DatagramSocket getDatagramSocket()
     {
         return socket;
     }
+
+    public abstract void send(MulticastConnector connector, byte[] bytes) throws IOException;
 
     public void close()
     {

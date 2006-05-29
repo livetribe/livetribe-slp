@@ -88,7 +88,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
-                ServiceAgentInfo info = new ServiceAgentInfo(null, Locale.getDefault().getLanguage(), null, "service:service-agent://127.0.0.1");
+                ServiceAgentInfo info = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.unicastSrvReg(localhost, service, info, true);
 
                 assertNotNull(ack);
@@ -223,7 +223,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
         }
     }
 
-    public void testSADiscovery() throws Exception
+    public void testSADiscoveryAndFindServicesViaTCP() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
 
@@ -233,6 +233,46 @@ public class StandardUserAgentTest extends SLPAPITestCase
         SocketUnicastConnector unicastConnector = new SocketUnicastConnector();
         unicastConnector.setUnicastListening(true);
         saManager.setUnicastConnector(unicastConnector);
+        sa.setConfiguration(configuration);
+        ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
+        String language = Locale.ITALY.getLanguage();
+        ServiceInfo service = new ServiceInfo(serviceURL, null, null, language);
+        sa.register(service);
+        sa.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardUserAgent ua = new StandardUserAgent();
+            ua.setConfiguration(configuration);
+            ua.start();
+
+            try
+            {
+                sleep(500);
+
+                List services = ua.findServices(serviceURL.getServiceType(), null, null, language);
+                assertNotNull(services);
+                assertEquals(1, services.size());
+                assertEquals(serviceURL, services.get(0));
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    public void testSADiscoveryAndFindServicesViaUDP() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardServiceAgent sa = new StandardServiceAgent();
         sa.setConfiguration(configuration);
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
         String language = Locale.ITALY.getLanguage();
