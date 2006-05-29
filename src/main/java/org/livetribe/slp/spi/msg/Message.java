@@ -176,7 +176,7 @@ public abstract class Message extends BytesBlock
             int offset = 0;
             byte version = bytes[offset];
             if (version != SLP_VERSION)
-                throw new ServiceLocationException("Unsupported SLP version " + version + ", only version " + SLP_VERSION + " is supported", ServiceLocationException.PARSE_ERROR);
+                throw new ServiceLocationException("Unsupported SLP version " + version + ", only version " + SLP_VERSION + " is supported", ServiceLocationException.VERSION_NOT_SUPPORTED);
 
             offset += VERSION_BYTES_LENGTH;
             byte messageType = bytes[offset];
@@ -249,7 +249,7 @@ public abstract class Message extends BytesBlock
             case SA_ADVERT_TYPE:
                 return new SAAdvert();
         }
-        throw new ServiceLocationException("Unknown message " + messageType, ServiceLocationException.PARSE_ERROR);
+        throw new ServiceLocationException("Message not supported " + messageType, ServiceLocationException.MESSAGE_NOT_SUPPORTED);
     }
 
     protected static byte[] attributesToBytes(Attributes attributes) throws ServiceLocationException
