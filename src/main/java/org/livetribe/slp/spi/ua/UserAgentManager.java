@@ -34,6 +34,4 @@ public interface UserAgentManager extends AgentManager
     public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, String language, int timeframe) throws IOException;
 
     public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException;
-
-    public SrvRply udpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException;
 }

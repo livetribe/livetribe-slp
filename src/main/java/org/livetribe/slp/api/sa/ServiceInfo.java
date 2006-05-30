@@ -68,4 +68,11 @@ public class ServiceInfo
     {
         return language;
     }
+
+    public ServiceType resolveServiceType()
+    {
+        ServiceType result = getServiceType();
+        if (result != null) return result;
+        return getServiceURL().getServiceType();
+    }
 }

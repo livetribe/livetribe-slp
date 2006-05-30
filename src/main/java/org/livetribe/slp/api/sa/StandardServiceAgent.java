@@ -182,6 +182,26 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
+    private List getServiceTypes()
+    {
+        servicesLock.lock();
+        try
+        {
+            List result = new ArrayList();
+            for (Iterator allServices = services.iterator(); allServices.hasNext();)
+            {
+                ServiceInfo serviceInfo = (ServiceInfo)allServices.next();
+                ServiceType serviceType = serviceInfo.resolveServiceType();
+                result.add(serviceType.toString());
+            }
+            return result;
+        }
+        finally
+        {
+            servicesLock.unlock();
+        }
+    }
+
     protected void doStart() throws Exception
     {
         InetAddress agentAddr = getInetAddress();
@@ -286,7 +306,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         int errorCode = srvAck.getErrorCode();
         if (errorCode != 0)
             throw new ServiceLocationException("Could not register service " + service.getServiceURL() + " to DirectoryAgent " + address, errorCode);
-        if (logger.isLoggable(Level.FINE)) logger.fine("Registered service " + service.getServiceURL() + " to DirectoryAgent " + address);
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("Registered service " + service.getServiceURL() + " to DirectoryAgent " + address);
 
         long renewalPeriod = calculateRenewalPeriod(service);
         long renewalDelay = calculateRenewalDelay(service);
@@ -392,25 +413,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         return result;
     }
 
-    protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address)
+    protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address) throws ServiceLocationException
     {
-        ServiceType serviceType = message.getServiceType();
-        if (serviceType.isAbstractType() || !"service-agent".equals(serviceType.getPrincipleTypeName()))
-        {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": expected service type 'service-agent', got " + serviceType);
-            return;
-        }
-
-        List scopesList = Arrays.asList(getScopes());
-        List messageScopes = Arrays.asList(message.getScopes());
-        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopes))
-        {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + scopesList + " and message scopes " + messageScopes);
-            return;
-        }
-
+        // Match previous responders
         Set prevResponders = message.getPreviousResponders();
         String responder = localhost.getHostAddress();
         if (prevResponders.contains(responder))
@@ -420,12 +425,44 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             return;
         }
 
+        // Match scopes
+        List scopesList = Arrays.asList(getScopes());
+        List messageScopes = Arrays.asList(message.getScopes());
+        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopes))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + scopesList + " and message scopes " + messageScopes);
+            return;
+        }
+
+        // Match filter (see RFC 2608, 8.6)
+        Attributes filter = new Attributes(message.getFilter());
+        String serviceTypeTag = "service-type";
+        if (filter.isTagPresent(serviceTypeTag))
+        {
+            List messageServiceTypes = Arrays.asList(filter.getValues(serviceTypeTag));
+            List serviceTypes = getServiceTypes();
+            if (Collections.disjoint(serviceTypes, messageServiceTypes))
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("ServiceAgent " + this + " dropping message " + message + ": filter " + filter + " does not match registered services");
+            }
+        }
+
+        // Check that's a correct multicast request for this ServiceAgent
+        ServiceType serviceType = message.getServiceType();
+        if (serviceType.isAbstractType() || !"service-agent".equals(serviceType.getPrincipleTypeName()))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": expected service type 'service-agent', got " + serviceType);
+        }
+
         // Replies must have the same language and XID as the request (RFC 2608, 8.0)
         try
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + address);
-            manager.udpSAAdvert(address, getScopes(), null, new Integer(message.getXID()), message.getLanguage());
+            manager.udpSAAdvert(address, getScopes(), getAttributes(), new Integer(message.getXID()), message.getLanguage());
         }
         catch (IOException x)
         {
@@ -475,10 +512,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    protected void handleUnicastSrvRqst(SrvRqst message, Socket socket)
+    protected void handleTCPSrvRqst(SrvRqst message, Socket socket)
     {
         if (logger.isLoggable(Level.FINE))
-            logger.fine("ServiceAgent " + this + " queried for services of type " + message.getServiceType());
+            logger.fine("ServiceAgent " + this + " queried via TCP for services of type " + message.getServiceType());
 
         List matchingServices = matchServices(message.getServiceType(), message.getFilter(), message.getScopes(), message.getLanguage());
         ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
@@ -487,12 +524,12 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
             if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
+                logger.fine("ServiceAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
         }
         catch (IOException x)
         {
             if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
+                logger.log(Level.INFO, "ServiceAgent " + this + " cannot send TCP unicast reply to " + socket, x);
         }
     }
 
@@ -505,8 +542,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
             {
                 ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.next();
-                ServiceType registeredServiceType = serviceInfo.getServiceType();
-                if (registeredServiceType == null) registeredServiceType = serviceInfo.getServiceURL().getServiceType();
+                ServiceType registeredServiceType = serviceInfo.resolveServiceType();
                 if (registeredServiceType.matches(serviceType))
                 {
                     // TODO: match the other parameters
@@ -539,7 +575,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      * ServiceAgents listen for multicast messages that may arrive.
      * They are interested in:
      * <ul>
-     * <li>SrvRqst, from UAs that want to discover ServiceURLs in absence of DAs; the reply is a SAAdvert</li>
+     * <li>SrvRqst with service type 'service-agent', from UAs that want to discover ServiceURLs in absence of DAs; the reply is a SAAdvert</li>
      * <li>DAAdverts, from DAs that boot or shutdown; no reply, just update of internal caches</li>
      * </ul>
      */
@@ -563,7 +599,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
                 switch (message.getMessageType())
                 {
-                    case  Message.SRV_RQST_TYPE:
+                    case Message.SRV_RQST_TYPE:
                         handleMulticastSrvRqst((SrvRqst)message, address);
                         break;
                     case Message.DA_ADVERT_TYPE:
@@ -610,7 +646,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
                 switch (message.getMessageType())
                 {
                     case Message.SRV_RQST_TYPE:
-                        handleUnicastSrvRqst((SrvRqst)message, (Socket)event.getSource());
+                        handleTCPSrvRqst((SrvRqst)message, (Socket)event.getSource());
                         break;
                     default:
                         if (logger.isLoggable(Level.FINE))

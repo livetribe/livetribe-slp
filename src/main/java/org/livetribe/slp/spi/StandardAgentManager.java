@@ -265,7 +265,7 @@ public abstract class StandardAgentManager implements AgentManager
 
     protected DAAdvert[] convergentDASrvRqst(SrvRqst message, long timeframe) throws IOException
     {
-        ConvergentDAMessageListener converger = new ConvergentDAMessageListener();
+        DASrvRqstConverger converger = new DASrvRqstConverger();
         try
         {
             List replies = convergentMulticastSend(message, timeframe, converger);
@@ -279,7 +279,7 @@ public abstract class StandardAgentManager implements AgentManager
 
     protected SAAdvert[] convergentSASrvRqst(SrvRqst message, long timeframe) throws IOException
     {
-        ConvergentSAMessageListener converger = new ConvergentSAMessageListener();
+        SASrvRqstConverger converger = new SASrvRqstConverger();
         try
         {
             List replies = convergentMulticastSend(message, timeframe, converger);
@@ -387,6 +387,7 @@ public abstract class StandardAgentManager implements AgentManager
                     {
                         Rply reply = converger.pop();
                         String responder = reply.getResponder();
+                        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence received reply " + reply + ", responder is " + responder);
                         if (responder != null && responder.length() > 0)
                         {
                             if (previousResponders.add(responder))
@@ -455,9 +456,9 @@ public abstract class StandardAgentManager implements AgentManager
         return result;
     }
 
-    private class ConvergentDAMessageListener extends Converger
+    private class DASrvRqstConverger extends Converger
     {
-        public ConvergentDAMessageListener() throws SocketException
+        public DASrvRqstConverger() throws SocketException
         {
         }
 
@@ -493,9 +494,9 @@ public abstract class StandardAgentManager implements AgentManager
         }
     }
 
-    private class ConvergentSAMessageListener extends Converger
+    private class SASrvRqstConverger extends Converger
     {
-        public ConvergentSAMessageListener() throws SocketException
+        public SASrvRqstConverger() throws SocketException
         {
         }
 

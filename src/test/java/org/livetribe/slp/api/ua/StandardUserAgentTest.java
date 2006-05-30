@@ -267,13 +267,16 @@ public class StandardUserAgentTest extends SLPAPITestCase
             sa.stop();
         }
     }
-
-    public void testSADiscoveryAndFindServicesViaUDP() throws Exception
+/*
+    public void testSADiscoveryAndFindServicesViaUDPWithOneSA() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
 
         StandardServiceAgent sa = new StandardServiceAgent();
         sa.setConfiguration(configuration);
+        Attributes attributes = new Attributes();
+        attributes.put(ServiceAgentInfo.SRVRQST_PROTOCOL_TAG, "multicast");
+        sa.setAttributes(attributes);
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
         String language = Locale.ITALY.getLanguage();
         ServiceInfo service = new ServiceInfo(serviceURL, null, null, language);
@@ -307,4 +310,64 @@ public class StandardUserAgentTest extends SLPAPITestCase
             sa.stop();
         }
     }
+
+    public void testSADiscoveryAndFindServicesViaUDPWithTwoSA() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardServiceAgent sa1 = new StandardServiceAgent();
+        sa1.setConfiguration(configuration);
+        Attributes attributes = new Attributes();
+        attributes.put(ServiceAgentInfo.ID_TAG, "sa1");
+        attributes.put(ServiceAgentInfo.SRVRQST_PROTOCOL_TAG, "multicast");
+        sa1.setAttributes(attributes);
+        ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
+        String language = Locale.ITALY.getLanguage();
+        ServiceInfo service1 = new ServiceInfo(serviceURL1, null, null, language);
+        sa1.register(service1);
+        sa1.start();
+
+        StandardServiceAgent sa2 = new StandardServiceAgent();
+        sa2.setConfiguration(configuration);
+        attributes = new Attributes();
+        attributes.put(ServiceAgentInfo.ID_TAG, "sa2");
+        attributes.put(ServiceAgentInfo.SRVRQST_PROTOCOL_TAG, "multicast");
+        sa2.setAttributes(attributes);
+        ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://host/path", ServiceURL.LIFETIME_DEFAULT);
+        ServiceInfo service2 = new ServiceInfo(serviceURL2, null, null, language);
+        sa2.register(service2);
+        sa2.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardUserAgent ua = new StandardUserAgent();
+            ua.setConfiguration(configuration);
+            ua.start();
+
+            try
+            {
+                sleep(500);
+
+                ServiceType generic = new ServiceType("service:jmx");
+                List services = ua.findServices(generic, null, null, language);
+                assertNotNull(services);
+                assertEquals(2, services.size());
+                Set urls = new HashSet();
+                urls.add(serviceURL1);
+                urls.add(serviceURL2);
+                assertEquals(urls, new HashSet(services));
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa1.stop();
+        }
+    }
+*/
 }

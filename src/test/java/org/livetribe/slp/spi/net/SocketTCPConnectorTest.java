@@ -28,7 +28,7 @@ import org.livetribe.slp.spi.msg.URLEntry;
 /**
  * @version $Rev$ $Date$
  */
-public class SocketUnicastConnectorTest extends SLPSPITestCase
+public class SocketTCPConnectorTest extends SLPSPITestCase
 {
     protected void tearDown() throws Exception
     {

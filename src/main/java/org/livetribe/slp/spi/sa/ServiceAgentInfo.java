@@ -27,8 +27,6 @@ import org.livetribe.slp.spi.msg.SAAdvert;
  */
 public class ServiceAgentInfo
 {
-    public static final String PROTOCOL_TAG = "srvrqst-protocol";
-
     private final String url;
     private final List scopes;
     private final Attributes attributes;

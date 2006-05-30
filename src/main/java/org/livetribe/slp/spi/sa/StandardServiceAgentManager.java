@@ -105,8 +105,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         urlEntry.setLifetime(serviceURL.getLifetime());
         urlEntry.setURL(serviceURL.getURL());
 
-        ServiceType serviceType = service.getServiceType();
-        if (serviceType == null) serviceType = serviceURL.getServiceType();
+        ServiceType serviceType = service.resolveServiceType();
 
         SrvReg registration = new SrvReg();
         registration.setURLEntry(urlEntry);
@@ -192,6 +191,17 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
     public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
     {
+        SrvRply srvRply = createSrvRply(xid, language, serviceURLs);
+        byte[] bytes = serializeMessage(srvRply);
+
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("TCP unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
+
+        getTCPConnector().reply(socket, bytes);
+    }
+
+    private SrvRply createSrvRply(Integer xid, String language, ServiceURL[] serviceURLs)
+    {
         SrvRply srvRply = new SrvRply();
         srvRply.setXID(xid == null ? generateXID() : xid.intValue());
         srvRply.setLanguage(language);
@@ -206,10 +216,6 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
             entries[i].setLifetime(serviceURL.getLifetime());
         }
         srvRply.setURLEntries(entries);
-        byte[] bytes = serializeMessage(srvRply);
-
-        if (logger.isLoggable(Level.FINEST)) logger.finest("TCP unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
-
-        getTCPConnector().reply(socket, bytes);
+        return srvRply;
     }
 }
