@@ -21,6 +21,7 @@ package org.livetribe.slp.api;
 public class Configuration
 {
     private int port = 427;
+    private int notificationPort = 1847;
     private String multicastAddress = "239.255.255.253";
     private int mtu = 1400; // bytes
     private int multicastTTL = 255; // 0..255
@@ -41,6 +42,16 @@ public class Configuration
     public int getPort()
     {
         return port;
+    }
+
+    public void setNotificationPort(int notificationPort)
+    {
+        this.notificationPort = notificationPort;
+    }
+
+    public int getNotificationPort()
+    {
+        return notificationPort;
     }
 
     public void setMulticastAddress(String multicastAddress)
