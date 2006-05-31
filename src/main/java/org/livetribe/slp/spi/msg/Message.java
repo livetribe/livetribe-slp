@@ -15,6 +15,11 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 
@@ -33,7 +38,16 @@ import org.livetribe.slp.ServiceLocationException;
  * |      Language Tag Length      |         Language Tag          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
+ * The RFC 2608 extension is the following:
+ * <pre>
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |         Extension ID          |       Next Extension Offset   |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * | Offset, contd.|                Extension Data                 \
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * </pre>
  * @version $Rev$ $Date$
  */
 public abstract class Message extends BytesBlock
@@ -64,10 +78,80 @@ public abstract class Message extends BytesBlock
     private boolean multicast;
     private int xid;
     private String language;
+    private Collection extensions = new ArrayList();
 
     protected abstract byte[] serializeBody() throws ServiceLocationException;
 
     protected abstract void deserializeBody(byte[] bytes) throws ServiceLocationException;
+
+    protected byte[] serializeExtensions(int firstExtensionOffset) throws ServiceLocationException
+    {
+        if (extensions == null) return EMPTY_BYTES;
+
+        int extensionCount = extensions.size();
+        if (extensionCount == 0) return EMPTY_BYTES;
+
+        byte[][] extensionsBytes = new byte[extensionCount][];
+        int extensionsLength = 0;
+        int i = 0;
+        for (Iterator allExtensions = extensions.iterator(); allExtensions.hasNext(); ++i)
+        {
+            Extension extension = (Extension)allExtensions.next();
+            byte[] extensionBytes = extension.serialize();
+
+            // Correct the offset of the next extension
+            int nextExtensionOffset = allExtensions.hasNext() ? firstExtensionOffset + extensionsLength + extensionBytes.length : 0;
+            writeInt(nextExtensionOffset, extensionBytes, Extension.ID_BYTES_LENGTH, Extension.NEXT_EXTENSION_OFFSET_BYTES_LENGTH);
+
+            extensionsBytes[i] = extensionBytes;
+            extensionsLength += extensionBytes.length;
+        }
+
+        int offset = 0;
+        byte[] result = new byte[extensionsLength];
+        for (int j = 0; j < extensionCount; ++j)
+        {
+            int length = extensionsBytes[j].length;
+            System.arraycopy(extensionsBytes[j], 0, result, offset, length);
+            offset += length;
+        }
+
+        return result;
+    }
+
+    protected void deserializeExtensions(byte[] bytes) throws ServiceLocationException
+    {
+        extensions.clear();
+
+        int offset = 0;
+        while (offset < bytes.length)
+        {
+            int initialOffset = offset;
+
+            offset += Extension.ID_BYTES_LENGTH;
+            int nextOffset = readInt(bytes, offset, Extension.NEXT_EXTENSION_OFFSET_BYTES_LENGTH);
+
+            offset += Extension.NEXT_EXTENSION_OFFSET_BYTES_LENGTH;
+            int extensionLength = nextOffset == 0 ? bytes.length - initialOffset : nextOffset - initialOffset;
+            byte[] extensionBytes = new byte[extensionLength];
+            System.arraycopy(bytes, initialOffset, extensionBytes, 0, extensionBytes.length);
+            Extension extension = Extension.deserialize(extensionBytes);
+
+            if (extension != null) extensions.add(extension);
+
+            offset = initialOffset + extensionLength;
+        }
+    }
+
+    public void addExtension(Extension extension)
+    {
+        extensions.add(extension);
+    }
+
+    public Collection getExtensions()
+    {
+        return Collections.unmodifiableCollection(extensions);
+    }
 
     public abstract byte getMessageType();
 
@@ -123,12 +207,16 @@ public abstract class Message extends BytesBlock
 
     public byte[] serialize() throws ServiceLocationException
     {
-        byte[] body = serializeBody();
+        byte[] bodyBytes = serializeBody();
 
         byte[] languageBytes = writeString(getLanguage());
         int headerLength = VERSION_BYTES_LENGTH + MESSAGE_TYPE_BYTES_LENGTH + MESSAGE_LENGTH_BYTES_LENGTH + FLAGS_BYTES_LENGTH;
         headerLength += EXTENSION_BYTES_LENGTH + XID_BYTES_LENGTH + LANGUAGE_LENGTH_BYTES_LENGTH + languageBytes.length;
-        byte[] result = new byte[headerLength + body.length];
+
+        int firstExtensionOffset = headerLength + bodyBytes.length;
+        byte[] extensionsBytes = serializeExtensions(firstExtensionOffset);
+
+        byte[] result = new byte[firstExtensionOffset + extensionsBytes.length];
 
         int offset = 0;
         result[offset] = SLP_VERSION;
@@ -146,9 +234,15 @@ public abstract class Message extends BytesBlock
         if (isMulticast()) flags |= 0x2000;
         writeInt(flags, result, offset, FLAGS_BYTES_LENGTH);
 
-        // Ignore extensions, for now
         offset += FLAGS_BYTES_LENGTH;
-        writeInt(0, result, offset, EXTENSION_BYTES_LENGTH);
+        if (extensionsBytes.length > 0)
+        {
+            writeInt(firstExtensionOffset, result, offset, EXTENSION_BYTES_LENGTH);
+        }
+        else
+        {
+            writeInt(0, result, offset, EXTENSION_BYTES_LENGTH);
+        }
 
         offset += EXTENSION_BYTES_LENGTH;
         writeInt(getXID(), result, offset, XID_BYTES_LENGTH);
@@ -160,7 +254,10 @@ public abstract class Message extends BytesBlock
         System.arraycopy(languageBytes, 0, result, offset, languageBytes.length);
 
         offset += languageBytes.length;
-        System.arraycopy(body, 0, result, offset, body.length);
+        System.arraycopy(bodyBytes, 0, result, offset, bodyBytes.length);
+
+        offset += bodyBytes.length;
+        System.arraycopy(extensionsBytes, 0, result, offset, extensionsBytes.length);
 
         return result;
     }
@@ -189,9 +286,8 @@ public abstract class Message extends BytesBlock
             offset += MESSAGE_LENGTH_BYTES_LENGTH;
             int flags = readInt(bytes, offset, FLAGS_BYTES_LENGTH);
 
-            // Ignore extensions, for now
             offset += FLAGS_BYTES_LENGTH;
-            readInt(bytes, offset, EXTENSION_BYTES_LENGTH);
+            int extensionOffset = readInt(bytes, offset, EXTENSION_BYTES_LENGTH);
 
             offset += EXTENSION_BYTES_LENGTH;
             int xid = readInt(bytes, offset, XID_BYTES_LENGTH);
@@ -210,9 +306,17 @@ public abstract class Message extends BytesBlock
             message.setLanguage(language);
 
             offset += languageLength;
-            byte[] body = new byte[length - offset];
-            System.arraycopy(bytes, offset, body, 0, body.length);
-            message.deserializeBody(body);
+            int bodyLength = extensionOffset == 0 ? length - offset : extensionOffset - offset;
+            byte[] bodyBytes = new byte[bodyLength];
+            System.arraycopy(bytes, offset, bodyBytes, 0, bodyBytes.length);
+            message.deserializeBody(bodyBytes);
+
+            if (extensionOffset > 0)
+            {
+                byte[] extensionsBytes = new byte[length - extensionOffset];
+                System.arraycopy(bytes, extensionOffset, extensionsBytes, 0, extensionsBytes.length);
+                message.deserializeExtensions(extensionsBytes);
+            }
 
             return message;
         }
