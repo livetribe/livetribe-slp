@@ -150,7 +150,6 @@ public class SocketUDPConnectorTest extends SLPTestSupport
         }
         finally
         {
-            sleep(500);
             connector.stop();
         }
     }
