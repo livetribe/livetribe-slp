@@ -137,7 +137,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     {
         List result = new ArrayList();
 
-        List das = findDirectoryAgents(scopes);
+        List das = findDirectoryAgents(scopes, null);
         if (!das.isEmpty())
         {
             for (int i = 0; i < das.size(); ++i)
@@ -155,7 +155,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
         else
         {
-            List sas = findServiceAgents(scopes);
+            List sas = findServiceAgents(scopes, null);
             for (int i = 0; i < sas.size(); ++i)
             {
                 ServiceAgentInfo info = (ServiceAgentInfo)sas.get(i);
@@ -172,19 +172,20 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return result;
     }
 
-    protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
+    public List findDirectoryAgents(String[] scopes, String filter) throws IOException, ServiceLocationException
     {
-        List das = getCachedDirectoryAgents(scopes);
+        List das = getCachedDirectoryAgents(scopes, filter);
         if (das.isEmpty())
         {
-            das = discoverDirectoryAgents(scopes);
+            das = discoverDirectoryAgents(scopes, filter);
             cacheDirectoryAgents(das);
         }
         return das;
     }
 
-    protected List getCachedDirectoryAgents(String[] scopes)
+    protected List getCachedDirectoryAgents(String[] scopes, String filter)
     {
+        // TODO: filter cached DAs upon the given filter
         return daCache.getByScopes(scopes);
     }
 
@@ -203,10 +204,10 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return daCache.remove(info);
     }
 
-    protected List discoverDirectoryAgents(String[] scopes) throws IOException
+    protected List discoverDirectoryAgents(String[] scopes, String filter) throws IOException
     {
         List result = new ArrayList();
-        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, null, -1);
+        DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, filter, null, -1);
         for (int i = 0; i < daAdverts.length; ++i)
         {
             DAAdvert daAdvert = daAdverts[i];
@@ -217,15 +218,15 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return result;
     }
 
-    protected List findServiceAgents(String[] scopes) throws IOException, ServiceLocationException
+    public List findServiceAgents(String[] scopes, String filter) throws IOException, ServiceLocationException
     {
-        return discoverServiceAgents(scopes);
+        return discoverServiceAgents(scopes, filter);
     }
 
-    private List discoverServiceAgents(String[] scopes) throws IOException
+    private List discoverServiceAgents(String[] scopes, String filter) throws IOException
     {
         List result = new ArrayList();
-        SAAdvert[] saAdverts = manager.multicastSASrvRqst(scopes, null, null, -1);
+        SAAdvert[] saAdverts = manager.multicastSASrvRqst(scopes, filter, null, -1);
         for (int i = 0; i < saAdverts.length; ++i)
         {
             SAAdvert saAdvert = saAdverts[i];
@@ -313,7 +314,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             if (logger.isLoggable(Level.FINE)) logger.fine("UserAgent " + this + " executing periodic discovery of DAs");
             try
             {
-                List das = discoverDirectoryAgents(getScopes());
+                List das = discoverDirectoryAgents(getScopes(), null);
                 cacheDirectoryAgents(das);
             }
             catch (IOException x)

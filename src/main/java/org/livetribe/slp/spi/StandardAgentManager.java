@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -31,6 +32,7 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.Rqst;
@@ -315,6 +317,7 @@ public abstract class StandardAgentManager implements AgentManager
      * or when a timeout expires.
      * <br />
      * The algorithm is described very briefly in RFC 2608, section 6.3
+     *
      * @return A list of messages in response of the multicast send
      */
     protected List convergentMulticastSend(Rqst message, long timeframe, Converger converger) throws IOException
@@ -323,16 +326,19 @@ public abstract class StandardAgentManager implements AgentManager
 
         if (timeframe < 0)
         {
-            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeframe is negative, using max multicast wait");
+            if (logger.isLoggable(Level.FINER))
+                logger.finer("Multicast convergence timeframe is negative, using max multicast wait");
             timeframe = getMulticastMaxWait();
         }
         if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeframe (ms): " + timeframe);
 
         long[] timeouts = getMulticastTimeouts();
-        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence timeouts (ms): " + Arrays.toString(timeouts));
+        if (logger.isLoggable(Level.FINER))
+            logger.finer("Multicast convergence timeouts (ms): " + Arrays.toString(timeouts));
 
         List result = new ArrayList();
         Set previousResponders = new HashSet();
+        Set previousResponderIdentifiers = new HashSet();
 
         udpConnector.accept(converger);
 
@@ -349,13 +355,14 @@ public abstract class StandardAgentManager implements AgentManager
                 break;
             }
 
-            message.setPreviousResponders(previousResponders);
+            setPreviousResponders(message, previousResponders, previousResponderIdentifiers);
             byte[] messageBytes = serializeMessage(message);
 
             // Exit if the message bytes cannot fit into the MTU
             if (messageBytes.length > getMaxTransmissionUnit())
             {
-                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, message greater than MTU");
+                if (logger.isLoggable(Level.FINER))
+                    logger.finer("Multicast convergence exit, message greater than MTU");
                 break;
             }
 
@@ -368,42 +375,64 @@ public abstract class StandardAgentManager implements AgentManager
             {
                 // Avoid spurious wakeups
                 long timeout = timeouts[timeoutIndex];
-                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence start wait on timeout #" + (timeoutIndex + 1) + " (ms): " + timeout);
+                if (logger.isLoggable(Level.FINER))
+                    logger.finer("Multicast convergence start wait on timeout #" + (timeoutIndex + 1) + " (ms): " + timeout);
                 long startWait = System.currentTimeMillis();
                 long endWait = startWait;
                 while (converger.isEmpty() && endWait - startWait < timeout)
                 {
                     converger.await(startWait + timeout - endWait);
                     endWait = System.currentTimeMillis();
-                    if (logger.isLoggable(Level.FINEST)) logger.finest("Multicast convergence waited (ms): " + (endWait - startWait));
+                    if (logger.isLoggable(Level.FINEST))
+                        logger.finest("Multicast convergence waited (ms): " + (endWait - startWait));
                 }
-                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence stop wait on timeout #" + (timeoutIndex + 1));
+                if (logger.isLoggable(Level.FINER))
+                    logger.finer("Multicast convergence stop wait on timeout #" + (timeoutIndex + 1));
 
                 boolean newMessages = false;
-                if (!converger.isEmpty())
+                // Messages arrived
+                while (!converger.isEmpty())
                 {
-                    // Messages arrived
-                    while (!converger.isEmpty())
+                    Rply reply = converger.pop();
+                    String responder = reply.getResponder();
+                    if (logger.isLoggable(Level.FINER))
+                        logger.finer("Multicast convergence received reply " + reply + ", responder is " + responder);
+
+                    boolean newResponder = previousResponders.add(responder);
+                    boolean newResponderIdentifier = newResponder;
+                    IdentifierExtension identifierExtension = IdentifierExtension.findFirst(reply.getExtensions());
+                    if (identifierExtension != null) newResponderIdentifier = previousResponderIdentifiers.add(identifierExtension);
+
+                    if (newResponder)
                     {
-                        Rply reply = converger.pop();
-                        String responder = reply.getResponder();
-                        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence received reply " + reply + ", responder is " + responder);
-                        if (responder != null && responder.length() > 0)
+                        if (logger.isLoggable(Level.FINER))
+                            logger.finer("Multicast convergence received a reply from new responder " + responder);
+                        result.add(reply);
+                        newMessages = true;
+                    }
+                    else
+                    {
+                        if (logger.isLoggable(Level.FINER))
+                            logger.finer("Multicast convergence received a reply from known responder " + responder);
+
+                        if (identifierExtension != null)
                         {
-                            if (previousResponders.add(responder))
+                            if (newResponderIdentifier)
                             {
+                                if (logger.isLoggable(Level.FINER))
+                                    logger.finer("Multicast convergence received a reply from new responder with id " + identifierExtension.getIdentifier() + " - " + responder);
                                 result.add(reply);
                                 newMessages = true;
                             }
                             else
                             {
-                                // Drop the duplicate message, one copy arrived already
-                                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence received a reply from known responder " + responder + ", dropping it");
+                                if (logger.isLoggable(Level.FINER))
+                                    logger.finer("Multicast convergence received a reply from known responder with id "  + identifierExtension.getIdentifier() + " - " + responder + ", dropping it");
                             }
                         }
                         else
                         {
-                            throw new IllegalStateException("Multicast convergence reply does not contain responder information " + reply);
+                                logger.finer("Multicast convergence received a reply from known responder " + responder + ", dropping it");
                         }
                     }
                 }
@@ -415,7 +444,8 @@ public abstract class StandardAgentManager implements AgentManager
                     // As extension, exit when the first storm of messages arrive
                     if (timeframe == 0)
                     {
-                        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, first reply received");
+                        if (logger.isLoggable(Level.FINER))
+                            logger.finer("Multicast convergence exit, first reply received");
                         break;
                     }
 
@@ -434,7 +464,8 @@ public abstract class StandardAgentManager implements AgentManager
                     // Exit if there are no result for 2 successive timeouts (RFC 2614 section 2.1.5)
                     if (noReplies > 1)
                     {
-                        if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence exit, two timeouts elapsed");
+                        if (logger.isLoggable(Level.FINER))
+                            logger.finer("Multicast convergence exit, two timeouts elapsed");
                         break;
                     }
                 }
@@ -456,6 +487,19 @@ public abstract class StandardAgentManager implements AgentManager
         return result;
     }
 
+    private void setPreviousResponders(Rqst message, Set previousResponders, Set previousResponderIdentifiers)
+    {
+        message.setPreviousResponders(previousResponders);
+        if (!previousResponderIdentifiers.isEmpty())
+        {
+            for (Iterator identifiers = previousResponderIdentifiers.iterator(); identifiers.hasNext();)
+            {
+                IdentifierExtension extension = (IdentifierExtension)identifiers.next();
+                message.addExtension(extension);
+            }
+        }
+    }
+
     private class DASrvRqstConverger extends Converger
     {
         public DASrvRqstConverger() throws SocketException
@@ -473,23 +517,27 @@ public abstract class StandardAgentManager implements AgentManager
             try
             {
                 Message message = Message.deserialize(event.getMessageBytes());
-                if (logger.isLoggable(Level.FINEST)) logger.finest("Convergent DA message listener " + this + " received message " + message);
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("Convergent DA message listener " + this + " received message " + message);
 
                 switch (message.getMessageType())
                 {
                     case Message.DA_ADVERT_TYPE:
-                        if (logger.isLoggable(Level.FINE)) logger.fine("Convergent DA message listener " + this + " received reply message from " + address + ": " + message);
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("Convergent DA message listener " + this + " received reply message from " + address + ": " + message);
                         ((DAAdvert)message).setResponder(address.getAddress().getHostAddress());
                         add(message);
                         break;
                     default:
-                        if (logger.isLoggable(Level.FINEST)) logger.finest("Convergent DA message listener " + this + " ignoring message received from " + address + ": " + message);
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest("Convergent DA message listener " + this + " ignoring message received from " + address + ": " + message);
                         break;
                 }
             }
             catch (ServiceLocationException x)
             {
-                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Convergent DA message listener " + this + " received bad message from " + address + ", ignoring", x);
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Convergent DA message listener " + this + " received bad message from " + address + ", ignoring", x);
             }
         }
     }
@@ -515,7 +563,8 @@ public abstract class StandardAgentManager implements AgentManager
                 switch (message.getMessageType())
                 {
                     case Message.SA_ADVERT_TYPE:
-                        if (logger.isLoggable(Level.FINE)) logger.fine("Convergent SA message listener " + this + " received reply message from " + address + ": " + message);
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("Convergent SA message listener " + this + " received reply message from " + address + ": " + message);
                         lock();
                         try
                         {
@@ -528,13 +577,15 @@ public abstract class StandardAgentManager implements AgentManager
                         }
                         break;
                     default:
-                        if (logger.isLoggable(Level.FINEST)) logger.finest("Convergent SA message listener " + this + " ignoring message received from " + address + ": " + message);
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest("Convergent SA message listener " + this + " ignoring message received from " + address + ": " + message);
                         break;
                 }
             }
             catch (ServiceLocationException x)
             {
-                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Convergent SA message listener " + this + " received bad message from " + address + ", ignoring", x);
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Convergent SA message listener " + this + " received bad message from " + address + ", ignoring", x);
             }
         }
     }

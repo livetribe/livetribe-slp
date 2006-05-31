@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +44,7 @@ import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentCache;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvRqst;
@@ -71,10 +73,21 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private final Set services = new HashSet();
     private final Lock servicesLock = new ReentrantLock();
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+    private String identifier;
 
     public void setServiceAgentManager(ServiceAgentManager manager)
     {
         this.manager = manager;
+    }
+
+    public String getIdentifier()
+    {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier)
+    {
+        this.identifier = identifier;
     }
 
     public void setConfiguration(Configuration configuration) throws IOException
@@ -213,7 +226,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
         localhost = agentAddr;
 
-        serviceAgent = new ServiceAgentInfo("service:service-agent://" + localhost, getScopes(), getAttributes(), getLanguage());
+        serviceAgent = new ServiceAgentInfo(getIdentifier(), "service:service-agent://" + localhost, getScopes(), getAttributes(), getLanguage());
 
         if (manager == null)
         {
@@ -416,14 +429,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address) throws ServiceLocationException
     {
         // Match previous responders
-        Set prevResponders = message.getPreviousResponders();
-        String responder = localhost.getHostAddress();
-        if (prevResponders.contains(responder))
-        {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": already contains responder " + responder);
-            return;
-        }
+        if (!matchPreviousResponders(message)) return;
 
         // Match scopes
         List scopesList = Arrays.asList(getScopes());
@@ -462,13 +468,43 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + address);
-            manager.udpSAAdvert(address, getScopes(), getAttributes(), new Integer(message.getXID()), message.getLanguage());
+            manager.udpSAAdvert(address, getIdentifier(), getScopes(), getAttributes(), new Integer(message.getXID()), message.getLanguage());
         }
         catch (IOException x)
         {
             if (logger.isLoggable(Level.INFO))
                 logger.log(Level.INFO, "ServiceAgent " + this + " cannot send reply to " + address, x);
         }
+    }
+
+    private boolean matchPreviousResponders(SrvRqst message)
+    {
+        Set prevResponders = message.getPreviousResponders();
+        String responder = localhost.getHostAddress();
+        if (prevResponders.contains(responder))
+        {
+            Collection identifierExtensions = IdentifierExtension.findAll(message.getExtensions());
+            if (!identifierExtensions.isEmpty())
+            {
+                for (Iterator identifiers = identifierExtensions.iterator(); identifiers.hasNext();)
+                {
+                    IdentifierExtension identifierExtension = (IdentifierExtension)identifiers.next();
+                    if (identifierExtension.getIdentifier().equals(getIdentifier()))
+                    {
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("ServiceAgent " + this + " dropping message " + message + ": already contains responder " + responder + " with id " + getIdentifier());
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("ServiceAgent " + this + " dropping message " + message + ": already contains responder " + responder);
+                return false;
+            }
+        }
+        return true;
     }
 
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)

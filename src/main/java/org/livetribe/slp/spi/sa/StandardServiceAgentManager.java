@@ -28,6 +28,7 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.StandardAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
@@ -82,7 +83,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return convergentDASrvRqst(request, timeframe);
     }
 
-    public void udpSAAdvert(InetSocketAddress address, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void udpSAAdvert(InetSocketAddress address, String identifier, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         SAAdvert advert = new SAAdvert();
         advert.setLanguage(language);
@@ -90,6 +91,13 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         advert.setAttributes(attributes);
         advert.setScopes(scopes);
         advert.setURL("service:service-agent://" + localhost.getHostAddress());
+        if (identifier != null)
+        {
+            IdentifierExtension extension = new IdentifierExtension();
+            extension.setIdentifier(identifier);
+            advert.addExtension(extension);
+        }
+
         byte[] bytes = serializeMessage(advert);
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + advert + " to " + address);

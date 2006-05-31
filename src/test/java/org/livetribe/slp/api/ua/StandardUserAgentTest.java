@@ -88,7 +88,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
-                ServiceAgentInfo info = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
+                ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
                 assertNotNull(ack);
@@ -143,7 +143,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
 
         try
         {
-            List das = ua.getCachedDirectoryAgents(ua.getScopes());
+            List das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
             assertNotNull(das);
             assertTrue(das.isEmpty());
 
@@ -160,7 +160,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 // Allow unsolicited DAAdvert to arrive and UA to cache it
                 sleep(500);
 
-                das = ua.getCachedDirectoryAgents(ua.getScopes());
+                das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
                 assertNotNull(das);
                 assertEquals(1, das.size());
             }
@@ -208,7 +208,7 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 long sleep = timeouts[0] + timeouts[1] + timeouts[2];
                 sleep(sleep);
 
-                List das = ua.getCachedDirectoryAgents(ua.getScopes());
+                List das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
                 assertNotNull(das);
                 assertEquals(1, das.size());
             }
@@ -267,6 +267,67 @@ public class StandardUserAgentTest extends SLPAPITestCase
             sa.stop();
         }
     }
+
+    public void testDiscoveryOfTwoSA() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardServiceAgent sa1 = new StandardServiceAgent();
+        sa1.setConfiguration(configuration);
+        sa1.setIdentifier("sa1");
+        ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
+        String language = Locale.ITALY.getLanguage();
+        ServiceInfo service1 = new ServiceInfo(serviceURL1, null, null, language);
+        sa1.register(service1);
+        sa1.start();
+
+        StandardServiceAgent sa2 = new StandardServiceAgent();
+        sa2.setConfiguration(configuration);
+        sa2.setIdentifier("sa2");
+        ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://host/path", ServiceURL.LIFETIME_DEFAULT);
+        ServiceInfo service2 = new ServiceInfo(serviceURL2, null, null, language);
+        sa2.register(service2);
+        sa2.start();
+
+        try
+        {
+            sleep(500);
+
+            StandardUserAgent ua = new StandardUserAgent();
+            ua.setConfiguration(configuration);
+            ua.start();
+
+            try
+            {
+                sleep(500);
+
+                List sas = ua.findServiceAgents(null, null);
+                assertEquals(2, sas.size());
+                ServiceAgentInfo sai1 = (ServiceAgentInfo)sas.get(0);
+                boolean oneToOne = sa1.getIdentifier().equals(sai1.getIdentifier());
+                ServiceAgentInfo sai2 = (ServiceAgentInfo)sas.get(1);
+                if (oneToOne)
+                {
+                    assertEquals(sa1.getIdentifier(), sai1.getIdentifier());
+                    assertEquals(sa2.getIdentifier(), sai2.getIdentifier());
+                }
+                else
+                {
+                    assertEquals(sa2.getIdentifier(), sai1.getIdentifier());
+                    assertEquals(sa1.getIdentifier(), sai2.getIdentifier());
+                }
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa1.stop();
+        }
+    }
+
 /*
     public void testSADiscoveryAndFindServicesViaUDPWithOneSA() throws Exception
     {

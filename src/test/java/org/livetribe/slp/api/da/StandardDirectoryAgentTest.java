@@ -284,7 +284,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
                 String[] scopes = new String[]{"scope1", "scope2"};
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
-                ServiceAgentInfo info = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
+                ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
                 assertNotNull(ack);
@@ -353,7 +353,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
 
                 String language = Locale.getDefault().getLanguage();
 
-                ServiceAgentInfo serviceAgent = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, language);
+                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, language);
 
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
@@ -412,7 +412,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
                 ServiceInfo service = new ServiceInfo(serviceURL, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getLanguage());
-                ServiceAgentInfo info = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, null);
+                ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, false);
 
                 assertNotNull(ack);
@@ -456,7 +456,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 String[] scopes = new String[]{"scope1", "scope2"};
 
                 String language = Locale.getDefault().getLanguage();
-                ServiceAgentInfo serviceAgent = new ServiceAgentInfo("service:service-agent://127.0.0.1", null, null, null);
+                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, language);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
                 assertNotNull(ack);

@@ -15,6 +15,11 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -23,6 +28,19 @@ import org.livetribe.slp.ServiceLocationException;
 public class IdentifierExtension extends Extension
 {
     private String identifier;
+
+    public boolean equals(Object obj)
+    {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        final IdentifierExtension that = (IdentifierExtension)obj;
+        return identifier.equals(that.identifier);
+    }
+
+    public int hashCode()
+    {
+        return identifier.hashCode();
+    }
 
     public int getId()
     {
@@ -47,5 +65,30 @@ public class IdentifierExtension extends Extension
     protected void deserializeBody(byte[] bodyBytes) throws ServiceLocationException
     {
         setIdentifier(utf8BytesToString(bodyBytes, 0, bodyBytes.length));
+    }
+
+    /**
+     * Returns the first IdentifierExtension found in the given collection of extensions.
+     */
+    public static IdentifierExtension findFirst(Collection extensions)
+    {
+        for (Iterator allExtensions = extensions.iterator(); allExtensions.hasNext();)
+        {
+            Extension extension = (Extension)allExtensions.next();
+            if (IDENTIFIER_EXTENSION_ID == extension.getId())
+                return (IdentifierExtension)extension;
+        }
+        return null;
+    }
+
+    public static Collection findAll(Collection extensions)
+    {
+        List result = new ArrayList();
+        for (Iterator allExtensions = extensions.iterator(); allExtensions.hasNext();)
+        {
+            Extension extension = (Extension)allExtensions.next();
+            if (IDENTIFIER_EXTENSION_ID == extension.getId()) result.add(extension);
+        }
+        return result;
     }
 }

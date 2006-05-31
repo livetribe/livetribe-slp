@@ -34,7 +34,7 @@ public interface ServiceAgentManager extends AgentManager
 {
     public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException;
 
-    public void udpSAAdvert(InetSocketAddress address, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void udpSAAdvert(InetSocketAddress address, String identifier, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
     public SrvAck tcpSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException;
 
