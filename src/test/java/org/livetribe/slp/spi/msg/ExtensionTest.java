@@ -17,12 +17,13 @@ package org.livetribe.slp.spi.msg;
 
 import java.util.Collection;
 
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.ServiceType;
 
 /**
  * @version $Rev$ $Date$
  */
-public class ExtensionTest
+public class ExtensionTest extends SLPTestSupport
 {
     /**
      * @testng.test

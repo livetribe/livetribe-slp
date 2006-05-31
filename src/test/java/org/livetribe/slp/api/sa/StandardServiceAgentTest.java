@@ -3,10 +3,10 @@ package org.livetribe.slp.api.sa;
 import java.util.List;
 import java.util.Locale;
 
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.api.da.DirectoryAgent;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
 import org.livetribe.slp.api.ua.StandardUserAgent;
@@ -20,13 +20,19 @@ import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 /**
  * @version $Rev$ $Date$
  */
-public class StandardServiceAgentTest extends SLPAPITestCase
+public class StandardServiceAgentTest extends SLPTestSupport
 {
+    /**
+     * @testng.configuration afterTestMethod="true"
+     */
     protected void tearDown() throws Exception
     {
         sleep(500);
     }
 
+    /**
+     * @testng.test
+     */
     public void testStartStop() throws Exception
     {
         StandardServiceAgent sa = new StandardServiceAgent();
@@ -36,17 +42,20 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         sa.setServiceAgentManager(saManager);
         sa.setConfiguration(getDefaultConfiguration());
 
-        assertFalse(sa.isRunning());
+        assert !sa.isRunning();
         sa.start();
-        assertTrue(sa.isRunning());
+        assert sa.isRunning();
         sa.stop();
-        assertFalse(sa.isRunning());
+        assert !sa.isRunning();
         sa.start();
-        assertTrue(sa.isRunning());
+        assert sa.isRunning();
         sa.stop();
-        assertFalse(sa.isRunning());
+        assert !sa.isRunning();
     }
 
+    /**
+     * @testng.test
+     */
     public void testRegistrationOnStartup() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -90,12 +99,12 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 {
                     List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
 
-                    assertNotNull(serviceURLs);
-                    assertEquals(1, serviceURLs.size());
+                    assert serviceURLs != null;
+                    assert serviceURLs.size() == 1;
                     ServiceURL discoveredServiceURL = (ServiceURL)serviceURLs.get(0);
-                    assertNotNull(discoveredServiceURL);
-                    assertEquals(serviceURL, discoveredServiceURL);
-                    assertEquals(serviceURL.getLifetime(), discoveredServiceURL.getLifetime());
+                    assert discoveredServiceURL != null;
+                    assert serviceURL.equals(discoveredServiceURL);
+                    assert serviceURL.getLifetime() == discoveredServiceURL.getLifetime();
                 }
                 finally
                 {
@@ -113,6 +122,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testDeregistration() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -154,8 +166,8 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 {
                     List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null, language);
 
-                    assertNotNull(serviceURLs);
-                    assertEquals(0, serviceURLs.size());
+                    assert serviceURLs != null;
+                    assert serviceURLs.isEmpty();
                 }
                 finally
                 {
@@ -173,6 +185,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testRegistration() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -218,12 +233,12 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 {
                     List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
 
-                    assertNotNull(serviceURLs);
-                    assertEquals(1, serviceURLs.size());
+                    assert serviceURLs != null;
+                    assert serviceURLs.size() == 1;
                     ServiceURL discoveredServiceURL = (ServiceURL)serviceURLs.get(0);
-                    assertNotNull(discoveredServiceURL);
-                    assertEquals(serviceURL, discoveredServiceURL);
-                    assertEquals(serviceURL.getLifetime(), discoveredServiceURL.getLifetime());
+                    assert discoveredServiceURL != null;
+                    assert serviceURL.equals(discoveredServiceURL);
+                    assert serviceURL.getLifetime() == discoveredServiceURL.getLifetime();
                 }
                 finally
                 {
@@ -241,6 +256,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testListenForDAAdverts() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -272,8 +290,8 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 sleep(sleep);
 
                 List das = sa.getCachedDirectoryAgents(sa.getScopes());
-                assertNotNull(das);
-                assertTrue(das.isEmpty());
+                assert null != (das);
+                assert (das.isEmpty());
 
                 da.start();
 
@@ -281,8 +299,8 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 sleep(500);
 
                 das = sa.getCachedDirectoryAgents(sa.getScopes());
-                assertNotNull(das);
-                assertEquals(1, das.size());
+                assert das != null;
+                assert das.size() == 1;
 
                 StandardUserAgent ua  = new StandardUserAgent();
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();
@@ -295,10 +313,10 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 try
                 {
                     List services = ua.findServices(serviceURL.getServiceType(), sa.getScopes(), null, null);
-                    assertNotNull(services);
-                    assertEquals(1, services.size());
+                    assert services != null;
+                    assert services.size() == 1;
                     ServiceURL service = (ServiceURL)services.get(0);
-                    assertEquals(serviceURL, service);
+                    assert serviceURL.equals(service);
                 }
                 finally
                 {
@@ -317,6 +335,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testDADiscoveryOnStartup() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -353,8 +374,8 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 sleep(sleep);
 
                 List das = sa.getCachedDirectoryAgents(sa.getScopes());
-                assertNotNull(das);
-                assertEquals(1, das.size());
+                assert das != null;
+                assert das.size() == 1;
             }
             finally
             {
@@ -367,6 +388,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testRegistrationFailureNoLanguage() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -386,11 +410,15 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             try
             {
                 sa.start();
-                fail();
+                throw new AssertionError();
             }
             catch (ServiceLocationException x)
             {
-                assertEquals(ServiceLocationException.INVALID_REGISTRATION, x.getErrorCode());
+                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+            }
+            finally
+            {
+                sa.stop();
             }
         }
         finally
@@ -399,6 +427,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testRegistrationFailureNoLifetime() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -418,11 +449,15 @@ public class StandardServiceAgentTest extends SLPAPITestCase
             try
             {
                 sa.start();
-                fail();
+                throw new AssertionError();
             }
             catch (ServiceLocationException x)
             {
-                assertEquals(ServiceLocationException.INVALID_REGISTRATION, x.getErrorCode());
+                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+            }
+            finally
+            {
+                sa.stop();
             }
         }
         finally
@@ -431,6 +466,9 @@ public class StandardServiceAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testRegisterMultipleServices() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -463,14 +501,14 @@ public class StandardServiceAgentTest extends SLPAPITestCase
                 try
                 {
                     List result = ua.findServices(serviceURL1.getServiceType(), null, null, null);
-                    assertNotNull(result);
-                    assertEquals(1, result.size());
-                    assertEquals(serviceURL1, result.get(0));
+                    assert result != null;
+                    assert result.size() == 1;
+                    assert serviceURL1.equals(result.get(0));
 
                     result = ua.findServices(serviceURL2.getServiceType(), null, null, null);
-                    assertNotNull(result);
-                    assertEquals(1, result.size());
-                    assertEquals(serviceURL2, result.get(0));
+                    assert result != null;
+                    assert result.size() == 1;
+                    assert serviceURL2.equals(result.get(0));
                 }
                 finally
                 {
