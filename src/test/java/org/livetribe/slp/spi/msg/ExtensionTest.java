@@ -18,13 +18,15 @@ package org.livetribe.slp.spi.msg;
 import java.util.Collection;
 
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.spi.SLPSPITestCase;
 
 /**
  * @version $Rev$ $Date$
  */
-public class ExtensionTest extends SLPSPITestCase
+public class ExtensionTest
 {
+    /**
+     * @testng.test
+     */
     public void testIdentifierExtension() throws Exception
     {
         IdentifierExtension original = new IdentifierExtension();
@@ -33,9 +35,12 @@ public class ExtensionTest extends SLPSPITestCase
         byte[] bytes = original.serialize();
         IdentifierExtension deserialized = (IdentifierExtension)Extension.deserialize(bytes);
 
-        assertEquals(original.getIdentifier(), deserialized.getIdentifier());
+        assert original.getIdentifier().equals(deserialized.getIdentifier());
     }
 
+    /**
+     * @testng.test
+     */
     public void testMessageWithIdentifierExtension() throws Exception
     {
         SrvRqst original = new SrvRqst();
@@ -47,9 +52,9 @@ public class ExtensionTest extends SLPSPITestCase
         byte[] bytes = original.serialize();
         SrvRqst deserialized = (SrvRqst)Message.deserialize(bytes);
         Collection extensions = deserialized.getExtensions();
-        assertNotNull(extensions);
-        assertEquals(1, extensions.size());
+        assert extensions != null;
+        assert extensions.size() == 1;
         IdentifierExtension deserializedExtension = (IdentifierExtension)extensions.iterator().next();
-        assertEquals(originalExtension.getIdentifier(), deserializedExtension.getIdentifier());
+        assert originalExtension.getIdentifier().equals(deserializedExtension.getIdentifier());
     }
 }
