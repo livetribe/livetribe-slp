@@ -21,32 +21,46 @@ import java.net.InetAddress;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.spi.SLPSPITestCase;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
 
 /**
  * @version $Rev$ $Date$
  */
-public class SocketUDPConnectorTest extends SLPSPITestCase
+public class SocketUDPConnectorTest extends SLPTestSupport
 {
+    /**
+     * @testng.configuration afterTestMethod="true"
+     */
+    protected void tearDown() throws Exception
+    {
+        sleep(500);
+    }
+
+    /**
+     * @testng.test
+     */
     public void testStartStop() throws Exception
     {
         Configuration config = getDefaultConfiguration();
         SocketUDPConnector connector = new SocketUDPConnector();
         connector.setConfiguration(config);
         connector.start();
-        assertTrue(connector.isRunning());
+        assert connector.isRunning();
         connector.stop();
-        assertFalse(connector.isRunning());
+        assert !connector.isRunning();
 
         // Be sure we can restart it
         connector.start();
-        assertTrue(connector.isRunning());
+        assert connector.isRunning();
         connector.stop();
     }
 
+    /**
+     * @testng.test
+     */
     public void testClientSendsEmptyMessage() throws Exception
     {
         Configuration config = getDefaultConfiguration();
@@ -78,18 +92,20 @@ public class SocketUDPConnectorTest extends SLPSPITestCase
 
             sleep(500);
 
-            assertTrue(connector.isRunning());
-            assertNotNull(message.get());
+            assert connector.isRunning();
             MessageEvent event = (MessageEvent)message.get();
-            assertTrue(Arrays.equals(messageBytes, event.getMessageBytes()));
+            assert event != null;
+            assert Arrays.equals(messageBytes, event.getMessageBytes());
         }
         finally
         {
-            sleep(500);
             connector.stop();
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testClientSendsMessage() throws Exception
     {
         Configuration config = getDefaultConfiguration();
@@ -115,7 +131,6 @@ public class SocketUDPConnectorTest extends SLPSPITestCase
             URLEntry entry = new URLEntry();
             entry.setURL("url1");
             reply.setURLEntries(new URLEntry[]{entry});
-            reply.setResponder("127.0.0.1");
 
             byte[] messageBytes = reply.serialize();
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length);
@@ -128,10 +143,10 @@ public class SocketUDPConnectorTest extends SLPSPITestCase
 
             sleep(500);
 
-            assertTrue(connector.isRunning());
-            assertNotNull(message.get());
+            assert connector.isRunning();
             MessageEvent event = (MessageEvent)message.get();
-            assertTrue(Arrays.equals(messageBytes, event.getMessageBytes()));
+            assert event != null;
+            assert Arrays.equals(messageBytes, event.getMessageBytes());
         }
         finally
         {
