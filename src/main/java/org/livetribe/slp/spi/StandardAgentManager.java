@@ -68,7 +68,6 @@ public abstract class StandardAgentManager implements AgentManager
         setMulticastMaxWait(configuration.getMulticastMaxWait());
         setMulticastTimeouts(configuration.getMulticastTimeouts());
         setMaxTransmissionUnit(configuration.getMTU());
-        setPort(configuration.getPort());
         if (udpConnector != null) udpConnector.setConfiguration(configuration);
         if (tcpConnector != null) tcpConnector.setConfiguration(configuration);
     }
@@ -106,16 +105,6 @@ public abstract class StandardAgentManager implements AgentManager
     public void setMaxTransmissionUnit(int maxTransmissionUnit)
     {
         this.maxTransmissionUnit = maxTransmissionUnit;
-    }
-
-    public int getPort()
-    {
-        return port;
-    }
-
-    public void setPort(int port)
-    {
-        this.port = port;
     }
 
     public void setUDPConnector(UDPConnector connector)
