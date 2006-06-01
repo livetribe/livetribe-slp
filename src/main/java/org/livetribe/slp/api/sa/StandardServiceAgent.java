@@ -195,6 +195,11 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
+    public Set getServices()
+    {
+        return Collections.unmodifiableSet(services);
+    }
+
     private List getServiceTypes()
     {
         servicesLock.lock();
@@ -305,10 +310,18 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private void registerService(ServiceInfo service) throws IOException, ServiceLocationException
     {
         List das = findDirectoryAgents(service.getScopes());
-        for (int i = 0; i < das.size(); ++i)
+        if (!das.isEmpty())
         {
-            DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
-            registerService(service, directory);
+            for (int i = 0; i < das.size(); ++i)
+            {
+                DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
+                registerService(service, directory);
+            }
+        }
+        else
+        {
+            // There are no DA deployed on the network: multicast a SrvReg as specified by RFC 3082.
+            manager.multicastSrvRegNotification(service, serviceAgent, true);
         }
     }
 
@@ -364,10 +377,18 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private void deregisterService(ServiceInfo service) throws IOException, ServiceLocationException
     {
         List das = findDirectoryAgents(service.getScopes());
-        for (int i = 0; i < das.size(); ++i)
+        if (!das.isEmpty())
         {
-            DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
-            deregisterService(service, directory);
+            for (int i = 0; i < das.size(); ++i)
+            {
+                DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
+                deregisterService(service, directory);
+            }
+        }
+        else
+        {
+            // There are no DA deployed on the network: multicast a SrvDeReg as specified by RFC 3082.
+            manager.multicastSrvDeRegNotification(service, serviceAgent);
         }
     }
 

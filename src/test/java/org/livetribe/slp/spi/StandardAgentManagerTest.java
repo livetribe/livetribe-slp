@@ -345,6 +345,11 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             }
             return socket;
         }
+
+        public DatagramSocket multicastNotify(DatagramSocket socket, byte[] bytes) throws IOException
+        {
+            throw new AssertionError("BUG: this method should not be called");
+        }
     }
 
     private class UCConnector extends TCPConnector

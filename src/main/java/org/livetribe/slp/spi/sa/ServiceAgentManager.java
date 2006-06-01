@@ -41,4 +41,8 @@ public interface ServiceAgentManager extends AgentManager
     public SrvAck tcpSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException;
 
     public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
+
+    public void multicastSrvRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException;
+
+    public void multicastSrvDeRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException;
 }

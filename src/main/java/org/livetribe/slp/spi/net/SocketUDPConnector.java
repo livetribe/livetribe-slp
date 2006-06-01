@@ -34,20 +34,21 @@ public class SocketUDPConnector extends UDPConnector
 
     protected Runnable[] createAcceptors() throws IOException
     {
+        int port = getConfiguration().getPort();
         InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {
             // No interface addresses defined, bind on the wildcard address
             bindAddresses = new InetSocketAddress[1];
-            bindAddresses[0] = new InetSocketAddress((InetAddress)null, getPort());
+            bindAddresses[0] = new InetSocketAddress((InetAddress)null, port);
         }
         else
         {
             bindAddresses = new InetSocketAddress[interfaceAddresses.length];
             for (int i = 0; i < bindAddresses.length; ++i)
             {
-                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], getPort());
+                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], port);
             }
         }
 
@@ -90,7 +91,12 @@ public class SocketUDPConnector extends UDPConnector
 
     public DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException
     {
-        return send(socket, new InetSocketAddress(getMulticastAddress(), getPort()), bytes);
+        return send(socket, new InetSocketAddress(getMulticastAddress(), getConfiguration().getPort()), bytes);
+    }
+
+    public DatagramSocket multicastNotify(DatagramSocket socket, byte[] bytes) throws IOException
+    {
+        return send(socket, new InetSocketAddress(getMulticastAddress(), getConfiguration().getNotificationPort()), bytes);
     }
 
     private DatagramSocket send(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException

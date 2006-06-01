@@ -39,19 +39,20 @@ public class SocketTCPConnector extends TCPConnector
     {
         if (!isTCPListening()) return null;
 
+        int port = getConfiguration().getPort();
         InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {
             bindAddresses = new InetSocketAddress[1];
-            bindAddresses[0] = new InetSocketAddress((InetAddress)null, getPort());
+            bindAddresses[0] = new InetSocketAddress((InetAddress)null, port);
         }
         else
         {
             bindAddresses = new InetSocketAddress[interfaceAddresses.length];
             for (int i = 0; i < bindAddresses.length; ++i)
             {
-                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], getPort());
+                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], port);
             }
         }
 
@@ -145,7 +146,7 @@ public class SocketTCPConnector extends TCPConnector
 
     public Socket send(byte[] messageBytes, InetAddress address, boolean closeSocket) throws ConnectException, IOException
     {
-        Socket socket = new Socket(address, getPort());
+        Socket socket = new Socket(address, getConfiguration().getPort());
         try
         {
             write(socket, messageBytes);

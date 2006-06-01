@@ -89,6 +89,8 @@ public abstract class UDPConnector extends NetworkConnector
      */
     public abstract DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException;
 
+    public abstract DatagramSocket multicastNotify(DatagramSocket socket, byte[] bytes) throws IOException;
+
     public void accept(Runnable executor)
     {
         if (executor instanceof Acceptor) ((Acceptor)executor).setMulticastConnector(this);

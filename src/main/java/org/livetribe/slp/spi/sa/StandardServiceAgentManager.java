@@ -107,22 +107,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
     public SrvAck tcpSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException
     {
-        ServiceURL serviceURL = service.getServiceURL();
-
-        URLEntry urlEntry = new URLEntry();
-        urlEntry.setLifetime(serviceURL.getLifetime());
-        urlEntry.setURL(serviceURL.getURL());
-
-        ServiceType serviceType = service.resolveServiceType();
-
-        SrvReg registration = new SrvReg();
-        registration.setURLEntry(urlEntry);
-        registration.setServiceType(serviceType);
-        registration.setScopes(resolveScopes(service, serviceAgent));
-        registration.setAttributes(service.getAttributes());
-        registration.setFresh(freshRegistration);
-        registration.setXID(generateXID());
-        registration.setLanguage(resolveLanguage(service, serviceAgent));
+        SrvReg registration = createSrvReg(service, serviceAgent, freshRegistration);
 
         byte[] requestBytes = serializeMessage(registration);
 
@@ -146,6 +131,28 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         }
     }
 
+    private SrvReg createSrvReg(ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration)
+    {
+        ServiceURL serviceURL = service.getServiceURL();
+
+        URLEntry urlEntry = new URLEntry();
+        urlEntry.setLifetime(serviceURL.getLifetime());
+        urlEntry.setURL(serviceURL.getURL());
+
+        ServiceType serviceType = service.resolveServiceType();
+
+        SrvReg registration = new SrvReg();
+        registration.setURLEntry(urlEntry);
+        registration.setServiceType(serviceType);
+        registration.setScopes(resolveScopes(service, serviceAgent));
+        registration.setAttributes(service.getAttributes());
+        registration.setFresh(freshRegistration);
+        registration.setXID(generateXID());
+        registration.setLanguage(resolveLanguage(service, serviceAgent));
+
+        return registration;
+    }
+
     private String resolveLanguage(ServiceInfo service, ServiceAgentInfo serviceAgent)
     {
         String language = service.getLanguage();
@@ -162,18 +169,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
     public SrvAck tcpSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException
     {
-        ServiceURL serviceURL = service.getServiceURL();
-
-        URLEntry urlEntry = new URLEntry();
-        urlEntry.setLifetime(serviceURL.getLifetime());
-        urlEntry.setURL(serviceURL.getURL());
-
-        SrvDeReg deregistration = new SrvDeReg();
-        deregistration.setURLEntry(urlEntry);
-        deregistration.setScopes(resolveScopes(service, serviceAgent));
-        deregistration.setTags(service.getAttributes());
-        deregistration.setXID(generateXID());
-        deregistration.setLanguage(resolveLanguage(service, serviceAgent));
+        SrvDeReg deregistration = createSrvDeReg(service, serviceAgent);
 
         byte[] requestBytes = serializeMessage(deregistration);
 
@@ -197,6 +193,24 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         }
     }
 
+    private SrvDeReg createSrvDeReg(ServiceInfo service, ServiceAgentInfo serviceAgent)
+    {
+        ServiceURL serviceURL = service.getServiceURL();
+
+        URLEntry urlEntry = new URLEntry();
+        urlEntry.setLifetime(serviceURL.getLifetime());
+        urlEntry.setURL(serviceURL.getURL());
+
+        SrvDeReg deregistration = new SrvDeReg();
+        deregistration.setURLEntry(urlEntry);
+        deregistration.setScopes(resolveScopes(service, serviceAgent));
+        deregistration.setTags(service.getAttributes());
+        deregistration.setXID(generateXID());
+        deregistration.setLanguage(resolveLanguage(service, serviceAgent));
+
+        return deregistration;
+    }
+
     public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
     {
         SrvRply srvRply = createSrvRply(xid, language, serviceURLs);
@@ -206,6 +220,22 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
             logger.finest("TCP unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());
 
         getTCPConnector().reply(socket, bytes);
+    }
+
+    public void multicastSrvRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException
+    {
+        SrvReg registration = createSrvReg(service, serviceAgent, freshRegistration);
+        registration.setMulticast(true);
+        byte[] bytes = serializeMessage(registration);
+        getUDPConnector().multicastNotify(null, bytes).close();
+    }
+
+    public void multicastSrvDeRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException
+    {
+        SrvDeReg deregistration = createSrvDeReg(service, serviceAgent);
+        deregistration.setMulticast(true);
+        byte[] bytes = serializeMessage(deregistration);
+        getUDPConnector().multicastNotify(null, bytes).close();
     }
 
     private SrvRply createSrvRply(Integer xid, String language, ServiceURL[] serviceURLs)

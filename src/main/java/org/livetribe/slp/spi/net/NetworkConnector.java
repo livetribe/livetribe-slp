@@ -40,7 +40,6 @@ public abstract class NetworkConnector
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;
-    private int port;
     private final List listeners = new ArrayList();
     private final Lock listenersLock = new ReentrantLock();
     private InetAddress[] inetAddresses;
@@ -51,7 +50,6 @@ public abstract class NetworkConnector
     public void setConfiguration(Configuration configuration) throws IOException
     {
         this.configuration = configuration;
-        setPort(configuration.getPort());
         String[] interfaces = configuration.getInterfaceAddresses();
         if (interfaces != null)
         {
@@ -73,16 +71,6 @@ public abstract class NetworkConnector
     public void setConnectionPool(ThreadPoolExecutor threadPool)
     {
         this.connectionPool = threadPool;
-    }
-
-    public void setPort(int port)
-    {
-        this.port = port;
-    }
-
-    public int getPort()
-    {
-        return port;
     }
 
     public void addMessageListener(MessageListener listener)
