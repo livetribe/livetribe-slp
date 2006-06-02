@@ -91,18 +91,18 @@ public class ServiceURL implements Serializable
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         final ServiceURL that = (ServiceURL)obj;
-        return url.equals(that.url);
+        return getURL().equals(that.getURL());
     }
 
     public int hashCode()
     {
-        return url.hashCode();
+        return getURL().hashCode();
     }
 
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException
     {
         ois.defaultReadObject();
-        parse(url);
+        parse(getURL());
     }
 
     public String toString()

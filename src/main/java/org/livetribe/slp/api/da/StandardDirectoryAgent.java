@@ -41,6 +41,7 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
@@ -188,6 +189,68 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
+    private void notifyServiceRegistered(SrvReg message)
+    {
+/*
+        listenersLock.lock();
+        try
+        {
+            if (!listeners.isEmpty())
+            {
+                ServiceRegistrationEvent event = new ServiceRegistrationEvent(message, message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes());
+                for (int i = 0; i < listeners.size(); ++i)
+                {
+                    ServiceRegistrationListener listener = (ServiceRegistrationListener)listeners.get(i);
+                    try
+                    {
+                        listener.serviceRegistered(event);
+                    }
+                    catch (RuntimeException x)
+                    {
+                        if (logger.isLoggable(Level.INFO))
+                            logger.log(Level.INFO, "ServiceRegistrationListener threw exception, ignoring", x);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            listenersLock.unlock();
+        }
+*/
+    }
+
+    private void notifyServiceDeregistered(SrvReg message)
+    {
+/*
+        listenersLock.lock();
+        try
+        {
+            if (!listeners.isEmpty())
+            {
+                ServiceRegistrationEvent event = new ServiceRegistrationEvent(message, message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes());
+                for (int i = 0; i < listeners.size(); ++i)
+                {
+                    ServiceRegistrationListener listener = (ServiceRegistrationListener)listeners.get(i);
+                    try
+                    {
+                        listener.serviceDeregistered(event);
+                    }
+                    catch (RuntimeException x)
+                    {
+                        if (logger.isLoggable(Level.INFO))
+                            logger.log(Level.INFO, "ServiceRegistrationListener threw exception, ignoring", x);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            listenersLock.unlock();
+        }
+*/
+    }
+
     public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean notifyListeners) throws ServiceLocationException
     {
         SrvReg message = new SrvReg();
@@ -307,35 +370,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         return result;
     }
 
-    private void notifyServiceRegistered(SrvReg message)
-    {
-        listenersLock.lock();
-        try
-        {
-            if (!listeners.isEmpty())
-            {
-                ServiceRegistrationEvent event = new ServiceRegistrationEvent(message, message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes());
-                for (int i = 0; i < listeners.size(); ++i)
-                {
-                    ServiceRegistrationListener listener = (ServiceRegistrationListener)listeners.get(i);
-                    try
-                    {
-                        listener.serviceRegistered(event);
-                    }
-                    catch (RuntimeException x)
-                    {
-                        if (logger.isLoggable(Level.INFO))
-                            logger.log(Level.INFO, "ServiceRegistrationListener threw exception, ignoring", x);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            listenersLock.unlock();
-        }
-    }
-
     private int updateService(SrvReg message)
     {
         servicesLock.lock();
@@ -407,35 +441,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         {
             if (logger.isLoggable(Level.INFO))
                 logger.log(Level.INFO, "DirectoryAgent " + this + " cannot send unicast reply to " + socket, x);
-        }
-    }
-
-    private void notifyServiceDeregistered(SrvReg message)
-    {
-        listenersLock.lock();
-        try
-        {
-            if (!listeners.isEmpty())
-            {
-                ServiceRegistrationEvent event = new ServiceRegistrationEvent(message, message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes());
-                for (int i = 0; i < listeners.size(); ++i)
-                {
-                    ServiceRegistrationListener listener = (ServiceRegistrationListener)listeners.get(i);
-                    try
-                    {
-                        listener.serviceDeregistered(event);
-                    }
-                    catch (RuntimeException x)
-                    {
-                        if (logger.isLoggable(Level.INFO))
-                            logger.log(Level.INFO, "ServiceRegistrationListener threw exception, ignoring", x);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            listenersLock.unlock();
         }
     }
 

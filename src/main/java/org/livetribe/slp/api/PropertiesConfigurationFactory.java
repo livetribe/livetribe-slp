@@ -15,10 +15,10 @@
  */
 package org.livetribe.slp.api;
 
-import java.util.Properties;
-import java.io.InputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * @version $Rev$ $Date$
@@ -74,10 +74,10 @@ public class PropertiesConfigurationFactory
         if (interfaces != null) configuration.setInterfaceAddresses(interfaces.split(",", 0));
 
         Integer unicastReadTimeout = getAsInteger(properties.getProperty("org.livetribe.slp.unicastReadTimeout"));
-        if (unicastReadTimeout != null) configuration.setUnicastReadTimeout(unicastReadTimeout.intValue());
+        if (unicastReadTimeout != null) configuration.setTCPReadTimeout(unicastReadTimeout.intValue());
 
         Integer unicastMaxMessageLength = getAsInteger(properties.getProperty("org.livetribe.slp.unicastMaxMessageLength"));
-        if (unicastMaxMessageLength != null) configuration.setUnicastMaxMessageLength(unicastMaxMessageLength.intValue());
+        if (unicastMaxMessageLength != null) configuration.setMaxTCPMessageLength(unicastMaxMessageLength.intValue());
 
         Integer daHeartBeatPeriod = getAsInteger(properties.getProperty("net.slp.DAHeartBeat"));
         if (daHeartBeatPeriod != null) configuration.setDAHeartBeatPeriod(daHeartBeatPeriod.intValue());

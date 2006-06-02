@@ -31,12 +31,17 @@ import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.api.ServiceRegistrationEvent;
+import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.da.DirectoryAgentCache;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.MessageEvent;
@@ -44,6 +49,7 @@ import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 import org.livetribe.slp.spi.ua.UserAgentManager;
+import org.livetribe.util.ConcurrentListeners;
 
 /**
  * @version $Rev$ $Date$
@@ -53,9 +59,11 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     private int discoveryStartWaitBound;
     private long discoveryPeriod;
     private UserAgentManager manager;
-    private MessageListener udpListener;
+    private MessageListener multicastMessageListener;
+    private MessageListener multicastNotificationListener;
     private final DirectoryAgentCache daCache = new DirectoryAgentCache();
     private ScheduledExecutorService scheduledExecutorService;
+    private final ConcurrentListeners listeners = new ConcurrentListeners();
 
     public void setUserAgentManager(UserAgentManager manager)
     {
@@ -108,8 +116,10 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
         manager.start();
 
-        udpListener = new UDPMessageListener();
-        manager.addMessageListener(udpListener, true);
+        multicastMessageListener = new MulticastMessageListener();
+        manager.addMessageListener(multicastMessageListener, true);
+        multicastNotificationListener = new MulticastNotificationListener();
+        manager.addNotificationListener(multicastNotificationListener);
 
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
@@ -129,8 +139,31 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             scheduledExecutorService = null;
         }
 
-        manager.removeMessageListener(udpListener, true);
+        manager.removeNotificationListener(multicastNotificationListener);
+        manager.removeMessageListener(multicastMessageListener, true);
         manager.stop();
+    }
+
+    public void addServiceRegistrationListener(ServiceRegistrationListener listener)
+    {
+        listeners.add(listener);
+    }
+
+    public void removeServiceRegistrationListener(ServiceRegistrationListener listener)
+    {
+        listeners.remove(listener);
+    }
+
+    private void notifyServiceRegistered(ServiceInfo service)
+    {
+        ServiceRegistrationEvent event = new ServiceRegistrationEvent(service, null);
+        listeners.notify("serviceRegistered", event);
+    }
+
+    private void notifyServiceDeregistered(ServiceInfo service)
+    {
+        ServiceRegistrationEvent event = new ServiceRegistrationEvent(null, service);
+        listeners.notify("serviceDeregistered", event);
     }
 
     public List findServices(ServiceType serviceType, String[] scopes, String filter, String language) throws IOException, ServiceLocationException
@@ -263,6 +296,18 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
     }
 
+    protected void handleMulticastSrvReg(SrvReg message)
+    {
+        ServiceInfo service = ServiceInfo.from(message);
+        notifyServiceRegistered(service);
+    }
+
+    protected void handleMulticastSrvDeReg(SrvDeReg message)
+    {
+        ServiceInfo service = ServiceInfo.from(message);
+        notifyServiceDeregistered(service);
+    }
+
     /**
      * UserAgents listen for multicast UDP messages that may arrive.
      * They are interested in:
@@ -270,7 +315,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
      * <li>DAAdverts, from DAs that boot or shutdown</li>
      * </ul>
      */
-    private class UDPMessageListener implements MessageListener
+    private class MulticastMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -303,6 +348,46 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "UserAgent " + this + " received bad multicast message from: " + address + ", ignoring", x);
+            }
+        }
+    }
+
+    private class MulticastNotificationListener implements MessageListener
+    {
+        public void handle(MessageEvent event)
+        {
+            InetSocketAddress address = event.getSocketAddress();
+            try
+            {
+                Message message = Message.deserialize(event.getMessageBytes());
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("UserAgent multicast notification listener received message " + message);
+
+                if (!message.isMulticast())
+                {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("UserAgent " + this + " dropping notification " + message + ": expected multicast flag set");
+                    return;
+                }
+
+                switch (message.getMessageType())
+                {
+                    case Message.SRV_REG_TYPE:
+                        handleMulticastSrvReg((SrvReg)message);
+                        break;
+                    case Message.SRV_DEREG_TYPE:
+                        handleMulticastSrvDeReg((SrvDeReg)message);
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("UserAgent " + this + " dropping multicast notification " + message + ": not handled by UserAgents");
+                        break;
+                }
+            }
+            catch (ServiceLocationException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "UserAgent " + this + " received bad multicast notification from: " + address + ", ignoring", x);
             }
         }
     }

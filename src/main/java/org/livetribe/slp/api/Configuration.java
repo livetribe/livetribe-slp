@@ -28,8 +28,8 @@ public class Configuration
     private long multicastMaxWait = 15000; // milliseconds
     private long[] multicastTimeouts = new long[]{250L, 500L, 750L, 1000L, 1250L, 1500L, 2000L, 3000L, 4000L}; // milliseconds
     private String[] interfaceAddresses = null;
-    private int unicastReadTimeout = 2000; // milliseconds
-    private int unicastMaxMessageLength = 8192; // bytes
+    private int tcpReadTimeout = 2000; // milliseconds
+    private int maxTCPMessageLength = 8192; // bytes
     private int daHeartBeatPeriod = 10800; // seconds
     private int daDiscoveryStartWaitBound = 3; // seconds
     private int daDiscoveryPeriod = 900; // seconds
@@ -114,24 +114,24 @@ public class Configuration
         return interfaceAddresses;
     }
 
-    public void setUnicastReadTimeout(int unicastReadTimeout)
+    public void setTCPReadTimeout(int tcpReadTimeout)
     {
-        this.unicastReadTimeout = unicastReadTimeout;
+        this.tcpReadTimeout = tcpReadTimeout;
     }
 
-    public int getUnicastReadTimeout()
+    public int getTCPReadTimeout()
     {
-        return unicastReadTimeout;
+        return tcpReadTimeout;
     }
 
-    public void setUnicastMaxMessageLength(int unicastMaxMessageLength)
+    public void setMaxTCPMessageLength(int maxTCPMessageLength)
     {
-        this.unicastMaxMessageLength = unicastMaxMessageLength;
+        this.maxTCPMessageLength = maxTCPMessageLength;
     }
 
-    public int getUnicastMaxMessageLength()
+    public int getMaxTCPMessageLength()
     {
-        return unicastMaxMessageLength;
+        return maxTCPMessageLength;
     }
 
     public void setDAHeartBeatPeriod(int daHeartBeatPeriod)

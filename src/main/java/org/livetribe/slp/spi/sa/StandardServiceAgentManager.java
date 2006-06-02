@@ -90,11 +90,13 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         advert.setXID(xid == null ? generateXID() : xid.intValue());
         advert.setAttributes(attributes);
         advert.setScopes(scopes);
-        advert.setURL("service:service-agent://" + localhost.getHostAddress());
+        String host = localhost.getHostAddress();
+        advert.setURL("service:service-agent://" + host);
         if (identifier != null)
         {
             IdentifierExtension extension = new IdentifierExtension();
             extension.setIdentifier(identifier);
+            extension.setHost(host);
             advert.addExtension(extension);
         }
 
@@ -222,22 +224,6 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         getTCPConnector().reply(socket, bytes);
     }
 
-    public void multicastSrvRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException
-    {
-        SrvReg registration = createSrvReg(service, serviceAgent, freshRegistration);
-        registration.setMulticast(true);
-        byte[] bytes = serializeMessage(registration);
-        getUDPConnector().multicastNotify(null, bytes).close();
-    }
-
-    public void multicastSrvDeRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException
-    {
-        SrvDeReg deregistration = createSrvDeReg(service, serviceAgent);
-        deregistration.setMulticast(true);
-        byte[] bytes = serializeMessage(deregistration);
-        getUDPConnector().multicastNotify(null, bytes).close();
-    }
-
     private SrvRply createSrvRply(Integer xid, String language, ServiceURL[] serviceURLs)
     {
         SrvRply srvRply = new SrvRply();
@@ -255,5 +241,35 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         }
         srvRply.setURLEntries(entries);
         return srvRply;
+    }
+
+    public void multicastSrvRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException
+    {
+        SrvReg registration = createSrvReg(service, serviceAgent, freshRegistration);
+        registration.setMulticast(true);
+
+        IdentifierExtension extension = new IdentifierExtension();
+        extension.setIdentifier(serviceAgent.getIdentifier());
+        extension.setHost(serviceAgent.getHost());
+        registration.addExtension(extension);
+
+        byte[] bytes = serializeMessage(registration);
+        InetSocketAddress address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getNotificationPort());
+        getUDPConnector().multicastSend(null, address, bytes).close();
+    }
+
+    public void multicastSrvDeRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException
+    {
+        SrvDeReg deregistration = createSrvDeReg(service, serviceAgent);
+        deregistration.setMulticast(true);
+
+        IdentifierExtension extension = new IdentifierExtension();
+        extension.setIdentifier(serviceAgent.getIdentifier());
+        extension.setHost(serviceAgent.getHost());
+        deregistration.addExtension(extension);
+
+        byte[] bytes = serializeMessage(deregistration);
+        InetSocketAddress address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getNotificationPort());
+        getUDPConnector().multicastSend(null, address, bytes).close();
     }
 }

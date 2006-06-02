@@ -27,7 +27,10 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.net.SocketUDPConnector;
 import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * An SLP User Agent (UA) can discover SLP ServiceAgents (SAs) and SLP DirectoryAgents(DAs).
@@ -42,6 +45,39 @@ import org.livetribe.slp.spi.net.TCPConnector;
  */
 public class StandardUserAgentManager extends StandardAgentManager implements UserAgentManager
 {
+    private UDPConnector notificationConnector;
+
+    protected void doStart() throws IOException
+    {
+        super.doStart();
+        notificationConnector = createNotificationConnector();
+        notificationConnector.start();
+    }
+
+    protected void doStop() throws IOException
+    {
+        if (notificationConnector != null) notificationConnector.stop();
+        super.doStop();
+    }
+
+    protected UDPConnector createNotificationConnector() throws IOException
+    {
+        SocketUDPConnector connector = new SocketUDPConnector();
+        connector.setConfiguration(getConfiguration());
+        connector.setPort(getConfiguration().getNotificationPort());
+        return connector;
+    }
+
+    public void addNotificationListener(MessageListener listener)
+    {
+        notificationConnector.addMessageListener(listener);
+    }
+
+    public void removeNotificationListener(MessageListener listener)
+    {
+        notificationConnector.removeMessageListener(listener);
+    }
+
     public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter, language);

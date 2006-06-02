@@ -81,15 +81,13 @@ public abstract class UDPConnector extends NetworkConnector
     public abstract DatagramSocket unicastSend(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException;
 
     /**
-     * Sends the given bytes to the SLP multicast address (by default 239.255.255.253:427).
+     * Sends the given bytes to the specified multicast address.
      * @param socket The datagram socket to be used to send the bytes, or null if the datagram socket must be created
      * @param bytes The bytes to send
      * @return The datagram socket passed in, or the newly created one if <code>socket</code> was null
      * @throws IOException In case of communication errors
      */
-    public abstract DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException;
-
-    public abstract DatagramSocket multicastNotify(DatagramSocket socket, byte[] bytes) throws IOException;
+    public abstract DatagramSocket multicastSend(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException;
 
     public void accept(Runnable executor)
     {

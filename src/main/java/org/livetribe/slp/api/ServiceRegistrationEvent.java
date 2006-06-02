@@ -13,16 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.api.da;
+package org.livetribe.slp.api;
 
-import java.util.EventListener;
+import java.util.EventObject;
+
+import org.livetribe.slp.api.sa.ServiceInfo;
 
 /**
  * @version $Rev$ $Date$
  */
-public interface ServiceRegistrationListener extends EventListener
+public class ServiceRegistrationEvent extends EventObject
 {
-    public void serviceRegistered(ServiceRegistrationEvent event);
+    private final ServiceInfo previous;
+    private final ServiceInfo current;
 
-    public void serviceDeregistered(ServiceRegistrationEvent event);
+    public ServiceRegistrationEvent(ServiceInfo current, ServiceInfo previous)
+    {
+        super(current != null ? current : previous);
+        this.current = current;
+        this.previous = previous;
+    }
+
+    public ServiceInfo getPreviousServiceInfo()
+    {
+        return previous;
+    }
+
+    public ServiceInfo getCurrentServiceInfo()
+    {
+        return current;
+    }
 }

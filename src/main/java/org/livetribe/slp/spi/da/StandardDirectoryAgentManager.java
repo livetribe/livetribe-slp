@@ -71,7 +71,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         localhost = agentAddr;
     }
 
-    protected TCPConnector createTCPConnector()
+    protected TCPConnector createTCPConnector() throws IOException
     {
         TCPConnector result = super.createTCPConnector();
         // By default, DirectoryAgent listens to TCP also
@@ -86,7 +86,8 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Multicasting " + daAdvert);
 
-        getUDPConnector().multicastSend(null, bytes).close();
+        InetSocketAddress address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getPort());
+        getUDPConnector().multicastSend(null, address, bytes).close();
     }
 
     public void udpDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException

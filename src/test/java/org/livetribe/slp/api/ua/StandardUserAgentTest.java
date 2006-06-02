@@ -19,9 +19,13 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Locale;
 
+import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.api.SLPAPITestCase;
+import org.livetribe.slp.api.ServiceRegistrationEvent;
+import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.api.sa.StandardServiceAgent;
@@ -36,13 +40,19 @@ import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 /**
  * @version $Rev$ $Date$
  */
-public class StandardUserAgentTest extends SLPAPITestCase
+public class StandardUserAgentTest extends SLPTestSupport
 {
+    /**
+     * @testng.configuration afterTestMethod="true"
+     */
     protected void tearDown() throws Exception
     {
         sleep(500);
     }
 
+    /**
+     * @testng.test
+     */
     public void testStartStop() throws Exception
     {
         StandardUserAgent ua = new StandardUserAgent();
@@ -52,17 +62,20 @@ public class StandardUserAgentTest extends SLPAPITestCase
         ua.setUserAgentManager(uaManager);
         ua.setConfiguration(getDefaultConfiguration());
 
-        assertFalse(ua.isRunning());
+        assert !ua.isRunning();
         ua.start();
-        assertTrue(ua.isRunning());
+        assert ua.isRunning();
         ua.stop();
-        assertFalse(ua.isRunning());
+        assert !ua.isRunning();
         ua.start();
-        assertTrue(ua.isRunning());
+        assert ua.isRunning();
         ua.stop();
-        assertFalse(ua.isRunning());
+        assert !ua.isRunning();
     }
 
+    /**
+     * @testng.test
+     */
     public void testFindServices() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -91,8 +104,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
 
                 StandardUserAgent ua = new StandardUserAgent();
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();
@@ -106,12 +119,12 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 {
                     List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
 
-                    assertNotNull(serviceURLs);
-                    assertEquals(1, serviceURLs.size());
+                    assert serviceURLs != null;
+                    assert serviceURLs.size() == 1;
                     ServiceURL foundService = (ServiceURL)serviceURLs.get(0);
-                    assertNotNull(foundService);
-                    assertEquals(serviceURL, foundService);
-                    assertEquals(serviceURL.getLifetime(), foundService.getLifetime());
+                    assert foundService != null;
+                    assert serviceURL.equals(foundService);
+                    assert serviceURL.getLifetime() == foundService.getLifetime();
                 }
                 finally
                 {
@@ -129,6 +142,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testListenForDAAdverts() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -144,8 +160,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
         try
         {
             List das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
-            assertNotNull(das);
-            assertTrue(das.isEmpty());
+            assert das != null;
+            assert das.isEmpty();
 
             StandardDirectoryAgent da = new StandardDirectoryAgent();
             StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
@@ -161,8 +177,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 sleep(500);
 
                 das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
-                assertNotNull(das);
-                assertEquals(1, das.size());
+                assert das != null;
+                assert das.size() == 1;
             }
             finally
             {
@@ -175,6 +191,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testDADiscoveryOnStartup() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -209,8 +228,8 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 sleep(sleep);
 
                 List das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
-                assertNotNull(das);
-                assertEquals(1, das.size());
+                assert das != null;
+                assert das.size() == 1;
             }
             finally
             {
@@ -223,6 +242,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testSADiscoveryAndFindServicesViaTCP() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -253,9 +275,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
                 sleep(500);
 
                 List services = ua.findServices(serviceURL.getServiceType(), null, null, language);
-                assertNotNull(services);
-                assertEquals(1, services.size());
-                assertEquals(serviceURL, services.get(0));
+                assert services != null;
+                assert services.size() == 1;
+                assert serviceURL.equals(services.get(0));
             }
             finally
             {
@@ -268,6 +290,9 @@ public class StandardUserAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testDiscoveryOfTwoSA() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -304,19 +329,19 @@ public class StandardUserAgentTest extends SLPAPITestCase
                     sleep(500);
 
                     List sas = ua.findServiceAgents(null, null);
-                    assertEquals(2, sas.size());
+                    assert sas.size() == 2;
                     ServiceAgentInfo sai1 = (ServiceAgentInfo)sas.get(0);
                     boolean oneToOne = sa1.getIdentifier().equals(sai1.getIdentifier());
                     ServiceAgentInfo sai2 = (ServiceAgentInfo)sas.get(1);
                     if (oneToOne)
                     {
-                        assertEquals(sa1.getIdentifier(), sai1.getIdentifier());
-                        assertEquals(sa2.getIdentifier(), sai2.getIdentifier());
+                        assert sa1.getIdentifier().equals(sai1.getIdentifier());
+                        assert sa2.getIdentifier().equals(sai2.getIdentifier());
                     }
                     else
                     {
-                        assertEquals(sa2.getIdentifier(), sai1.getIdentifier());
-                        assertEquals(sa1.getIdentifier(), sai2.getIdentifier());
+                        assert sa2.getIdentifier().equals(sai2.getIdentifier());
+                        assert sa1.getIdentifier().equals(sai1.getIdentifier());
                     }
                 }
                 finally
@@ -332,6 +357,99 @@ public class StandardUserAgentTest extends SLPAPITestCase
         finally
         {
             sa1.stop();
+        }
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testListenForSrvRegSrvDeRegNotifications() throws Exception
+    {
+        StandardServiceAgent sa = new StandardServiceAgent();
+        sa.setIdentifier("sa1");
+        sa.setConfiguration(getDefaultConfiguration());
+        sa.start();
+
+        try
+        {
+            StandardUserAgent ua = new StandardUserAgent();
+            ua.setConfiguration(getDefaultConfiguration());
+            ua.start();
+
+            final AtomicReference registered = new AtomicReference();
+            final AtomicReference updated = new AtomicReference();
+            final AtomicReference deregistered = new AtomicReference();
+            ua.addServiceRegistrationListener(new ServiceRegistrationListener()
+            {
+                public void serviceRegistered(ServiceRegistrationEvent event)
+                {
+                    registered.set(event);
+                }
+
+                public void serviceUpdated(ServiceRegistrationEvent event)
+                {
+                    updated.set(event);
+                }
+
+                public void serviceDeregistered(ServiceRegistrationEvent event)
+                {
+                    deregistered.set(event);
+                }
+            });
+
+            try
+            {
+                ServiceURL serviceURL = new ServiceURL("service:foo:bar://baz");
+                ServiceInfo service = new ServiceInfo(serviceURL, new String[]{"scope1"}, null, Locale.getDefault().getLanguage());
+                sa.register(service);
+
+                // Let the event arrive
+                sleep(500);
+
+                assert registered.get() != null;
+                assert updated.get() == null;
+                assert deregistered.get() == null;
+                ServiceRegistrationEvent event = (ServiceRegistrationEvent)registered.get();
+                assert event.getPreviousServiceInfo() == null;
+                assert event.getCurrentServiceInfo().getKey().equals(service.getKey());
+
+                registered.set(null);
+
+                Attributes attributes = new Attributes("(attr=value)");
+                service = new ServiceInfo(service.getServiceURL(), service.getScopes(), attributes, service.getLanguage());
+                sa.register(service);
+
+                // Let the event arrive
+                sleep(500);
+
+                assert registered.get() != null;
+                assert deregistered.get() == null;
+                event = (ServiceRegistrationEvent)registered.get();
+                assert event.getPreviousServiceInfo() == null;
+                assert event.getCurrentServiceInfo().getKey().equals(service.getKey());
+                assert !event.getCurrentServiceInfo().getAttributes().isEmpty();
+
+                registered.set(null);
+
+                sa.deregister(service);
+
+                // Let the event arrive
+                sleep(500);
+
+                assert registered.get() == null;
+                assert deregistered.get() != null;
+                event = (ServiceRegistrationEvent)deregistered.get();
+                assert event.getPreviousServiceInfo() != null;
+                assert event.getCurrentServiceInfo() == null;
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
         }
     }
 

@@ -317,7 +317,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
             throw new AssertionError("BUG: this method should not be called");
         }
 
-        public DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException
+        public DatagramSocket multicastSend(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException
         {
             if (sent.getAndDecrement() > 0)
             {
@@ -344,11 +344,6 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                 }).start();
             }
             return socket;
-        }
-
-        public DatagramSocket multicastNotify(DatagramSocket socket, byte[] bytes) throws IOException
-        {
-            throw new AssertionError("BUG: this method should not be called");
         }
     }
 
@@ -386,7 +381,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
 
         public void send(UDPConnector connector, byte[] bytes) throws IOException
         {
-            connector.multicastSend(getDatagramSocket(), bytes);
+            connector.multicastSend(getDatagramSocket(), null, bytes);
         }
 
         public void handle(MessageEvent event)

@@ -323,6 +323,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             // There are no DA deployed on the network: multicast a SrvReg as specified by RFC 3082.
             manager.multicastSrvRegNotification(service, serviceAgent, true);
         }
+
+        // TODO: if the renewal is done here, also networks with no DA can get registrations renewals
     }
 
     private void registerService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException

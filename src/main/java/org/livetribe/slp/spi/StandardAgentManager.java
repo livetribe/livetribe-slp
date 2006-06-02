@@ -56,7 +56,6 @@ public abstract class StandardAgentManager implements AgentManager
     private long multicastMaxWait;
     private long[] multicastTimeouts;
     private int maxTransmissionUnit;
-    private int port;
     private volatile boolean running;
     private UDPConnector udpConnector;
     private TCPConnector tcpConnector;
@@ -166,17 +165,8 @@ public abstract class StandardAgentManager implements AgentManager
 
         if (logger.isLoggable(Level.FINER)) logger.finer("AgentManager " + this + " starting...");
 
-        Configuration config = getConfiguration();
-        if (udpConnector == null)
-        {
-            udpConnector = createUDPConnector();
-            udpConnector.setConfiguration(config);
-        }
-        if (tcpConnector == null)
-        {
-            tcpConnector = createTCPConnector();
-            tcpConnector.setConfiguration(config);
-        }
+        if (udpConnector == null) udpConnector = createUDPConnector();
+        if (tcpConnector == null) tcpConnector = createTCPConnector();
 
         doStart();
 
@@ -191,14 +181,18 @@ public abstract class StandardAgentManager implements AgentManager
         tcpConnector.start();
     }
 
-    protected UDPConnector createUDPConnector()
+    protected UDPConnector createUDPConnector() throws IOException
     {
-        return new SocketUDPConnector();
+        SocketUDPConnector connector = new SocketUDPConnector();
+        connector.setConfiguration(getConfiguration());
+        return connector;
     }
 
-    protected TCPConnector createTCPConnector()
+    protected TCPConnector createTCPConnector() throws IOException
     {
-        return new SocketTCPConnector();
+        SocketTCPConnector connector = new SocketTCPConnector();
+        connector.setConfiguration(getConfiguration());
+        return connector;
     }
 
     public void stop() throws IOException
@@ -491,13 +485,16 @@ public abstract class StandardAgentManager implements AgentManager
 
     private class DASrvRqstConverger extends Converger
     {
+        private final InetSocketAddress address;
+
         public DASrvRqstConverger() throws SocketException
         {
+            address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getPort());
         }
 
         public void send(UDPConnector connector, byte[] bytes) throws IOException
         {
-            connector.multicastSend(getDatagramSocket(), bytes);
+            connector.multicastSend(getDatagramSocket(), address, bytes);
         }
 
         public void handle(MessageEvent event)
@@ -533,13 +530,16 @@ public abstract class StandardAgentManager implements AgentManager
 
     private class SASrvRqstConverger extends Converger
     {
+        private final InetSocketAddress address;
+
         public SASrvRqstConverger() throws SocketException
         {
+            address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getPort());
         }
 
         public void send(UDPConnector connector, byte[] bytes) throws IOException
         {
-            connector.multicastSend(getDatagramSocket(), bytes);
+            connector.multicastSend(getDatagramSocket(), address, bytes);
         }
 
         public void handle(MessageEvent event)

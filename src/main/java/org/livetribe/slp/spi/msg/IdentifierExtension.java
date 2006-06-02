@@ -27,19 +27,27 @@ import org.livetribe.slp.ServiceLocationException;
  */
 public class IdentifierExtension extends Extension
 {
+    private static final int IDENTIFIER_LENGTH_BYTES_LENGTH = 2;
+    private static final int HOST_LENGTH_BYTES_LENGTH = 2;
+
     private String identifier;
+    private String host;
 
     public boolean equals(Object obj)
     {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         final IdentifierExtension that = (IdentifierExtension)obj;
-        return identifier.equals(that.identifier);
+        if (!getIdentifier().equals(that.getIdentifier())) return false;
+        if (!getHost().equals(that.getHost())) return false;
+        return true;
     }
 
     public int hashCode()
     {
-        return identifier.hashCode();
+        int result = getIdentifier().hashCode();
+        result = 29 * result + getHost().hashCode();
+        return result;
     }
 
     public int getId()
@@ -57,14 +65,51 @@ public class IdentifierExtension extends Extension
         this.identifier = identifier;
     }
 
+    public String getHost()
+    {
+        return host;
+    }
+
+    public void setHost(String host)
+    {
+        this.host = host;
+    }
+
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        return stringToUTF8Bytes(getIdentifier());
+        byte[] identifierBytes = writeString(getIdentifier());
+        byte[] hostBytes = writeString(getHost());
+
+        byte[] result = new byte[IDENTIFIER_LENGTH_BYTES_LENGTH + identifierBytes.length + HOST_LENGTH_BYTES_LENGTH + hostBytes.length];
+
+        int offset = 0;
+        writeInt(identifierBytes.length, result, offset, IDENTIFIER_LENGTH_BYTES_LENGTH);
+
+        offset += IDENTIFIER_LENGTH_BYTES_LENGTH;
+        System.arraycopy(identifierBytes, 0, result, offset, identifierBytes.length);
+
+        offset += identifierBytes.length;
+        writeInt(hostBytes.length, result, offset, HOST_LENGTH_BYTES_LENGTH);
+
+        offset += HOST_LENGTH_BYTES_LENGTH;
+        System.arraycopy(hostBytes, 0, result, offset, hostBytes.length);
+
+        return result;
     }
 
     protected void deserializeBody(byte[] bodyBytes) throws ServiceLocationException
     {
-        setIdentifier(utf8BytesToString(bodyBytes, 0, bodyBytes.length));
+        int offset = 0;
+        int identifierLength = readInt(bodyBytes, offset, IDENTIFIER_LENGTH_BYTES_LENGTH);
+
+        offset += IDENTIFIER_LENGTH_BYTES_LENGTH;
+        setIdentifier(readString(bodyBytes, offset, identifierLength));
+
+        offset += identifierLength;
+        int hostLength = readInt(bodyBytes, offset, HOST_LENGTH_BYTES_LENGTH);
+
+        offset += HOST_LENGTH_BYTES_LENGTH;
+        setHost(readString(bodyBytes, offset, hostLength));
     }
 
     /**

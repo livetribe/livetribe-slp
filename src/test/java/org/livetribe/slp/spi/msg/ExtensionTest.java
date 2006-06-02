@@ -15,6 +15,7 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.livetribe.slp.SLPTestSupport;
@@ -32,11 +33,13 @@ public class ExtensionTest extends SLPTestSupport
     {
         IdentifierExtension original = new IdentifierExtension();
         original.setIdentifier("id1");
+        original.setHost("1.2.3.4");
 
         byte[] bytes = original.serialize();
         IdentifierExtension deserialized = (IdentifierExtension)Extension.deserialize(bytes);
 
         assert original.getIdentifier().equals(deserialized.getIdentifier());
+        assert original.getHost().equals(deserialized.getHost());
     }
 
     /**
@@ -48,6 +51,7 @@ public class ExtensionTest extends SLPTestSupport
         original.setServiceType(new ServiceType("service:type"));
         IdentifierExtension originalExtension = new IdentifierExtension();
         originalExtension.setIdentifier("id1");
+        originalExtension.setHost("1.2.3.4");
         original.addExtension(originalExtension);
 
         byte[] bytes = original.serialize();
@@ -57,5 +61,30 @@ public class ExtensionTest extends SLPTestSupport
         assert extensions.size() == 1;
         IdentifierExtension deserializedExtension = (IdentifierExtension)extensions.iterator().next();
         assert originalExtension.getIdentifier().equals(deserializedExtension.getIdentifier());
+        assert originalExtension.getHost().equals(deserializedExtension.getHost());
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testTwoIdentifierExtensions() throws Exception
+    {
+        SrvRqst srvRqst = new SrvRqst();
+        srvRqst.setServiceType(new ServiceType("service:type"));
+        IdentifierExtension ext1 = new IdentifierExtension();
+        ext1.setIdentifier("id-unique-1");
+        ext1.setHost("1.2.3.4");
+        srvRqst.addExtension(ext1);
+        IdentifierExtension ext2 = new IdentifierExtension();
+        ext2.setIdentifier("id2");
+        ext2.setHost("255.255.255.255");
+        srvRqst.addExtension(ext2);
+
+        byte[] bytes = srvRqst.serialize();
+        SrvRqst deserialized = (SrvRqst)Message.deserialize(bytes);
+        Collection extensions = deserialized.getExtensions();
+        assert extensions != null;
+        assert extensions.size() == 2;
+        assert new ArrayList(IdentifierExtension.findAll(extensions)).equals(new ArrayList(extensions));
     }
 }

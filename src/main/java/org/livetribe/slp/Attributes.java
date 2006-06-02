@@ -57,6 +57,11 @@ public class Attributes
         parse(attributeList);
     }
 
+    private Attributes(Attributes copy)
+    {
+        attributes.putAll(copy.attributes);
+    }
+
     public void put(String tag)
     {
         attributes.put(tag, new Entry(null, Entry.PRESENCE));
@@ -404,6 +409,20 @@ public class Attributes
             System.arraycopy(values, 0, entryValues, 0, values.length);
             return new Entry(entryValues, Entry.STRING);
         }
+    }
+
+    public Attributes merge(Attributes that)
+    {
+        Attributes result = new Attributes(this);
+        if (that != null) result.attributes.putAll(that.attributes);
+        return result;
+    }
+
+    public Attributes unmerge(Attributes that)
+    {
+        Attributes result = new Attributes(this);
+        if (that != null) result.attributes.keySet().removeAll(that.attributes.keySet());
+        return result;
     }
 
     public static class Entry

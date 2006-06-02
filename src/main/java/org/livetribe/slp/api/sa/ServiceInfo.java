@@ -18,17 +18,36 @@ package org.livetribe.slp.api.sa;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 
 /**
+ * Representation of a service, exposed by ServiceAgents and registered in DirectoryAgents.
+ * <br />
+ * In SLP, services are distinguished by their {@link ServiceURL} and by their language.
+ * <br />
+ * {@link Attributes} are not involved in service equality since they can contain
+ * locale-specific information (for example: <code>(color=Yellow)</code> with language English,
+ * and <code>(color=Giallo)</code> with language Italian.
+ * Two service registration with the same ServiceURL and language overwrite each other.
  * @version $Rev$ $Date$
  */
 public class ServiceInfo
 {
+    private final Key key;
     private final ServiceType serviceType;
-    private final ServiceURL serviceURL;
     private final String[] scopes;
     private final Attributes attributes;
-    private final String language;
+
+    public static ServiceInfo from(SrvReg message)
+    {
+        return new ServiceInfo(message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes(), message.getLanguage());
+    }
+
+    public static ServiceInfo from(SrvDeReg message)
+    {
+        return new ServiceInfo(message.getURLEntry().toServiceURL(), message.getScopes(), message.getTags(), message.getLanguage());
+    }
 
     public ServiceInfo(ServiceURL serviceURL, String[] scopes, Attributes attributes, String language)
     {
@@ -37,11 +56,15 @@ public class ServiceInfo
 
     public ServiceInfo(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language)
     {
+        this.key = new Key(serviceURL, language);
         this.serviceType = serviceType;
-        this.serviceURL = serviceURL;
         this.scopes = scopes;
         this.attributes = attributes;
-        this.language = language;
+    }
+
+    public Key getKey()
+    {
+        return key;
     }
 
     public ServiceType getServiceType()
@@ -51,7 +74,7 @@ public class ServiceInfo
 
     public ServiceURL getServiceURL()
     {
-        return serviceURL;
+        return getKey().getServiceURL();
     }
 
     public String[] getScopes()
@@ -66,7 +89,7 @@ public class ServiceInfo
 
     public String getLanguage()
     {
-        return language;
+        return getKey().getLanguage();
     }
 
     public ServiceType resolveServiceType()
@@ -74,5 +97,68 @@ public class ServiceInfo
         ServiceType result = getServiceType();
         if (result != null) return result;
         return getServiceURL().getServiceType();
+    }
+
+    public ServiceInfo merge(ServiceInfo that)
+    {
+        if (!getKey().equals(that.getKey())) return null;
+        Attributes thisAttrs = getAttributes();
+        Attributes thatAttrs = that.getAttributes();
+        Attributes mergedAttrs = null;
+        if (thisAttrs == null)
+            mergedAttrs = thatAttrs == null ? null : thatAttrs.merge(null);
+        else
+            mergedAttrs = thisAttrs.merge(thatAttrs);
+        return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+    }
+
+    public ServiceInfo unmerge(ServiceInfo that)
+    {
+        if (!getKey().equals(that.getKey())) return null;
+        Attributes thatAttr = that.getAttributes();
+        if (thatAttr == null || thatAttr.isEmpty()) return null;
+        Attributes thisAttr = getAttributes();
+        if (thisAttr == null) return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), getAttributes(), getLanguage());
+        Attributes mergedAttrs = thisAttr.unmerge(thatAttr);
+        return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+    }
+
+    public static class Key
+    {
+        private final ServiceURL serviceURL;
+        private final String language;
+
+        public Key(ServiceURL serviceURL, String language)
+        {
+            this.serviceURL = serviceURL;
+            this.language = language;
+        }
+
+        public boolean equals(Object obj)
+        {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            final Key that = (Key)obj;
+            if (!getServiceURL().equals(that.getServiceURL())) return false;
+            if (!getLanguage().equals(that.getLanguage())) return false;
+            return true;
+        }
+
+        public int hashCode()
+        {
+            int result = getServiceURL().hashCode();
+            result = 29 * result + getLanguage().hashCode();
+            return result;
+        }
+
+        public ServiceURL getServiceURL()
+        {
+            return serviceURL;
+        }
+
+        public String getLanguage()
+        {
+            return language;
+        }
     }
 }

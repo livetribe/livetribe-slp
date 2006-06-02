@@ -20,6 +20,7 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Agent;
+import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
 
 /**

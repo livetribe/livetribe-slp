@@ -119,7 +119,7 @@ public abstract class Message extends BytesBlock
         return result;
     }
 
-    protected void deserializeExtensions(byte[] bytes) throws ServiceLocationException
+    protected void deserializeExtensions(byte[] bytes, int firstExtensionOffset) throws ServiceLocationException
     {
         extensions.clear();
 
@@ -132,7 +132,7 @@ public abstract class Message extends BytesBlock
             int nextOffset = readInt(bytes, offset, Extension.NEXT_EXTENSION_OFFSET_BYTES_LENGTH);
 
             offset += Extension.NEXT_EXTENSION_OFFSET_BYTES_LENGTH;
-            int extensionLength = nextOffset == 0 ? bytes.length - initialOffset : nextOffset - initialOffset;
+            int extensionLength = nextOffset == 0 ? bytes.length - initialOffset : nextOffset - firstExtensionOffset - initialOffset;
             byte[] extensionBytes = new byte[extensionLength];
             System.arraycopy(bytes, initialOffset, extensionBytes, 0, extensionBytes.length);
             Extension extension = Extension.deserialize(extensionBytes);
@@ -315,7 +315,7 @@ public abstract class Message extends BytesBlock
             {
                 byte[] extensionsBytes = new byte[length - extensionOffset];
                 System.arraycopy(bytes, extensionOffset, extensionsBytes, 0, extensionsBytes.length);
-                message.deserializeExtensions(extensionsBytes);
+                message.deserializeExtensions(extensionsBytes, extensionOffset);
             }
 
             return message;

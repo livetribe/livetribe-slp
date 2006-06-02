@@ -55,6 +55,7 @@ public abstract class NetworkConnector
         {
             InetAddress[] interfaceAddresses = new InetAddress[interfaces.length];
             for (int i = 0; i < interfaces.length; ++i) interfaceAddresses[i] = InetAddress.getByName(interfaces[i]);
+            setInetAddresses(interfaceAddresses);
         }
     }
 

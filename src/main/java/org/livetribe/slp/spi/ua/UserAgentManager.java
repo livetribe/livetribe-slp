@@ -23,6 +23,7 @@ import org.livetribe.slp.spi.AgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.net.MessageListener;
 
 /**
  * @version $Rev$ $Date$
@@ -34,4 +35,8 @@ public interface UserAgentManager extends AgentManager
     public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, String language, int timeframe) throws IOException;
 
     public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException;
+
+    public void addNotificationListener(MessageListener listener);
+
+    public void removeNotificationListener(MessageListener listener);
 }

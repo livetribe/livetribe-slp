@@ -28,31 +28,49 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 
+import org.livetribe.slp.api.Configuration;
+
 /**
  * @version $Rev$ $Date$
  */
 public class SocketTCPConnector extends TCPConnector
 {
+    private int port;
     private ServerSocket[] serverSockets;
+
+    public void setConfiguration(Configuration configuration) throws IOException
+    {
+        super.setConfiguration(configuration);
+        setPort(configuration.getPort());
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(int port)
+    {
+        this.port = port;
+    }
 
     protected Runnable[] createAcceptors() throws IOException
     {
         if (!isTCPListening()) return null;
 
-        int port = getConfiguration().getPort();
         InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {
             bindAddresses = new InetSocketAddress[1];
-            bindAddresses[0] = new InetSocketAddress((InetAddress)null, port);
+            bindAddresses[0] = new InetSocketAddress((InetAddress)null, getPort());
         }
         else
         {
             bindAddresses = new InetSocketAddress[interfaceAddresses.length];
             for (int i = 0; i < bindAddresses.length; ++i)
             {
-                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], port);
+                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], getPort());
             }
         }
 
@@ -146,7 +164,7 @@ public class SocketTCPConnector extends TCPConnector
 
     public Socket send(byte[] messageBytes, InetAddress address, boolean closeSocket) throws ConnectException, IOException
     {
-        Socket socket = new Socket(address, getConfiguration().getPort());
+        Socket socket = new Socket(address, getPort());
         try
         {
             write(socket, messageBytes);

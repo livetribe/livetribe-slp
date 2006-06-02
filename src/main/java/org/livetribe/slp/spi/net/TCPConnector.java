@@ -34,8 +34,8 @@ public abstract class TCPConnector extends NetworkConnector
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setTCPReadTimeout(configuration.getUnicastReadTimeout());
-        setMaxTCPMessageLength(configuration.getUnicastMaxMessageLength());
+        setTCPReadTimeout(configuration.getTCPReadTimeout());
+        setMaxTCPMessageLength(configuration.getMaxTCPMessageLength());
     }
 
     public boolean isTCPListening()

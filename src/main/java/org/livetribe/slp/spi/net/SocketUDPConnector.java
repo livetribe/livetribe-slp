@@ -25,30 +25,48 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 
+import org.livetribe.slp.api.Configuration;
+
 /**
  * @version $Rev$ $Date$
  */
 public class SocketUDPConnector extends UDPConnector
 {
+    private int port;
     private MulticastSocket[] sockets;
+
+    public void setConfiguration(Configuration configuration) throws IOException
+    {
+        super.setConfiguration(configuration);
+        setPort(configuration.getPort());
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(int port)
+    {
+        this.port = port;
+    }
 
     protected Runnable[] createAcceptors() throws IOException
     {
-        int port = getConfiguration().getPort();
         InetAddress[] interfaceAddresses = getInetAddresses();
         InetSocketAddress[] bindAddresses = null;
         if (interfaceAddresses == null || interfaceAddresses.length == 0)
         {
             // No interface addresses defined, bind on the wildcard address
             bindAddresses = new InetSocketAddress[1];
-            bindAddresses[0] = new InetSocketAddress((InetAddress)null, port);
+            bindAddresses[0] = new InetSocketAddress((InetAddress)null, getPort());
         }
         else
         {
             bindAddresses = new InetSocketAddress[interfaceAddresses.length];
             for (int i = 0; i < bindAddresses.length; ++i)
             {
-                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], port);
+                bindAddresses[i] = new InetSocketAddress(interfaceAddresses[i], getPort());
             }
         }
 
@@ -89,14 +107,10 @@ public class SocketUDPConnector extends UDPConnector
         return send(socket, address, bytes);
     }
 
-    public DatagramSocket multicastSend(DatagramSocket socket, byte[] bytes) throws IOException
+    public DatagramSocket multicastSend(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException
     {
-        return send(socket, new InetSocketAddress(getMulticastAddress(), getConfiguration().getPort()), bytes);
-    }
-
-    public DatagramSocket multicastNotify(DatagramSocket socket, byte[] bytes) throws IOException
-    {
-        return send(socket, new InetSocketAddress(getMulticastAddress(), getConfiguration().getNotificationPort()), bytes);
+        assert address.getAddress().isMulticastAddress();
+        return send(socket, address, bytes);
     }
 
     private DatagramSocket send(DatagramSocket socket, InetSocketAddress address, byte[] bytes) throws IOException
