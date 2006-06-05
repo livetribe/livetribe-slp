@@ -15,11 +15,8 @@
  */
 package org.livetribe.slp.spi.sa;
 
-import java.util.List;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.SAAdvert;
 
@@ -30,7 +27,7 @@ public class ServiceAgentInfo
 {
     private final String identifier;
     private final String url;
-    private final List scopes;
+    private final Scopes scopes;
     private final Attributes attributes;
     private final String language;
     private final String host;
@@ -42,11 +39,11 @@ public class ServiceAgentInfo
         return new ServiceAgentInfo(identifier, saAdvert.getURL(), saAdvert.getScopes(), saAdvert.getAttributes(), saAdvert.getLanguage());
     }
 
-    public ServiceAgentInfo(String identifier, String url, String[] scopes, Attributes attributes, String language)
+    public ServiceAgentInfo(String identifier, String url, Scopes scopes, Attributes attributes, String language)
     {
         this.identifier = identifier;
         this.url = url;
-        this.scopes = scopes == null ? Collections.emptyList() : Arrays.asList(scopes);
+        this.scopes = scopes;
         this.attributes = attributes;
         this.language = language;
         this.host = parseHost(url);
@@ -67,9 +64,9 @@ public class ServiceAgentInfo
         return identifier;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
-        return (String[])scopes.toArray(new String[scopes.size()]);
+        return scopes;
     }
 
     public Attributes getAttributes()

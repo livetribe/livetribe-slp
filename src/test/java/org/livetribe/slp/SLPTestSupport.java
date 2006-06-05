@@ -42,4 +42,27 @@ public class SLPTestSupport
         configuration.setPort(1427);
         return configuration;
     }
+
+    protected void assertTrue(boolean value)
+    {
+        assert value;
+    }
+
+    protected void assertFalse(boolean value)
+    {
+        assert !value;
+    }
+
+    protected void assertNotNull(Object value)
+    {
+        assert value != null;
+    }
+
+    protected void assertEquals(Object expected, Object value)
+    {
+        if (expected != value)
+        {
+            assert expected != null ? expected.equals(value) : value.equals(expected);
+        }
+    }
 }

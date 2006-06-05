@@ -19,9 +19,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.StandardAgentManager;
+import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
@@ -78,23 +80,25 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         notificationConnector.removeMessageListener(listener);
     }
 
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException
+    public DAAdvert[] multicastDASrvRqst(Scopes scopes, String filter, String language, long timeframe) throws IOException
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:directory-agent"), scopes, filter, language);
         request.setMulticast(true);
         return convergentDASrvRqst(request, timeframe);
     }
 
-    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, String language, int timeframe) throws IOException
+    public SAAdvert[] multicastSASrvRqst(Scopes scopes, String filter, String language, int timeframe) throws IOException
     {
         SrvRqst request = createSrvRqst(new ServiceType("service:service-agent"), scopes, filter, language);
         request.setMulticast(true);
         return convergentSASrvRqst(request, timeframe);
     }
 
-    public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException
+    public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, Scopes scopes, String filter, String language) throws IOException
     {
         SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);
+        // Ask to send the Attributes as well (RFC 3059)
+        request.addExtension(new AttributeListExtension());
         byte[] requestBytes = serializeMessage(request);
 
         TCPConnector connector = getTCPConnector();
@@ -118,7 +122,7 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         }
     }
 
-    private SrvRqst createSrvRqst(ServiceType serviceType, String[] scopes, String filter, String language)
+    private SrvRqst createSrvRqst(ServiceType serviceType, Scopes scopes, String filter, String language)
     {
         SrvRqst request = new SrvRqst();
         request.setLanguage(language);

@@ -18,6 +18,7 @@ package org.livetribe.slp.api.ua;
 import java.io.IOException;
 import java.util.List;
 
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Agent;
@@ -31,7 +32,7 @@ public interface UserAgent extends Agent
 {
     public void setUserAgentManager(UserAgentManager manager);
 
-    public List findServices(ServiceType serviceType, String[] scopes, String filter, String language) throws IOException, ServiceLocationException;
+    public List findServices(ServiceType serviceType, Scopes scopes, String filter, String language) throws IOException, ServiceLocationException;
 
     public void addServiceRegistrationListener(ServiceRegistrationListener listener);
 

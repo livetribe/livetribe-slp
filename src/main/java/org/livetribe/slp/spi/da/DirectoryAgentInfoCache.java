@@ -21,16 +21,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import org.livetribe.slp.Scopes;
 
 /**
  * A thread-safe class that handles caching of {@link DirectoryAgentInfo}, and
  * allows querying the content depending on parameters.
  * @version $Rev$ $Date$
  */
-public class DirectoryAgentCache
+public class DirectoryAgentInfoCache
 {
     private final Lock lock = new ReentrantLock();
     private final Set cache = new HashSet();
@@ -48,7 +48,7 @@ public class DirectoryAgentCache
         }
     }
 
-    public List getByScopes(String[] scopes)
+    public List getByScopes(Scopes scopes)
     {
         lock.lock();
         try
@@ -60,11 +60,10 @@ public class DirectoryAgentCache
             }
             else
             {
-                List scopesList = Arrays.asList(scopes);
                 for (Iterator infos = cache.iterator(); infos.hasNext();)
                 {
                     DirectoryAgentInfo info = (DirectoryAgentInfo)infos.next();
-                    if (info.matchScopes(scopesList)) result.add(info);
+                    if (info.matchScopes(scopes)) result.add(info);
                 }
             }
             return result;

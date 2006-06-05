@@ -21,28 +21,28 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.ScheduledFuture;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
-import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
-import org.livetribe.slp.spi.da.DirectoryAgentCache;
+import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
+import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
+import org.livetribe.slp.spi.filter.Filter;
+import org.livetribe.slp.spi.filter.FilterParser;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.Message;
@@ -70,9 +70,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private ServiceAgentInfo serviceAgent;
     private MessageListener udpListener;
     private MessageListener tcpListener;
-    private final Set services = new HashSet();
-    private final Lock servicesLock = new ReentrantLock();
-    private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+    private final ServiceInfoCache services = new ServiceInfoCache();
+    private final DirectoryAgentInfoCache directoryAgents = new DirectoryAgentInfoCache();
     private String identifier;
 
     public void setServiceAgentManager(ServiceAgentManager manager)
@@ -159,65 +158,31 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     public void register(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        if (isRunning()) registerService(service);
-        addService(service);
+        // Add the service first: if the registration with DA fails, this SA exposes anyway this service.
+        SAServiceInfo serviceToRegister = new SAServiceInfo(service);
+        addService(serviceToRegister);
+        if (isRunning()) registerService(serviceToRegister);
     }
 
     public void deregister(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        if (isRunning()) deregisterService(service);
-        removeService(service);
+        SAServiceInfo serviceToRemove = removeService(service);
+        if (isRunning()) deregisterService(serviceToRemove);
     }
 
-    private boolean addService(ServiceInfo service)
+    private void addService(ServiceInfo service)
     {
-        servicesLock.lock();
-        try
-        {
-            return services.add(service);
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
+        services.put(service);
     }
 
-    private boolean removeService(ServiceInfo service)
+    private SAServiceInfo removeService(ServiceInfo service)
     {
-        servicesLock.lock();
-        try
-        {
-            return services.remove(service);
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
+        return (SAServiceInfo)services.remove(service.getKey());
     }
 
-    public Set getServices()
+    public Collection getServices()
     {
-        return Collections.unmodifiableSet(services);
-    }
-
-    private List getServiceTypes()
-    {
-        servicesLock.lock();
-        try
-        {
-            List result = new ArrayList();
-            for (Iterator allServices = services.iterator(); allServices.hasNext();)
-            {
-                ServiceInfo serviceInfo = (ServiceInfo)allServices.next();
-                ServiceType serviceType = serviceInfo.resolveServiceType();
-                result.add(serviceType.toString());
-            }
-            return result;
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
+        return services.getServices();
     }
 
     protected void doStart() throws Exception
@@ -261,6 +226,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     {
         // RFC 2608, 10.6, requires services to deregister when no longer available
         deregisterServices();
+        services.clear();
 
         if (scheduledExecutorService != null)
         {
@@ -275,39 +241,24 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private void registerServices() throws IOException, ServiceLocationException
     {
-        servicesLock.lock();
-        try
+        for (Iterator serviceInfos = getServices().iterator(); serviceInfos.hasNext();)
         {
-            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
-            {
-                ServiceInfo service = (ServiceInfo)serviceInfos.next();
-                registerService(service);
-            }
-        }
-        finally
-        {
-            servicesLock.unlock();
+            SAServiceInfo service = (SAServiceInfo)serviceInfos.next();
+            registerService(service);
         }
     }
 
     private void registerServices(DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
-        servicesLock.lock();
-        try
+        List servicesToRegister = services.match(null, da.getScopes(), null, null);
+        for (Iterator serviceInfos = servicesToRegister.iterator(); serviceInfos.hasNext();)
         {
-            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
-            {
-                ServiceInfo service = (ServiceInfo)serviceInfos.next();
-                registerService(service, da);
-            }
-        }
-        finally
-        {
-            servicesLock.unlock();
+            SAServiceInfo service = (SAServiceInfo)serviceInfos.next();
+            registerService(service, da);
         }
     }
 
-    private void registerService(ServiceInfo service) throws IOException, ServiceLocationException
+    private void registerService(SAServiceInfo service) throws IOException, ServiceLocationException
     {
         List das = findDirectoryAgents(service.getScopes());
         if (!das.isEmpty())
@@ -327,7 +278,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         // TODO: if the renewal is done here, also networks with no DA can get registrations renewals
     }
 
-    private void registerService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    private void registerService(SAServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
         InetAddress address = InetAddress.getByName(da.getHost());
         SrvAck srvAck = manager.tcpSrvReg(address, service, serviceAgent, true);
@@ -340,7 +291,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         long renewalPeriod = calculateRenewalPeriod(service);
         long renewalDelay = calculateRenewalDelay(service);
         if (renewalPeriod > 0)
-            scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
+        {
+            ScheduledFuture renewal = scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
+            service.setRenewal(renewal);
+        }
     }
 
     private long calculateRenewalPeriod(ServiceInfo service)
@@ -361,22 +315,14 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private void deregisterServices() throws IOException, ServiceLocationException
     {
-        servicesLock.lock();
-        try
+        for (Iterator serviceInfos = getServices().iterator(); serviceInfos.hasNext();)
         {
-            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
-            {
-                ServiceInfo service = (ServiceInfo)serviceInfos.next();
-                deregisterService(service);
-            }
-        }
-        finally
-        {
-            servicesLock.unlock();
+            SAServiceInfo service = (SAServiceInfo)serviceInfos.next();
+            deregisterService(service);
         }
     }
 
-    private void deregisterService(ServiceInfo service) throws IOException, ServiceLocationException
+    private void deregisterService(SAServiceInfo service) throws IOException, ServiceLocationException
     {
         List das = findDirectoryAgents(service.getScopes());
         if (!das.isEmpty())
@@ -394,8 +340,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    private void deregisterService(ServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    private void deregisterService(SAServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
+        service.cancelRenewal();
+
         InetAddress address = InetAddress.getByName(da.getHost());
         SrvAck srvAck = manager.tcpSrvDeReg(address, service, serviceAgent);
         int errorCode = srvAck.getErrorCode();
@@ -405,7 +353,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             logger.fine("Deregistered service " + service.getServiceURL() + " from DirectoryAgent " + address);
     }
 
-    protected List findDirectoryAgents(String[] scopes) throws IOException, ServiceLocationException
+    protected List findDirectoryAgents(Scopes scopes) throws IOException, ServiceLocationException
     {
         List das = getCachedDirectoryAgents(scopes);
         if (das.isEmpty())
@@ -416,27 +364,27 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         return das;
     }
 
-    protected List getCachedDirectoryAgents(String[] scopes)
+    protected List getCachedDirectoryAgents(Scopes scopes)
     {
-        return daCache.getByScopes(scopes);
+        return directoryAgents.getByScopes(scopes);
     }
 
     private boolean cacheDirectoryAgent(DirectoryAgentInfo info)
     {
-        return daCache.add(info);
+        return directoryAgents.add(info);
     }
 
     private void cacheDirectoryAgents(List infos)
     {
-        daCache.addAll(infos);
+        directoryAgents.addAll(infos);
     }
 
     private void uncacheDirectoryAgent(DirectoryAgentInfo info)
     {
-        daCache.remove(info);
+        directoryAgents.remove(info);
     }
 
-    protected List discoverDirectoryAgents(String[] scopes) throws IOException
+    protected List discoverDirectoryAgents(Scopes scopes) throws IOException
     {
         List result = new ArrayList();
         DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, null, null, -1);
@@ -455,27 +403,19 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         if (!matchPreviousResponders(message)) return;
 
         // Match scopes
-        List scopesList = Arrays.asList(getScopes());
-        List messageScopes = Arrays.asList(message.getScopes());
-        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopes))
+        if (!getScopes().match(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + scopesList + " and message scopes " + messageScopes);
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + getScopes() + " and message scopes " + message.getScopes());
             return;
         }
 
         // Match filter (see RFC 2608, 8.6)
-        Attributes filter = new Attributes(message.getFilter());
-        String serviceTypeTag = "service-type";
-        if (filter.isTagPresent(serviceTypeTag))
+        Filter filter = new FilterParser().parse(message.getFilter());
+        if (!filter.match(getAttributes()))
         {
-            List messageServiceTypes = Arrays.asList(filter.getValues(serviceTypeTag));
-            List serviceTypes = getServiceTypes();
-            if (Collections.disjoint(serviceTypes, messageServiceTypes))
-            {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("ServiceAgent " + this + " dropping message " + message + ": filter " + filter + " does not match registered services");
-            }
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": filter " + filter + " does not match attributes");
         }
 
         // Check that's a correct multicast request for this ServiceAgent
@@ -532,12 +472,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
-        List scopesList = Arrays.asList(getScopes());
-        List messageScopesList = Arrays.asList(message.getScopes());
-        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopesList))
+        if (!getScopes().match(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + scopesList + " and message scopes " + messageScopesList);
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + getScopes() + " and message scopes " + message.getScopes());
             return;
         }
 
@@ -571,19 +509,18 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    protected void handleTCPSrvRqst(SrvRqst message, Socket socket)
+    protected void handleTCPSrvRqst(SrvRqst message, Socket socket) throws ServiceLocationException
     {
         if (logger.isLoggable(Level.FINE))
             logger.fine("ServiceAgent " + this + " queried via TCP for services of type " + message.getServiceType());
 
-        List matchingServices = matchServices(message.getServiceType(), message.getFilter(), message.getScopes(), message.getLanguage());
-        ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
+        List matchingServices = matchServices(message.getServiceType(), message.getScopes(), message.getFilter(), message.getLanguage());
 
         try
         {
-            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), matchingServices);
             if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
+                logger.fine("ServiceAgent " + this + " returned " + matchingServices.size() + " services of type " + message.getServiceType());
         }
         catch (IOException x)
         {
@@ -592,42 +529,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    private List matchServices(ServiceType serviceType, String filter, String[] scopes, String language)
+    private List matchServices(ServiceType serviceType, Scopes scopes, String filter, String language) throws ServiceLocationException
     {
-        servicesLock.lock();
-        try
-        {
-            List result = new ArrayList();
-            for (Iterator serviceInfos = services.iterator(); serviceInfos.hasNext();)
-            {
-                ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.next();
-                ServiceType registeredServiceType = serviceInfo.resolveServiceType();
-                if (registeredServiceType.matches(serviceType))
-                {
-                    // TODO: match the other parameters
-/*
-                    if (filter != null)
-                    {
-                        Attributes registeredAttributes = serviceInfo.getAttributes();
-                        if (registeredAttributes != null)
-                        {
-                            Attributes attributes = new Attributes(filter);
-                            if (registeredAttributes.match(attributes))
-                            {
-
-                            }
-                        }
-                    }
-*/
-                    result.add(serviceInfo.getServiceURL());
-                }
-            }
-            return result;
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
+        return services.match(serviceType, scopes, new FilterParser().parse(filter), language);
     }
 
     /**
@@ -727,10 +631,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      */
     private class RegistrationRenewal implements Runnable
     {
-        private final ServiceInfo service;
+        private final SAServiceInfo service;
         private final DirectoryAgentInfo directory;
 
-        public RegistrationRenewal(ServiceInfo service, DirectoryAgentInfo directory)
+        public RegistrationRenewal(SAServiceInfo service, DirectoryAgentInfo directory)
         {
             this.service = service;
             this.directory = directory;
@@ -762,6 +666,27 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             {
                 if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not discover DAs", x);
             }
+        }
+    }
+
+    private class SAServiceInfo extends ServiceInfo
+    {
+        private ScheduledFuture renewal;
+
+        private SAServiceInfo(ServiceInfo serviceInfo)
+        {
+            super(serviceInfo.getServiceType(), serviceInfo.getServiceURL(), serviceInfo.getScopes(), serviceInfo.getAttributes(), serviceInfo.getLanguage());
+            this.renewal = renewal;
+        }
+
+        private void cancelRenewal()
+        {
+            if (renewal != null) renewal.cancel(false);
+        }
+
+        public void setRenewal(ScheduledFuture renewal)
+        {
+            this.renewal = renewal;
         }
     }
 }

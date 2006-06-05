@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.msg;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.ServiceType;
 
@@ -86,5 +87,25 @@ public class ExtensionTest extends SLPTestSupport
         assert extensions != null;
         assert extensions.size() == 2;
         assert new ArrayList(IdentifierExtension.findAll(extensions)).equals(new ArrayList(extensions));
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testAttributeListExtension() throws Exception
+    {
+        AttributeListExtension original = new AttributeListExtension();
+        original.setURL("service:foo:bar://baz");
+        Attributes originalAttributes = new Attributes("(attr=value)");
+        original.setAttributes(originalAttributes);
+        // TODO: test auth blocks
+//        original.setAuthenticationBlocks();
+
+        byte[] bytes = original.serialize();
+        AttributeListExtension deserialized = (AttributeListExtension)Extension.deserialize(bytes);
+
+        assert original.getURL().equals(deserialized.getURL());
+        assert originalAttributes.equals(deserialized.getAttributes());
+        // TODO: test auth blocks
     }
 }

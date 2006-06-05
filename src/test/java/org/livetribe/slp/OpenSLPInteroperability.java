@@ -78,11 +78,11 @@ public class OpenSLPInteroperability
             {
                 ServiceType serviceType = serviceURL.getServiceType();
                 System.out.println("User Agent: finding service of type " + serviceType);
-                List serviceURLs = ua.findServices(serviceType, new String[]{"default"}, null, null);
-                if (serviceURLs.isEmpty()) throw new AssertionError("Expected at least one service registered");
+                List serviceInfos = ua.findServices(serviceType, Scopes.DEFAULT, null, null);
+                if (serviceInfos.isEmpty()) throw new AssertionError("Expected at least one service registered");
 
-                System.out.println("User Agent: found services " + serviceURLs);
-                ServiceURL registered = (ServiceURL)serviceURLs.get(0);
+                System.out.println("User Agent: found services " + serviceInfos);
+                ServiceURL registered = ((ServiceInfo)serviceInfos.get(0)).getServiceURL();
                 if (!registered.equals(serviceURL)) throw new AssertionError("Expecting " + serviceURL + " got instead " + registered);
 
                 System.out.println("Interoperability with OpenSLP successful");

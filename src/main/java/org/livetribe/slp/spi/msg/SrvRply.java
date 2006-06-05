@@ -15,6 +15,9 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -38,17 +41,17 @@ public class SrvRply extends Rply
     private static final int URL_ENTRIES_COUNT_BYTES_LENGTH = 2;
 
     private int errorCode;
-    private URLEntry[] urlEntries;
+    private List urlEntries = new ArrayList();
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        URLEntry[] urls = getURLEntries();
-        int urlEntriesCount = urls == null ? 0 : urls.length;
+        List urls = getURLEntries();
+        int urlEntriesCount = urls == null ? 0 : urls.size();
         byte[][] urlEntriesBytes = new byte[urlEntriesCount][];
         int urlEntriesBytesSum = 0;
         for (int i = 0; i < urlEntriesCount; ++i)
         {
-            byte[] bytes = urls[i].serialize();
+            byte[] bytes = ((URLEntry)urls.get(i)).serialize();
             urlEntriesBytes[i] = bytes;
             urlEntriesBytesSum += bytes.length;
         }
@@ -85,13 +88,12 @@ public class SrvRply extends Rply
         int urlEntryCount = readInt(bytes, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
 
         offset += URL_ENTRIES_COUNT_BYTES_LENGTH;
-        URLEntry[] urls = new URLEntry[urlEntryCount];
         for (int i = 0; i < urlEntryCount; ++i)
         {
-            urls[i] = new URLEntry();
-            offset += urls[i].deserialize(bytes, offset);
+            URLEntry urlEntry = new URLEntry();
+            offset += urlEntry.deserialize(bytes, offset);
+            addURLEntry(urlEntry);
         }
-        setURLEntries(urls);
     }
 
     public byte getMessageType()
@@ -109,13 +111,13 @@ public class SrvRply extends Rply
         this.errorCode = errorCode;
     }
 
-    public URLEntry[] getURLEntries()
+    public List getURLEntries()
     {
         return urlEntries;
     }
 
-    public void setURLEntries(URLEntry[] urlEntries)
+    public void addURLEntry(URLEntry urlEntry)
     {
-        this.urlEntries = urlEntries;
+        urlEntries.add(urlEntry);
     }
 }

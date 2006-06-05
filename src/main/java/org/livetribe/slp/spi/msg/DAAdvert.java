@@ -19,6 +19,7 @@ import java.util.Date;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -59,7 +60,7 @@ public class DAAdvert extends Rply
     private int errorCode;
     private long bootTime;
     private String url;
-    private String[] scopes;
+    private Scopes scopes;
     private Attributes attributes;
     private String[] securityParamIndexes;
     private AuthenticationBlock[] authenticationBlocks;
@@ -73,7 +74,7 @@ public class DAAdvert extends Rply
     {
         byte[] urlBytes = writeString(getURL());
         int urlBytesLength = urlBytes.length;
-        byte[] scopesBytes = writeStringArray(getScopes());
+        byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesBytesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
@@ -157,7 +158,7 @@ public class DAAdvert extends Rply
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
         offset += SCOPES_LENGTH_BYTES_LENGTH;
-        setScopes(readStringArray(bytes, offset, scopesLength));
+        setScopes(new Scopes(readStringArray(bytes, offset, scopesLength)));
 
         offset += scopesLength;
         int attrsLength = readInt(bytes, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
@@ -218,12 +219,12 @@ public class DAAdvert extends Rply
         this.url = url;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
         return scopes;
     }
 
-    public void setScopes(String[] scopes)
+    public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }
@@ -273,16 +274,7 @@ public class DAAdvert extends Rply
 
         result.append(" ").append(getURL());
 
-        String[] scopes = getScopes();
-        if (scopes != null)
-        {
-            result.append(" ");
-            for (int i = 0; i < scopes.length; i++)
-            {
-                if (i > 0) result.append(",");
-                result.append(scopes[i]);
-            }
-        }
+        result.append(" ").append(getScopes());
 
         result.append(" {");
         Attributes attrs = getAttributes();

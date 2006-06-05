@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -45,7 +46,7 @@ public class SAAdvert extends Rply
     private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
 
     private String url;
-    private String[] scopes;
+    private Scopes scopes;
     private Attributes attributes;
     private AuthenticationBlock[] authenticationBlocks;
 
@@ -53,7 +54,7 @@ public class SAAdvert extends Rply
     {
         byte[] urlBytes = writeString(getURL());
         int urlBytesLength = urlBytes.length;
-        byte[] scopesBytes = writeStringArray(getScopes());
+        byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesBytesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsBytesLength = attrsBytes.length;
@@ -117,7 +118,7 @@ public class SAAdvert extends Rply
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
         offset += SCOPES_LENGTH_BYTES_LENGTH;
-        setScopes(readStringArray(bytes, offset, scopesLength));
+        setScopes(new Scopes(readStringArray(bytes, offset, scopesLength)));
 
         offset += scopesLength;
         int attrsLength = readInt(bytes, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
@@ -156,12 +157,12 @@ public class SAAdvert extends Rply
         this.url = url;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
         return scopes;
     }
 
-    public void setScopes(String[] scopes)
+    public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }

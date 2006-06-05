@@ -19,14 +19,18 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.StandardAgentManager;
+import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.Message;
@@ -71,7 +75,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         localhost = agentAddr;
     }
 
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException
+    public DAAdvert[] multicastDASrvRqst(Scopes scopes, String filter, String language, long timeframe) throws IOException
     {
         SrvRqst request = new SrvRqst();
         request.setLanguage(language);
@@ -83,7 +87,7 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return convergentDASrvRqst(request, timeframe);
     }
 
-    public void udpSAAdvert(InetSocketAddress address, String identifier, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void udpSAAdvert(InetSocketAddress address, String identifier, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         SAAdvert advert = new SAAdvert();
         advert.setLanguage(language);
@@ -159,13 +163,15 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
     {
         String language = service.getLanguage();
         if (language == null) language = serviceAgent.getLanguage();
+        if (language == null) language = Locale.getDefault().getLanguage();
         return language;
     }
 
-    private String[] resolveScopes(ServiceInfo service, ServiceAgentInfo serviceAgent)
+    private Scopes resolveScopes(ServiceInfo service, ServiceAgentInfo serviceAgent)
     {
-        String[] scopes = service.getScopes();
+        Scopes scopes = service.getScopes();
         if (scopes == null) scopes = serviceAgent.getScopes();
+        if (scopes == null) scopes = Scopes.DEFAULT;
         return scopes;
     }
 
@@ -213,9 +219,9 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return deregistration;
     }
 
-    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
+    public void tcpSrvRply(Socket socket, Integer xid, String language, List serviceInfos) throws IOException
     {
-        SrvRply srvRply = createSrvRply(xid, language, serviceURLs);
+        SrvRply srvRply = createSrvRply(xid, language, serviceInfos);
         byte[] bytes = serializeMessage(srvRply);
 
         if (logger.isLoggable(Level.FINEST))
@@ -224,22 +230,30 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         getTCPConnector().reply(socket, bytes);
     }
 
-    private SrvRply createSrvRply(Integer xid, String language, ServiceURL[] serviceURLs)
+    private SrvRply createSrvRply(Integer xid, String language, List serviceInfos)
     {
         SrvRply srvRply = new SrvRply();
         srvRply.setXID(xid == null ? generateXID() : xid.intValue());
         srvRply.setLanguage(language);
+
+        for (int i = 0; i < serviceInfos.size(); ++i)
+        {
+            ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.get(i);
+            ServiceURL serviceURL = serviceInfo.getServiceURL();
+
+            URLEntry urlEntry = new URLEntry();
+            urlEntry.setURL(serviceURL.getURL());
+            urlEntry.setLifetime(serviceURL.getLifetime());
+            srvRply.addURLEntry(urlEntry);
+
+            AttributeListExtension attrs = new AttributeListExtension();
+            attrs.setURL(serviceURL.getURL());
+            attrs.setAttributes(serviceInfo.getAttributes());
+            srvRply.addExtension(attrs);
+        }
+
         // TODO: a SrvRply can have errorCode != 0 ???
         srvRply.setErrorCode(0);
-        URLEntry[] entries = new URLEntry[serviceURLs.length];
-        for (int i = 0; i < entries.length; ++i)
-        {
-            ServiceURL serviceURL = serviceURLs[i];
-            entries[i] = new URLEntry();
-            entries[i].setURL(serviceURL.getURL());
-            entries[i].setLifetime(serviceURL.getLifetime());
-        }
-        srvRply.setURLEntries(entries);
         return srvRply;
     }
 

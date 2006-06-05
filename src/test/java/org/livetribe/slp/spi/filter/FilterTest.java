@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da.filter;
+package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
-import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.spi.SLPSPITestCase;
+import org.livetribe.slp.SLPTestSupport;
 
 /**
  * @version $Rev$ $Date$
  */
-public class FilterTest extends SLPSPITestCase
+public class FilterTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testMatchSingleString() throws Exception
     {
         String attributeList = "(a=foo)";
@@ -49,6 +51,9 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatchSingleLong() throws Exception
     {
         String attributeList = "(a=14)";
@@ -65,17 +70,12 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
 
         filter = parser.parse("(a=foo)");
-        try
-        {
-            filter.match(attributes);
-            fail();
-        }
-        catch (ServiceLocationException x)
-        {
-            assertEquals(ServiceLocationException.PARSE_ERROR, x.getErrorCode());
-        }
+        assertFalse(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatchSingleBoolean() throws Exception
     {
         String attributeList = "(a=true)";
@@ -89,50 +89,21 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
 
         filter = parser.parse("(a>=false)");
-        try
-        {
-            assertTrue(filter.match(attributes));
-            fail();
-        }
-        catch (ServiceLocationException x)
-        {
-            assertEquals(ServiceLocationException.PARSE_ERROR, x.getErrorCode());
-        }
+        assertFalse(filter.match(attributes));
 
         filter = parser.parse("(a<=true)");
-        try
-        {
-            assertTrue(filter.match(attributes));
-            fail();
-        }
-        catch (ServiceLocationException x)
-        {
-            assertEquals(ServiceLocationException.PARSE_ERROR, x.getErrorCode());
-        }
+        assertFalse(filter.match(attributes));
 
         filter = parser.parse("(a=foo)");
-        try
-        {
-            filter.match(attributes);
-            fail();
-        }
-        catch (ServiceLocationException x)
-        {
-            assertEquals(ServiceLocationException.PARSE_ERROR, x.getErrorCode());
-        }
+        assertFalse(filter.match(attributes));
 
         filter = parser.parse("(a=10)");
-        try
-        {
-            filter.match(attributes);
-            fail();
-        }
-        catch (ServiceLocationException x)
-        {
-            assertEquals(ServiceLocationException.PARSE_ERROR, x.getErrorCode());
-        }
+        assertFalse(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatchSinglePresence() throws Exception
     {
         String attributeList = "bar";
@@ -146,6 +117,9 @@ public class FilterTest extends SLPSPITestCase
         assertFalse(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMultipleParenthesis() throws Exception
     {
         String attributeList = "(bar=foo)";
@@ -156,6 +130,9 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatchMultipleStrings() throws Exception
     {
         String attributeList = "(x=true,2,bar)";
@@ -166,6 +143,9 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatchMultipleLongs() throws Exception
     {
         String attributeList = "(x=1,2,3)";
@@ -176,6 +156,9 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatchMultipleBooleans() throws Exception
     {
         String attributeList = "(x=true,false)";
@@ -186,6 +169,9 @@ public class FilterTest extends SLPSPITestCase
         assertTrue(filter.match(attributes));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMultipleMatches() throws Exception
     {
         String attributeList = "(a=1,2),(b=false),(name=name1)";

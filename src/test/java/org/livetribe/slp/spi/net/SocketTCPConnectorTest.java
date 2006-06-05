@@ -166,7 +166,7 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
             SrvRply reply = new SrvRply();
             URLEntry entry = new URLEntry();
             entry.setURL("url1");
-            reply.setURLEntries(new URLEntry[]{entry});
+            reply.addURLEntry(entry);
             reply.setResponder("127.0.0.1");
 
             byte[] messageBytes = reply.serialize();
@@ -219,7 +219,7 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
             SrvRply reply = new SrvRply();
             URLEntry entry = new URLEntry();
             entry.setURL("url1");
-            reply.setURLEntries(new URLEntry[]{entry});
+            reply.addURLEntry(entry);
             reply.setResponder("127.0.0.1");
 
             byte[] messageBytes = reply.serialize();

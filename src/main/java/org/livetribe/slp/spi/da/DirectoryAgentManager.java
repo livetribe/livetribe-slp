@@ -18,9 +18,10 @@ package org.livetribe.slp.spi.da;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
 
 import org.livetribe.slp.Attributes;
-import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.spi.AgentManager;
 
 /**
@@ -28,11 +29,11 @@ import org.livetribe.slp.spi.AgentManager;
  */
 public interface DirectoryAgentManager extends AgentManager
 {
-    public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void multicastDAAdvert(long bootTime, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
-    public void udpDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void udpDAAdvert(InetSocketAddress address, long bootTime, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException;
 
     public void tcpSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException;
 
-    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException;
+    public void tcpSrvRply(Socket socket, Integer xid, String language, List serviceInfos) throws IOException;
 }

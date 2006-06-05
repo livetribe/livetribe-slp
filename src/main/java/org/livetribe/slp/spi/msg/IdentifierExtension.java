@@ -126,6 +126,9 @@ public class IdentifierExtension extends Extension
         return null;
     }
 
+    /**
+     * Returns all IdentifierExtensions found in the given collection of extensions.
+     */
     public static Collection findAll(Collection extensions)
     {
         List result = new ArrayList();

@@ -16,6 +16,7 @@
 package org.livetribe.slp.api.sa;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.spi.msg.SrvDeReg;
@@ -25,6 +26,10 @@ import org.livetribe.slp.spi.msg.SrvReg;
  * Representation of a service, exposed by ServiceAgents and registered in DirectoryAgents.
  * <br />
  * In SLP, services are distinguished by their {@link ServiceURL} and by their language.
+ * However, there is an asymmetry in SLP that allows <code>(ServiceURL1, language1)</code>
+ * to be registered under two different ServiceTypes (this is allowed by the format of
+ * {@link SrvReg}), but not deregistered from one ServiceType only (as {@link SrvDeReg}
+ * does not support an additional ServiceType field).
  * <br />
  * {@link Attributes} are not involved in service equality since they can contain
  * locale-specific information (for example: <code>(color=Yellow)</code> with language English,
@@ -36,7 +41,7 @@ public class ServiceInfo
 {
     private final Key key;
     private final ServiceType serviceType;
-    private final String[] scopes;
+    private final Scopes scopes;
     private final Attributes attributes;
 
     public static ServiceInfo from(SrvReg message)
@@ -49,18 +54,23 @@ public class ServiceInfo
         return new ServiceInfo(message.getURLEntry().toServiceURL(), message.getScopes(), message.getTags(), message.getLanguage());
     }
 
-    public ServiceInfo(ServiceURL serviceURL, String[] scopes, Attributes attributes, String language)
+    public ServiceInfo(ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
     {
         this(null, serviceURL, scopes, attributes, language);
     }
 
-    public ServiceInfo(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language)
+    public ServiceInfo(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
     {
         this.key = new Key(serviceURL, language);
         this.serviceType = serviceType;
         this.scopes = scopes;
         this.attributes = attributes;
     }
+
+//    public ServiceInfo clone(ServiceInfo other)
+//    {
+//        return new ServiceInfo(other.getServiceType(), other.getServiceURL(), other.getScopes(), other.getAttributes(), other.getLanguage());
+//    }
 
     public Key getKey()
     {
@@ -77,7 +87,7 @@ public class ServiceInfo
         return getKey().getServiceURL();
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
         return scopes;
     }
@@ -85,6 +95,11 @@ public class ServiceInfo
     public Attributes getAttributes()
     {
         return attributes;
+    }
+
+    public boolean hasAttributes()
+    {
+        return attributes != null && !attributes.isEmpty();
     }
 
     public String getLanguage()
@@ -123,6 +138,11 @@ public class ServiceInfo
         return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
     }
 
+    /**
+     * Services in SLP are identified by ServiceURL and language.
+     * There is an asymmetry between SrvReg and SrvDereg,
+     * in which SrvReg specify
+     */
     public static class Key
     {
         private final ServiceURL serviceURL;
@@ -139,15 +159,14 @@ public class ServiceInfo
             if (this == obj) return true;
             if (obj == null || getClass() != obj.getClass()) return false;
             final Key that = (Key)obj;
-            if (!getServiceURL().equals(that.getServiceURL())) return false;
-            if (!getLanguage().equals(that.getLanguage())) return false;
-            return true;
+            if (!serviceURL.equals(that.serviceURL)) return false;
+            return language == null ? that.language == null : language.equals(that.language);
         }
 
         public int hashCode()
         {
-            int result = getServiceURL().hashCode();
-            result = 29 * result + getLanguage().hashCode();
+            int result = serviceURL.hashCode();
+            if (language != null) result = 29 * result + language.hashCode();
             return result;
         }
 

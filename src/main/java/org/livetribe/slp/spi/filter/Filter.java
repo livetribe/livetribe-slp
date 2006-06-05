@@ -13,34 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da.filter;
-
-import java.util.List;
+package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
-import org.livetribe.slp.ServiceLocationException;
 
 /**
  * @version $Rev$ $Date$
  */
-public class OrFilter implements Filter
+public interface Filter
 {
-    private final List filters;
-
-    public OrFilter(List filters)
-    {
-        this.filters = filters;
-    }
-
-    public boolean match(Attributes attributes) throws ServiceLocationException
-    {
-        boolean result = false;
-        for (int i = 0; i < filters.size(); ++i)
-        {
-            Filter filter = (Filter)filters.get(i);
-            result |= filter.match(attributes);
-            if (result) break;
-        }
-        return result;
-    }
+    /**
+     * Returns true if the given attributes matches the expression represented by this filter.
+     * @param attributes The attributes to match against this filter.
+     */
+    public boolean match(Attributes attributes);
 }

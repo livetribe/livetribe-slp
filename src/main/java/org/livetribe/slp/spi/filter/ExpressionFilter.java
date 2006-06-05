@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da.filter;
+package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
@@ -32,28 +32,29 @@ public class ExpressionFilter implements Filter
     private final String operator;
     private final String rhs;
 
-    public ExpressionFilter(String lhs, String operator, String rhs)
+    public ExpressionFilter(String lhs, String operator, String rhs) throws ServiceLocationException
     {
         this.lhs = lhs;
         this.operator = operator;
         this.rhs = rhs;
+        // Check if wildcard comparison is done properly (RFC 2608, 8.1)
+        if (!EQ.equals(operator) && rhs.indexOf(ANY) >= 0) throw new ServiceLocationException("Invalid filter " + this + ": wildcard matching is only allowed with operator " + EQ, ServiceLocationException.PARSE_ERROR);
     }
 
-    public boolean match(Attributes attributes) throws ServiceLocationException
+    public boolean match(Attributes attributes)
     {
+        if (attributes == null) return false;
+        
         Attributes.Entry entry = attributes.getEntry(lhs);
         if (entry == null) return false;
 
         // Check for presence only
         if (EQ.equals(operator) && ANY.equals(rhs)) return true;
 
-        // Check if wildcard comparison is done properly (RFC 2608, 8.1)
-        if (!EQ.equals(operator) && rhs.indexOf(ANY) >= 0) throw new ServiceLocationException("Invalid filter " + this + ": wildcard matching is only allowed with operator " + EQ, ServiceLocationException.PARSE_ERROR);
-
         return compare(entry, operator, rhs);
     }
 
-    private boolean compare(Attributes.Entry entry, String operator, String compare) throws ServiceLocationException
+    private boolean compare(Attributes.Entry entry, String operator, String compare)
     {
         if (entry.isStringType())
         {
@@ -153,21 +154,21 @@ public class ExpressionFilter implements Filter
                     throw new AssertionError("Invalid operator " + operator);
                 }
             }
-            catch (NumberFormatException e)
+            catch (NumberFormatException x)
             {
-                throw new ServiceLocationException("Invalid natural number value " + compare, ServiceLocationException.PARSE_ERROR);
+                return false;
             }
         }
         else if (entry.isBooleanType())
         {
-            if (!EQ.equals(operator)) throw new ServiceLocationException("Invalid operator " + operator + ": for boolean values is only allowed operator " + EQ, ServiceLocationException.PARSE_ERROR);
-            if (!"true".equalsIgnoreCase(compare) && !"false".equalsIgnoreCase(compare)) throw new ServiceLocationException("Invalid boolean value " + compare, ServiceLocationException.PARSE_ERROR);
+            if (!EQ.equals(operator)) return false;
+            if (!"true".equalsIgnoreCase(compare) && !"false".equalsIgnoreCase(compare)) return false;
             Boolean value = (Boolean)entry.getValue();
             return value.equals(Boolean.valueOf(compare));
         }
         else if (entry.isOpaqueType())
         {
-            if (!EQ.equals(operator)) throw new ServiceLocationException("Invalid operator " + operator + ": for opaque values is only allowed operator " + EQ, ServiceLocationException.PARSE_ERROR);
+            if (!EQ.equals(operator)) return false;
             String value = (String)entry.getValue();
             return compare.equals(value);
         }

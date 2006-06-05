@@ -130,7 +130,7 @@ public class SocketUDPConnectorTest extends SLPTestSupport
             SrvRply reply = new SrvRply();
             URLEntry entry = new URLEntry();
             entry.setURL("url1");
-            reply.setURLEntries(new URLEntry[]{entry});
+            reply.addURLEntry(entry);
 
             byte[] messageBytes = reply.serialize();
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length);

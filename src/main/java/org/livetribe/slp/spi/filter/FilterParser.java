@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da.filter;
+package org.livetribe.slp.spi.filter;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.livetribe.slp.ServiceLocationException;
 

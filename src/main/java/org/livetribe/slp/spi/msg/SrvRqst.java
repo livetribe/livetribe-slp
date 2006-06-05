@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 
@@ -55,7 +56,7 @@ public class SrvRqst extends Rqst
     private static final int SPI_LENGTH_BYTES_LENGTH = 2;
 
     private ServiceType serviceType;
-    private String[] scopes;
+    private Scopes scopes;
     private String filter;
     private String securityParameterIndex;
 
@@ -66,7 +67,7 @@ public class SrvRqst extends Rqst
         int previousRespondersLength = previousRespondersBytes.length;
         byte[] serviceTypeBytes = writeString(getServiceType().toString());
         int serviceTypeLength = serviceTypeBytes.length;
-        byte[] scopesBytes = writeStringArray(getScopes());
+        byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesLength = scopesBytes.length;
         byte[] filterBytes = writeString(getFilter());
         int filterLength = filterBytes.length;
@@ -128,7 +129,7 @@ public class SrvRqst extends Rqst
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
         offset += SCOPES_LENGTH_BYTES_LENGTH;
-        setScopes(readStringArray(bytes, offset, scopesLength));
+        setScopes(new Scopes(readStringArray(bytes, offset, scopesLength)));
 
         offset += scopesLength;
         int filterLength = readInt(bytes, offset, FILTER_LENGTH_BYTES_LENGTH);
@@ -158,12 +159,12 @@ public class SrvRqst extends Rqst
         this.serviceType = serviceType;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
         return scopes;
     }
 
-    public void setScopes(String[] scopes)
+    public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }
@@ -206,16 +207,7 @@ public class SrvRqst extends Rqst
 
         result.append(" ").append(getServiceType());
 
-        String[] scopes = getScopes();
-        if (scopes != null)
-        {
-            result.append(" ");
-            for (int i = 0; i < scopes.length; i++)
-            {
-                if (i > 0) result.append(",");
-                result.append(scopes[i]);
-            }
-        }
+        result.append(" ").append(getScopes());
 
         result.append(" ").append(getFilter());
 

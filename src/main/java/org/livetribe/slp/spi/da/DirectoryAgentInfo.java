@@ -15,11 +15,8 @@
  */
 package org.livetribe.slp.spi.da;
 
-import java.util.List;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.spi.msg.DAAdvert;
 
 /**
@@ -32,7 +29,7 @@ public class DirectoryAgentInfo
     private final Attributes attributes;
     private final long bootTime;
     private final String language;
-    private final List scopes;
+    private final Scopes scopes;
     private final String url;
     private final String host;
 
@@ -41,12 +38,12 @@ public class DirectoryAgentInfo
         return new DirectoryAgentInfo(daAdvert.getAttributes(), daAdvert.getBootTime(), daAdvert.getLanguage(), daAdvert.getScopes(), daAdvert.getURL());
     }
 
-    private DirectoryAgentInfo(Attributes attributes, long bootTime, String language, String[] scopes, String url)
+    private DirectoryAgentInfo(Attributes attributes, long bootTime, String language, Scopes scopes, String url)
     {
         this.attributes = attributes;
         this.bootTime = bootTime;
         this.language = language;
-        this.scopes = scopes == null ? Collections.emptyList() : Arrays.asList(scopes);
+        this.scopes = scopes;
         this.url = url;
         this.host = parseHost(url);
     }
@@ -76,23 +73,18 @@ public class DirectoryAgentInfo
         return language;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
-        return (String[])scopes.toArray(new String[scopes.size()]);
+        return scopes;
     }
 
     /**
      * Returns true if at least one of the given scopes is also a scope of this DirectoryAgentInfo
      */
-    public boolean matchScopes(List scopesList)
+    public boolean matchScopes(Scopes others)
     {
-        if (scopesList == null) return false;
-        for (int i = 0; i < scopesList.size(); ++i)
-        {
-            String scope = (String)scopesList.get(i);
-            if (scopes.contains(scope)) return true;
-        }
-        return false;
+        if (others == null) return false;
+        return getScopes().match(others);
     }
 
     public String getHost()

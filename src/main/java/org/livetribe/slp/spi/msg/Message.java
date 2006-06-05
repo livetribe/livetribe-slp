@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Iterator;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -40,8 +41,8 @@ import org.livetribe.slp.ServiceLocationException;
  * </pre>
  * The RFC 2608 extension is the following:
  * <pre>
- * 0                   1                   2                   3
- * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |         Extension ID          |       Next Extension Offset   |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -360,5 +361,11 @@ public abstract class Message extends BytesBlock
     {
         if (attributes == null) return EMPTY_BYTES;
         return stringToUTF8Bytes(attributes.asString());
+    }
+
+    protected static byte[] scopesToBytes(Scopes scopes) throws ServiceLocationException
+    {
+        if (scopes == null) return EMPTY_BYTES;
+        return writeStringArray(scopes.asStringArray());
     }
 }

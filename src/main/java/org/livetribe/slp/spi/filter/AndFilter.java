@@ -13,17 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da.filter;
+package org.livetribe.slp.spi.filter;
+
+import java.util.List;
 
 import org.livetribe.slp.Attributes;
 
 /**
  * @version $Rev$ $Date$
  */
-public class AlwaysMatchFilter implements Filter
+public class AndFilter implements Filter
 {
+    private final List filters;
+
+    public AndFilter(List filters)
+    {
+        this.filters = filters;
+    }
+
     public boolean match(Attributes attributes)
     {
-        return true;
+        boolean result = true;
+        for (int i = 0; i < filters.size(); ++i)
+        {
+            Filter filter = (Filter)filters.get(i);
+            result &= filter.match(attributes);
+            if (!result) break;
+        }
+        return result;
     }
 }

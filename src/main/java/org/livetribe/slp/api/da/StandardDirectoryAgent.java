@@ -19,32 +19,30 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.StandardAgent;
+import org.livetribe.slp.api.sa.ServiceInfo;
+import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
+import org.livetribe.slp.spi.filter.FilterParser;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
@@ -66,8 +64,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     private InetAddress localhost;
     private MessageListener udpListener;
     private MessageListener tcpListener;
-    private final Lock servicesLock = new ReentrantLock();
-    private final Map services = new HashMap();
+    private final ServiceInfoCache services = new ServiceInfoCache();
     private final List listeners = new LinkedList();
     private final Lock listenersLock = new ReentrantLock();
 
@@ -251,7 +248,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 */
     }
 
-    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean notifyListeners) throws ServiceLocationException
+    public void registerService(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language, boolean notifyListeners) throws ServiceLocationException
     {
         SrvReg message = new SrvReg();
         message.setServiceType(serviceType);
@@ -276,12 +273,10 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             return;
         }
 
-        List scopesList = Arrays.asList(getScopes());
-        List messageScopes = Arrays.asList(message.getScopes());
-        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopes))
+        if (!getScopes().match(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": no scopes match among DA scopes " + scopesList + " and message scopes " + messageScopes);
+                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": no scopes match among DA scopes " + getScopes() + " and message scopes " + message.getScopes());
             return;
         }
 
@@ -312,7 +307,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     {
         // TODO: check that the scopes match
 
-        int errorCode = message.isFresh() ? registerService(message, true) : updateService(message);
+        int errorCode = message.isFresh() ? registerService(message, true) : updateService(message, true);
         try
         {
             manager.tcpSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
@@ -338,101 +333,73 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             return ServiceLocationException.INVALID_REGISTRATION;
         }
 
-        int result = 0;
-        servicesLock.lock();
-        try
-        {
-            Map serviceURLs = (Map)services.get(message.getServiceType());
-            if (serviceURLs == null)
-            {
-                serviceURLs = new HashMap();
-                services.put(message.getServiceType(), serviceURLs);
-            }
+        services.put(ServiceInfo.from(message));
 
-            Object oldRegistration = serviceURLs.put(message.getURLEntry().getURL(), message);
-            if (oldRegistration != null)
-            {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("Replacing service registration " + oldRegistration + " with new registration " + message);
-            }
-            else
-            {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Registering new service " + message);
-            }
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
+        // TODO: notify listeners
+//        if (notifyListeners) notifyServiceRegistered(message);
 
-        if (notifyListeners) notifyServiceRegistered(message);
-
-        return result;
+        return 0;
     }
 
-    private int updateService(SrvReg message)
+    private int updateService(SrvReg message, boolean notifyListeners)
     {
-        servicesLock.lock();
+        services.lock();
         try
         {
-            Map serviceURLs = (Map)services.get(message.getServiceType());
-            if (serviceURLs == null)
-            {
-                serviceURLs = new HashMap();
-                services.put(message.getServiceType(), serviceURLs);
-            }
+            ServiceInfo update = ServiceInfo.from(message);
+            ServiceInfo existing = services.get(update.getKey());
 
-            SrvReg registration = (SrvReg)serviceURLs.get(message.getURLEntry().getURL());
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
-            if (registration == null) return ServiceLocationException.INVALID_UPDATE;
+            if (existing == null) return ServiceLocationException.INVALID_UPDATE;
+
             // Services must be updated keeping the same scopes list (RFC 2608, 9.3)
-            if (!Arrays.equals(registration.getScopes(), message.getScopes()))
+            if (!existing.getScopes().equals(update.getScopes()))
                 return ServiceLocationException.SCOPE_NOT_SUPPORTED;
 
-            registration.updateAttributes(message.getAttributes());
+            services.updateAdd(update);
+
             return 0;
         }
         finally
         {
-            servicesLock.unlock();
+            services.unlock();
         }
+
+        // TODO: notify listeners
+//        if (notifyListeners) notifyServiceUpdated();
     }
 
     protected void handleTCPSrvDeReg(SrvDeReg message, Socket socket)
     {
-        int errorCode = 0;
+        // TODO: check that the scopes match
 
-        servicesLock.lock();
+        ServiceInfo remove = ServiceInfo.from(message);
+        ServiceInfo existing = null;
+        ServiceInfo updated = null;
+
+        services.lock();
         try
         {
-            for (Iterator servicesIterator = services.entrySet().iterator(); servicesIterator.hasNext();)
-            {
-                Map.Entry serviceEntry = (Map.Entry)servicesIterator.next();
-                Map serviceURLs = (Map)serviceEntry.getValue();
-
-                String serviceURL = message.getURLEntry().getURL();
-                SrvReg registration = (SrvReg)serviceURLs.get(serviceURL);
-                if (registration != null)
-                {
-                    Attributes tags = message.getTags();
-                    if (tags != null && !tags.isEmpty())
-                    {
-                        registration.removeAttributes(tags);
-                    }
-                    else
-                    {
-                        serviceURLs.remove(serviceURL);
-                        if (serviceURLs.isEmpty()) servicesIterator.remove();
-                        notifyServiceDeregistered(registration);
-                    }
-                }
-            }
+            existing = services.get(remove.getKey());
+            updated = services.remove(remove.getKey());
         }
         finally
         {
-            servicesLock.unlock();
+            services.unlock();
         }
 
+        // TODO: notify listeners
+/*
+        if (existing != null)
+        {
+            if (updated != null)
+                notifyServiceUpdated();
+            else
+                notifyServiceDeregistered();
+        }
+*/
+
+        int errorCode = 0;
         try
         {
             manager.tcpSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
@@ -444,19 +411,18 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    protected void handleTCPSrvRqst(SrvRqst message, Socket socket)
+    protected void handleTCPSrvRqst(SrvRqst message, Socket socket) throws ServiceLocationException
     {
         if (logger.isLoggable(Level.FINE))
             logger.fine("DirectoryAgent " + this + " queried for services of type " + message.getServiceType());
 
-        List matchingServices = matchServices(message.getServiceType());
-        ServiceURL[] serviceURLs = (ServiceURL[])matchingServices.toArray(new ServiceURL[matchingServices.size()]);
+        List matchingServices = matchServices(message.getServiceType(), message.getScopes(), message.getFilter(), message.getLanguage());
 
         try
         {
-            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), serviceURLs);
+            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), matchingServices);
             if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " returned " + serviceURLs.length + " services of type " + message.getServiceType());
+                logger.fine("DirectoryAgent " + this + " returned " + matchingServices.size() + " services of type " + message.getServiceType());
         }
         catch (IOException x)
         {
@@ -465,34 +431,9 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    private List matchServices(ServiceType serviceType)
+    private List matchServices(ServiceType serviceType, Scopes scopes, String filter, String language) throws ServiceLocationException
     {
-        servicesLock.lock();
-        try
-        {
-            List result = new ArrayList();
-            for (Iterator entries = services.entrySet().iterator(); entries.hasNext();)
-            {
-                Map.Entry entry = (Map.Entry)entries.next();
-                ServiceType registeredServiceType = (ServiceType)entry.getKey();
-                Map serviceURLs = (Map)entry.getValue();
-                if (registeredServiceType.matches(serviceType))
-                {
-                    for (Iterator urls = serviceURLs.entrySet().iterator(); urls.hasNext();)
-                    {
-                        Map.Entry urlEntry = (Map.Entry)urls.next();
-                        String serviceURL = (String)urlEntry.getKey();
-                        SrvReg registeredService = (SrvReg)urlEntry.getValue();
-                        result.add(new ServiceURL(serviceURL, registeredService.getURLEntry().getLifetime()));
-                    }
-                }
-            }
-            return result;
-        }
-        finally
-        {
-            servicesLock.unlock();
-        }
+        return services.match(serviceType, scopes, new FilterParser().parse(filter), language);
     }
 
     private class UnsolicitedDAAdvert implements Runnable

@@ -16,13 +16,15 @@
 package org.livetribe.slp.api.da;
 
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Locale;
 
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicInteger;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import org.livetribe.slp.SLPTestSupport;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.api.SLPAPITestCase;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
@@ -41,14 +43,20 @@ import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 /**
  * @version $Rev$ $Date$
  */
-public class StandardDirectoryAgentTest extends SLPAPITestCase
+public class StandardDirectoryAgentTest extends SLPTestSupport
 {
+    /**
+     * @testng.configuration afterTestMethod="true"
+     */
     protected void tearDown() throws Exception
     {
         // Allow ServerSocket to shutdown completely
         sleep(500);
     }
 
+    /**
+     * @testng.test
+     */
     public void testStartStop() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -69,6 +77,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         assertFalse(da.isRunning());
     }
 
+    /**
+     * @testng.test
+     */
     public void testUnsolicitedDAAdverts() throws Exception
     {
         StandardUserAgentManager ua = new StandardUserAgentManager();
@@ -125,8 +136,8 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 ua.removeMessageListener(listener, true);
 
                 // There's one more DAAdvert, sent at boot
-                assertEquals(count + 1, daAdvertCount.get());
-                assertNull(failure.get());
+                assert daAdvertCount.get() == count + 1;
+                assert failure.get() == null;
             }
             finally
             {
@@ -139,6 +150,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testDAAdvertOnShutdown() throws Exception
     {
         StandardUserAgentManager uaManager = new StandardUserAgentManager();
@@ -199,8 +213,8 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
 
             uaManager.removeMessageListener(listener, true);
 
-            assertEquals(1, daAdvertCount.get());
-            assertNull(failure.get());
+            assert daAdvertCount.get() == 1;
+            assert failure.get() == null;
         }
         finally
         {
@@ -208,6 +222,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testDADiscoveryRepliesOnUnicast() throws Exception
     {
         InetAddress localhost = InetAddress.getLocalHost();
@@ -236,16 +253,16 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             {
                 sleep(500);
 
-                DAAdvert[] replies = uaManager.multicastDASrvRqst(new String[]{"DEFAULT"}, null, null, -1);
+                DAAdvert[] replies = uaManager.multicastDASrvRqst(Scopes.DEFAULT, null, null, -1);
 
-                assertNotNull(replies);
-                assertEquals(1, replies.length);
+                assert replies != null;
+                assert replies.length == 1;
                 DAAdvert reply = replies[0];
-                assertEquals(0, reply.getErrorCode());
-                assertEquals("service:directory-agent://" + localhost.getHostAddress(), reply.getURL());
-                assertTrue(afterBoot >= reply.getBootTime());
-                assertNotNull(reply.getResponder());
-                assertFalse(reply.isMulticast());
+                assert reply.getErrorCode() ==0;
+                assert reply.getURL().equals("service:directory-agent://" + localhost.getHostAddress());
+                assert afterBoot >= reply.getBootTime();
+                assert reply.getResponder() != null;
+                assert !reply.isMulticast();
             }
             finally
             {
@@ -258,6 +275,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testServiceRegistration() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -282,13 +302,13 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
-                String[] scopes = new String[]{"scope1", "scope2"};
+                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
 
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();
                 uaManager.setUDPConnector(new SocketUDPConnector());
@@ -300,14 +320,14 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
                 {
                     SrvRply srvRply = uaManager.tcpSrvRqst(localhost, serviceURL.getServiceType(), scopes, null, null);
 
-                    assertNotNull(srvRply);
-                    assertEquals(0, srvRply.getErrorCode());
-                    URLEntry[] urlEntries = srvRply.getURLEntries();
-                    assertNotNull(urlEntries);
-                    assertEquals(1, urlEntries.length);
-                    URLEntry urlEntry = urlEntries[0];
-                    assertEquals(serviceURL.getURL(), urlEntry.getURL());
-                    assertEquals(serviceURL.getLifetime(), urlEntry.getLifetime());
+                    assert srvRply != null;
+                    assert srvRply.getErrorCode() == 0;
+                    List urlEntries = srvRply.getURLEntries();
+                    assert urlEntries != null;
+                    assert urlEntries.size() == 1;
+                    URLEntry urlEntry = (URLEntry)urlEntries.get(0);
+                    assert serviceURL.getURL().equals(urlEntry.getURL());
+                    assert serviceURL.getLifetime() == urlEntry.getLifetime();
                 }
                 finally
                 {
@@ -325,6 +345,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testServiceUpdate() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -349,7 +372,7 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                String[] scopes = new String[]{"scope1", "scope2"};
+                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
 
                 String language = Locale.getDefault().getLanguage();
 
@@ -357,24 +380,25 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
 
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
 
                 // Re-registration with same information must replace service
                 ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
 
                 // Update with same information must pass
                 ack = saManager.tcpSrvReg(localhost, service, serviceAgent, false);
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
 
                 // Update with different scope must fail
-                service = new ServiceInfo(serviceURL, new String[]{"scope"}, null, null);
+                Scopes wrongScopes = new Scopes(new String[]{"scope"});
+                service = new ServiceInfo(serviceURL, wrongScopes, null, null);
                 ack = saManager.tcpSrvReg(localhost, service, serviceAgent, false);
-                assertNotNull(ack);
-                assertEquals(ServiceLocationException.SCOPE_NOT_SUPPORTED, ack.getErrorCode());
+                assert ack != null;
+                assert ServiceLocationException.SCOPE_NOT_SUPPORTED == ack.getErrorCode();
             }
             finally
             {
@@ -387,6 +411,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testServiceUpdateOfNonRegisteredService() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -411,12 +438,13 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                ServiceInfo service = new ServiceInfo(serviceURL, new String[]{"scope1", "scope2"}, null, Locale.getDefault().getLanguage());
+                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, Locale.getDefault().getLanguage());
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, false);
 
-                assertNotNull(ack);
-                assertEquals(ServiceLocationException.INVALID_UPDATE, ack.getErrorCode());
+                assert ack != null;
+                assert ServiceLocationException.INVALID_UPDATE == ack.getErrorCode();
             }
             finally
             {
@@ -429,6 +457,9 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testServiceDeregistration() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -453,18 +484,18 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                String[] scopes = new String[]{"scope1", "scope2"};
+                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
 
                 String language = Locale.getDefault().getLanguage();
                 ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, language);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
 
                 ack = saManager.tcpSrvDeReg(localhost, service, serviceAgent);
-                assertNotNull(ack);
-                assertEquals(0, ack.getErrorCode());
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
             }
             finally
             {
@@ -476,4 +507,41 @@ public class StandardDirectoryAgentTest extends SLPAPITestCase
             da.stop();
         }
     }
+
+    /**
+     * @testng.test
+     */
+/*
+    public void testRegisterServiceInWrongScope() throws Exception
+    {
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        da.setConfiguration(getDefaultConfiguration());
+        da.setScopes(new Scopes(new String[]{"scope1"}));
+        da.start();
+
+        try
+        {
+            StandardServiceAgent sa = new StandardServiceAgent();
+            sa.setConfiguration(getDefaultConfiguration());
+            sa.start();
+
+            try
+            {
+                ServiceURL serviceURL = new ServiceURL("service:foo://bar");
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
+                sa.register(service);
+
+                StandardUserAgent ua = new StandardUserAgent();
+            }
+            finally
+            {
+                sa.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+*/
 }

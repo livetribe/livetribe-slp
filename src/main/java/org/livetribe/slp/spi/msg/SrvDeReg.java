@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -40,13 +41,13 @@ public class SrvDeReg extends Message
     private static final int SCOPES_LENGTH_BYTES_LENGTH = 2;
     private static final int TAGS_LENGTH_BYTES_LENGTH = 2;
 
-    private String[] scopes;
+    private Scopes scopes;
     private URLEntry urlEntry;
     private Attributes tags;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        byte[] scopesBytes = writeStringArray(getScopes());
+        byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesLength = scopesBytes.length;
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
@@ -80,7 +81,7 @@ public class SrvDeReg extends Message
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
         offset += SCOPES_LENGTH_BYTES_LENGTH;
-        setScopes(readStringArray(bytes, offset, scopesLength));
+        setScopes(new Scopes(readStringArray(bytes, offset, scopesLength)));
 
         offset += scopesLength;
         URLEntry url = new URLEntry();
@@ -98,12 +99,12 @@ public class SrvDeReg extends Message
         return SRV_DEREG_TYPE;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
         return scopes;
     }
 
-    public void setScopes(String[] scopes)
+    public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }

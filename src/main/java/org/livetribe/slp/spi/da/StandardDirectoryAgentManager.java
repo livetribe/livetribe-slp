@@ -19,12 +19,16 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.List;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
+import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.StandardAgentManager;
+import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvRply;
@@ -79,7 +83,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         return result;
     }
 
-    public void multicastDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void multicastDAAdvert(long bootTime, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         byte[] bytes = serializeMessage(daAdvert);
@@ -90,7 +94,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         getUDPConnector().multicastSend(null, address, bytes).close();
     }
 
-    public void udpDAAdvert(InetSocketAddress address, long bootTime, String[] scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void udpDAAdvert(InetSocketAddress address, long bootTime, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException
     {
         DAAdvert daAdvert = createDAAdvert(bootTime, scopes, attributes, xid, language);
         daAdvert.setMulticast(false);
@@ -101,7 +105,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         getUDPConnector().unicastSend(null, address, bytes).close();
     }
 
-    private DAAdvert createDAAdvert(long bootTime, String[] scopes, Attributes attributes, Integer xid, String language)
+    private DAAdvert createDAAdvert(long bootTime, Scopes scopes, Attributes attributes, Integer xid, String language)
     {
         DAAdvert daAdvert = new DAAdvert();
         daAdvert.setLanguage(language);
@@ -117,7 +121,7 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
     public void tcpSrvAck(Socket socket, Integer xid, String language, int errorCode) throws IOException
     {
         SrvAck srvAck = new SrvAck();
-        srvAck.setXID(xid == null ? generateXID() : xid.intValue());
+        srvAck.setXID(xid.intValue());
         srvAck.setLanguage(language);
         srvAck.setErrorCode(errorCode);
         byte[] bytes = serializeMessage(srvAck);
@@ -127,22 +131,30 @@ public class StandardDirectoryAgentManager extends StandardAgentManager implemen
         getTCPConnector().reply(socket, bytes);
     }
 
-    public void tcpSrvRply(Socket socket, Integer xid, String language, ServiceURL[] serviceURLs) throws IOException
+    public void tcpSrvRply(Socket socket, Integer xid, String language, List serviceInfos) throws IOException
     {
         SrvRply srvRply = new SrvRply();
-        srvRply.setXID(xid == null ? generateXID() : xid.intValue());
+        srvRply.setXID(xid.intValue());
         srvRply.setLanguage(language);
+        for (int i = 0; i < serviceInfos.size(); ++i)
+        {
+            ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.get(i);
+            ServiceURL serviceURL = serviceInfo.getServiceURL();
+
+            URLEntry urlEntry = new URLEntry();
+            urlEntry.setURL(serviceURL.getURL());
+            urlEntry.setLifetime(serviceURL.getLifetime());
+            srvRply.addURLEntry(urlEntry);
+
+            AttributeListExtension attrs = new AttributeListExtension();
+            attrs.setURL(serviceURL.getURL());
+            attrs.setAttributes(serviceInfo.getAttributes());
+            srvRply.addExtension(attrs);
+        }
+
         // TODO: a SrvRply can have errorCode != 0 ???
         srvRply.setErrorCode(0);
-        URLEntry[] entries = new URLEntry[serviceURLs.length];
-        for (int i = 0; i < entries.length; ++i)
-        {
-            ServiceURL serviceURL = serviceURLs[i];
-            entries[i] = new URLEntry();
-            entries[i].setURL(serviceURL.getURL());
-            entries[i].setLifetime(serviceURL.getLifetime());
-        }
-        srvRply.setURLEntries(entries);
+
         byte[] bytes = serializeMessage(srvRply);
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("TCP unicasting " + srvRply + " to " + socket.getRemoteSocketAddress());

@@ -16,6 +16,7 @@
 package org.livetribe.slp.api.da;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
@@ -31,7 +32,7 @@ public interface DirectoryAgent extends Agent
     public void setDirectoryAgentManager(DirectoryAgentManager manager);
 
     // TODO: add equivalent to deregister a service ?
-    public void registerService(ServiceType serviceType, ServiceURL serviceURL, String[] scopes, Attributes attributes, String language, boolean notifyListeners) throws ServiceLocationException;
+    public void registerService(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language, boolean notifyListeners) throws ServiceLocationException;
 
     public void addServiceRegistrationListener(ServiceRegistrationListener listener);
 

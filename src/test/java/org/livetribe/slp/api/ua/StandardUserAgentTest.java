@@ -22,6 +22,7 @@ import java.util.Locale;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPTestSupport;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.ServiceRegistrationEvent;
@@ -99,8 +100,9 @@ public class StandardUserAgentTest extends SLPTestSupport
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///suat1", 13);
-                String[] scopes = new String[]{"scope1", "scope2"};
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
+                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
+                Attributes attributes = new Attributes("(attr=suat1)");
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, attributes, null);
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
@@ -117,14 +119,19 @@ public class StandardUserAgentTest extends SLPTestSupport
 
                 try
                 {
-                    List serviceURLs = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
+                    List serviceInfos = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
 
-                    assert serviceURLs != null;
-                    assert serviceURLs.size() == 1;
-                    ServiceURL foundService = (ServiceURL)serviceURLs.get(0);
+                    assert serviceInfos != null;
+                    assert serviceInfos.size() == 1;
+                    ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.get(0);
+                    assert serviceInfo != null;
+                    ServiceURL foundService = serviceInfo.getServiceURL();
                     assert foundService != null;
                     assert serviceURL.equals(foundService);
                     assert serviceURL.getLifetime() == foundService.getLifetime();
+
+                    assert serviceInfo.getAttributes() != null;
+                    assert serviceInfo.getAttributes().equals(attributes);
                 }
                 finally
                 {
@@ -274,10 +281,10 @@ public class StandardUserAgentTest extends SLPTestSupport
             {
                 sleep(500);
 
-                List services = ua.findServices(serviceURL.getServiceType(), null, null, language);
-                assert services != null;
-                assert services.size() == 1;
-                assert serviceURL.equals(services.get(0));
+                List serviceInfos = ua.findServices(serviceURL.getServiceType(), null, null, language);
+                assert serviceInfos != null;
+                assert serviceInfos.size() == 1;
+                assert serviceURL.equals(((ServiceInfo)serviceInfos.get(0)).getServiceURL());
             }
             finally
             {
@@ -340,8 +347,8 @@ public class StandardUserAgentTest extends SLPTestSupport
                     }
                     else
                     {
-                        assert sa2.getIdentifier().equals(sai2.getIdentifier());
-                        assert sa1.getIdentifier().equals(sai1.getIdentifier());
+                        assert sa1.getIdentifier().equals(sai2.getIdentifier());
+                        assert sa2.getIdentifier().equals(sai1.getIdentifier());
                     }
                 }
                 finally
@@ -400,7 +407,8 @@ public class StandardUserAgentTest extends SLPTestSupport
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:foo:bar://baz");
-                ServiceInfo service = new ServiceInfo(serviceURL, new String[]{"scope1"}, null, Locale.getDefault().getLanguage());
+                Scopes scopes = new Scopes(new String[]{"scope1"});
+                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, Locale.getDefault().getLanguage());
                 sa.register(service);
 
                 // Let the event arrive

@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.ua;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.AgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
@@ -30,11 +31,11 @@ import org.livetribe.slp.spi.net.MessageListener;
  */
 public interface UserAgentManager extends AgentManager
 {
-    public DAAdvert[] multicastDASrvRqst(String[] scopes, String filter, String language, long timeframe) throws IOException;
+    public DAAdvert[] multicastDASrvRqst(Scopes scopes, String filter, String language, long timeframe) throws IOException;
 
-    public SAAdvert[] multicastSASrvRqst(String[] scopes, String filter, String language, int timeframe) throws IOException;
+    public SAAdvert[] multicastSASrvRqst(Scopes scopes, String filter, String language, int timeframe) throws IOException;
 
-    public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, String[] scopes, String filter, String language) throws IOException;
+    public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, Scopes scopes, String filter, String language) throws IOException;
 
     public void addNotificationListener(MessageListener listener);
 

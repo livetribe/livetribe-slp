@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da.filter;
+package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
-import org.livetribe.slp.ServiceLocationException;
 
 /**
  * @version $Rev$ $Date$
@@ -30,7 +29,7 @@ public class NotFilter implements Filter
         this.filter = filter;
     }
 
-    public boolean match(Attributes attributes) throws ServiceLocationException
+    public boolean match(Attributes attributes)
     {
         return !filter.match(attributes);
     }

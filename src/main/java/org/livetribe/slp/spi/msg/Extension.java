@@ -22,6 +22,7 @@ import org.livetribe.slp.ServiceLocationException;
  */
 public abstract class Extension extends BytesBlock
 {
+    public static final int ATTRIBUTE_LIST_EXTENSION_ID = 0x0002;
     public static final int IDENTIFIER_EXTENSION_ID = 0x8001;
 
     public static final int ID_BYTES_LENGTH = 2;
@@ -77,6 +78,8 @@ public abstract class Extension extends BytesBlock
     {
         switch (extensionId)
         {
+            case ATTRIBUTE_LIST_EXTENSION_ID:
+                return new AttributeListExtension();
             case IDENTIFIER_EXTENSION_ID:
                 return new IdentifierExtension();
             default:

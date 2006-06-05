@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 
@@ -49,7 +50,7 @@ public class SrvReg extends Message
 
     private URLEntry urlEntry;
     private ServiceType serviceType;
-    private String[] scopes;
+    private Scopes scopes;
     private Attributes attributes;
     private AuthenticationBlock[] authenticationBlocks;
 
@@ -59,7 +60,7 @@ public class SrvReg extends Message
         int urlLength = urlBytes.length;
         byte[] serviceTypeBytes = writeString(getServiceType().toString());
         int serviceTypeLength = serviceTypeBytes.length;
-        byte[] scopesBytes = writeStringArray(getScopes());
+        byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesLength = scopesBytes.length;
         byte[] attrsBytes = attributesToBytes(getAttributes());
         int attrsLength = attrsBytes.length;
@@ -131,7 +132,7 @@ public class SrvReg extends Message
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);
 
         offset += SCOPES_LENGTH_BYTES_LENGTH;
-        setScopes(readStringArray(bytes, offset, scopesLength));
+        setScopes(new Scopes(readStringArray(bytes, offset, scopesLength)));
 
         offset += scopesLength;
         int attrsLength = readInt(bytes, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
@@ -180,12 +181,12 @@ public class SrvReg extends Message
         this.serviceType = serviceType;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
         return scopes;
     }
 
-    public void setScopes(String[] scopes)
+    public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }

@@ -20,19 +20,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPTestSupport;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.spi.SLPSPITestCase;
 
 /**
  * @version $Rev$ $Date$
  */
-public class MessageTest extends SLPSPITestCase
+public class MessageTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testSrvRqstSerializeDeserialize() throws Exception
     {
         SrvRqst original = new SrvRqst();
         original.setServiceType(new ServiceType("a:b"));
-        String[] scopes = new String[]{"scope1", "scope2"};
+        Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
         original.setScopes(scopes);
         Set previousResponders = new HashSet();
         previousResponders.add("1.2.3.4");
@@ -52,7 +56,7 @@ public class MessageTest extends SLPSPITestCase
         assertNotNull(deserialized.getServiceType());
         assertEquals(original.getServiceType(), deserialized.getServiceType());
         assertNotNull(deserialized.getScopes());
-        assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
+        assertEquals(original.getScopes(), deserialized.getScopes());
         Set deserializedResponders = deserialized.getPreviousResponders();
         assertNotNull(deserializedResponders);
         assertEquals(previousResponders, deserializedResponders);
@@ -62,11 +66,14 @@ public class MessageTest extends SLPSPITestCase
         assertNotNull(deserialized.getFilter());
         assertEquals(original.getFilter(), deserialized.getFilter());
         assertEquals(original.getLanguage(), deserialized.getLanguage());
-        assertEquals(original.getXID(), deserialized.getXID());
+        assert original.getXID() == deserialized.getXID();
         assertNotNull(deserialized.getSecurityParameterIndex());
         assertEquals(original.getSecurityParameterIndex(), deserialized.getSecurityParameterIndex());
     }
 
+    /**
+     * @testng.test
+     */
     public void testSrvRplySerializedDeserialize() throws Exception
     {
         SrvRply original = new SrvRply();
@@ -75,33 +82,36 @@ public class MessageTest extends SLPSPITestCase
         byte[] serialized = original.serialize();
         SrvRply deserialized = (SrvRply)Message.deserialize(serialized);
 
-        assertEquals(original.getErrorCode(), deserialized.getErrorCode());
+        assert original.getErrorCode() == deserialized.getErrorCode();
 
         original = new SrvRply();
         original.setErrorCode(0);
         URLEntry entry1 = new URLEntry();
         entry1.setURL("url1=");
         entry1.setLifetime(123);
+        original.addURLEntry(entry1);
         URLEntry entry2 = new URLEntry();
         entry2.setURL("url2");
         entry2.setLifetime(321);
-        URLEntry[] urlEntries = new URLEntry[]{entry1, entry2};
-        original.setURLEntries(urlEntries);
+        original.addURLEntry(entry2);
 
         serialized = original.serialize();
         deserialized = (SrvRply)Message.deserialize(serialized);
 
-        assertEquals(original.getErrorCode(), deserialized.getErrorCode());
-        assertTrue(Arrays.equals(original.getURLEntries(), deserialized.getURLEntries()));
+        assert original.getErrorCode() == deserialized.getErrorCode();
+        assertEquals(original.getURLEntries(), deserialized.getURLEntries());
     }
 
+    /**
+     * @testng.test
+     */
     public void testDAAdvertSerializeDeserialize() throws Exception
     {
         DAAdvert original = new DAAdvert();
         original.setErrorCode(1);
         original.setBootTime(System.currentTimeMillis());
         original.setURL("service:directory-agent://test");
-        original.setScopes(new String[]{"scope1", "scope2"});
+        original.setScopes(new Scopes(new String[]{"scope1", "scope2"}));
         Attributes attributes = new Attributes("(attr1=foo),attr2");
         original.setAttributes(attributes);
         original.setSecurityParamIndexes(new String[]{"spi1", "spi2"});
@@ -111,16 +121,19 @@ public class MessageTest extends SLPSPITestCase
         byte[] serialized = original.serialize();
         DAAdvert deserialized = (DAAdvert)Message.deserialize(serialized);
 
-        assertEquals(original.getErrorCode(), deserialized.getErrorCode());
-        assertEquals(original.getBootTime(), deserialized.getBootTime());
+        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getBootTime() == deserialized.getBootTime();
         assertEquals(original.getURL(), deserialized.getURL());
-        assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
+        assertEquals(original.getScopes(), deserialized.getScopes());
         assertEquals(original.getAttributes(), deserialized.getAttributes());
         assertTrue(Arrays.equals(original.getSecurityParameterIndexes(), deserialized.getSecurityParameterIndexes()));
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));
     }
 
+    /**
+     * @testng.test
+     */
     public void testSrvAckSerializeDeserialize() throws Exception
     {
         SrvAck original = new SrvAck();
@@ -128,9 +141,12 @@ public class MessageTest extends SLPSPITestCase
         byte[] serialized = original.serialize();
         SrvAck deserialized = (SrvAck)Message.deserialize(serialized);
 
-        assertEquals(original.getErrorCode(), deserialized.getErrorCode());
+        assert original.getErrorCode() == deserialized.getErrorCode();
     }
 
+    /**
+     * @testng.test
+     */
     public void testSrvRegSerializeDeserialize() throws Exception
     {
         SrvReg original = new SrvReg();
@@ -139,7 +155,7 @@ public class MessageTest extends SLPSPITestCase
         urlEntry.setLifetime(123);
         original.setURLEntry(urlEntry);
         original.setServiceType(new ServiceType("a:b"));
-        original.setScopes(new String[]{"scope1", "scope2"});
+        original.setScopes(new Scopes(new String[]{"scope1", "scope2"}));
         Attributes attributes = new Attributes("(attr1=foo),attr2");
         original.setAttributes(attributes);
         // TODO: test auth blocks
@@ -150,16 +166,19 @@ public class MessageTest extends SLPSPITestCase
 
         assertEquals(original.getURLEntry(), deserialized.getURLEntry());
         assertEquals(original.getServiceType(), deserialized.getServiceType());
-        assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
+        assertEquals(original.getScopes(), deserialized.getScopes());
         assertEquals(original.getAttributes(), deserialized.getAttributes());
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));
     }
 
+    /**
+     * @testng.test
+     */
     public void testSrvDeRegSerializeDeserialize() throws Exception
     {
         SrvDeReg original = new SrvDeReg();
-        original.setScopes(new String[]{"scope1", "scope2"});
+        original.setScopes(new Scopes(new String[]{"scope1", "scope2"}));
         URLEntry urlEntry = new URLEntry();
         urlEntry.setURL("url1");
         urlEntry.setLifetime(123);
@@ -170,15 +189,18 @@ public class MessageTest extends SLPSPITestCase
         byte[] serialized = original.serialize();
         SrvDeReg deserialized = (SrvDeReg)Message.deserialize(serialized);
 
-        assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
+        assertEquals(original.getScopes(), deserialized.getScopes());
         assertEquals(original.getURLEntry(), deserialized.getURLEntry());
         assertEquals(original.getTags(), deserialized.getTags());
     }
 
+    /**
+     * @testng.test
+     */
     public void testSAAdvertSerializeDeserialize() throws Exception
     {
         SAAdvert original = new SAAdvert();
-        original.setScopes(new String[]{"scope1", "scope2"});
+        original.setScopes(new Scopes(new String[]{"scope1", "scope2"}));
         Attributes attributes = new Attributes("(attr1=foo),attr2");
         original.setAttributes(attributes);
         original.setURL("url1");
@@ -188,7 +210,7 @@ public class MessageTest extends SLPSPITestCase
         byte[] serialized = original.serialize();
         SAAdvert deserialized = (SAAdvert)Message.deserialize(serialized);
 
-        assertTrue(Arrays.equals(original.getScopes(), deserialized.getScopes()));
+        assertEquals(original.getScopes(), deserialized.getScopes());
         assertEquals(original.getAttributes(), deserialized.getAttributes());
         assertEquals(original.getURL(), deserialized.getURL());
         // TODO: test auth blocks

@@ -23,20 +23,22 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.ServiceRegistrationEvent;
 import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.api.sa.ServiceInfo;
-import org.livetribe.slp.spi.da.DirectoryAgentCache;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
+import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
+import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
@@ -61,7 +63,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     private UserAgentManager manager;
     private MessageListener multicastMessageListener;
     private MessageListener multicastNotificationListener;
-    private final DirectoryAgentCache daCache = new DirectoryAgentCache();
+    private final DirectoryAgentInfoCache daInfoCache = new DirectoryAgentInfoCache();
     private ScheduledExecutorService scheduledExecutorService;
     private final ConcurrentListeners listeners = new ConcurrentListeners();
 
@@ -166,7 +168,14 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         listeners.notify("serviceDeregistered", event);
     }
 
-    public List findServices(ServiceType serviceType, String[] scopes, String filter, String language) throws IOException, ServiceLocationException
+    /**
+     * Returns a list of {@link ServiceInfo} that are available on the network, and that match the given arguments.
+     * @param serviceType The ServiceType of the services to find
+     * @param scopes The scopes of the services to find
+     * @param filter An LDAPv3 filter expression for the attributes of the services to find
+     * @param language The language of the services to find
+     */
+    public List findServices(ServiceType serviceType, Scopes scopes, String filter, String language) throws IOException, ServiceLocationException
     {
         List result = new ArrayList();
 
@@ -178,12 +187,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
                 DirectoryAgentInfo info = (DirectoryAgentInfo)das.get(i);
                 InetAddress address = InetAddress.getByName(info.getHost());
                 SrvRply srvRply = manager.tcpSrvRqst(address, serviceType, scopes, filter, language);
-                URLEntry[] entries = srvRply.getURLEntries();
-                for (int j = 0; j < entries.length; ++j)
-                {
-                    URLEntry entry = entries[j];
-                    result.add(entry.toServiceURL());
-                }
+                result.addAll(srvRplyToServiceInfos(srvRply, scopes, language));
             }
         }
         else
@@ -194,18 +198,38 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
                 ServiceAgentInfo info = (ServiceAgentInfo)sas.get(i);
                 InetAddress address = InetAddress.getByName(info.getHost());
                 SrvRply srvRply = manager.tcpSrvRqst(address, serviceType, scopes, filter, language);
-                URLEntry[] entries = srvRply.getURLEntries();
-                for (int j = 0; j < entries.length; ++j)
-                {
-                    URLEntry entry = entries[j];
-                    result.add(entry.toServiceURL());
-                }
+                result.addAll(srvRplyToServiceInfos(srvRply, scopes, language));
             }
         }
         return result;
     }
 
-    public List findDirectoryAgents(String[] scopes, String filter) throws IOException, ServiceLocationException
+    private List srvRplyToServiceInfos(SrvRply srvRply, Scopes scopes, String language)
+    {
+        List result = new ArrayList();
+        List serviceAttributes = AttributeListExtension.findAll(srvRply.getExtensions());
+        List entries = srvRply.getURLEntries();
+        for (int j = 0; j < entries.size(); ++j)
+        {
+            URLEntry entry = (URLEntry)entries.get(j);
+            ServiceURL serviceURL = entry.toServiceURL();
+            Attributes attributes = null;
+            for (int k = 0; k < serviceAttributes.size(); ++k)
+            {
+                AttributeListExtension attrListExt = (AttributeListExtension)serviceAttributes.get(k);
+                if (attrListExt.getURL().equals(serviceURL.getURL()))
+                {
+                    attributes = attrListExt.getAttributes();
+                    break;
+                }
+            }
+            ServiceInfo service = new ServiceInfo(serviceURL, scopes, attributes, language);
+            result.add(service);
+        }
+        return result;
+    }
+
+    public List findDirectoryAgents(Scopes scopes, String filter) throws IOException, ServiceLocationException
     {
         List das = getCachedDirectoryAgents(scopes, filter);
         if (das.isEmpty())
@@ -216,28 +240,28 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return das;
     }
 
-    protected List getCachedDirectoryAgents(String[] scopes, String filter)
+    protected List getCachedDirectoryAgents(Scopes scopes, String filter)
     {
         // TODO: filter cached DAs upon the given filter
-        return daCache.getByScopes(scopes);
+        return daInfoCache.getByScopes(scopes);
     }
 
     private void cacheDirectoryAgents(List infos)
     {
-        daCache.addAll(infos);
+        daInfoCache.addAll(infos);
     }
 
     private boolean cacheDirectoryAgent(DirectoryAgentInfo info)
     {
-        return daCache.add(info);
+        return daInfoCache.add(info);
     }
 
     private boolean uncacheDirectoryAgent(DirectoryAgentInfo info)
     {
-        return daCache.remove(info);
+        return daInfoCache.remove(info);
     }
 
-    protected List discoverDirectoryAgents(String[] scopes, String filter) throws IOException
+    protected List discoverDirectoryAgents(Scopes scopes, String filter) throws IOException
     {
         List result = new ArrayList();
         DAAdvert[] daAdverts = manager.multicastDASrvRqst(scopes, filter, null, -1);
@@ -251,12 +275,12 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         return result;
     }
 
-    public List findServiceAgents(String[] scopes, String filter) throws IOException, ServiceLocationException
+    public List findServiceAgents(Scopes scopes, String filter) throws IOException, ServiceLocationException
     {
         return discoverServiceAgents(scopes, filter);
     }
 
-    private List discoverServiceAgents(String[] scopes, String filter) throws IOException
+    private List discoverServiceAgents(Scopes scopes, String filter) throws IOException
     {
         List result = new ArrayList();
         SAAdvert[] saAdverts = manager.multicastSASrvRqst(scopes, filter, null, -1);
@@ -272,12 +296,10 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
 
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
-        List scopesList = Arrays.asList(getScopes());
-        List messageScopesList = Arrays.asList(message.getScopes());
-        if (!scopesList.contains(DEFAULT_SCOPE) && Collections.disjoint(scopesList, messageScopesList))
+        if (!getScopes().match(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("UserAgent " + this + " dropping message " + message + ": no scopes match among UA scopes " + scopesList + " and message scopes " + messageScopesList);
+                logger.fine("UserAgent " + this + " dropping message " + message + ": no scopes match among UA scopes " + getScopes() + " and message scopes " + message.getScopes());
             return;
         }
 

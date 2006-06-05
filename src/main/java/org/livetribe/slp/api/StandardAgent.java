@@ -19,19 +19,21 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.livetribe.slp.Scopes;
+
 /**
  * @version $Rev$ $Date$
  */
 public abstract class StandardAgent implements Agent
 {
-    protected static final String DEFAULT_SCOPE = "DEFAULT";
-    protected static final String[] DEFAULT_SCOPES = new String[]{DEFAULT_SCOPE};
+//    protected static final String DEFAULT_SCOPE = "DEFAULT";
+//    protected static final String[] DEFAULT_SCOPES = new String[]{DEFAULT_SCOPE};
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;
     private volatile boolean running;
-    private String[] scopes;
+    private Scopes scopes = Scopes.DEFAULT;
 
     public void setConfiguration(Configuration configuration) throws IOException
     {
@@ -43,15 +45,14 @@ public abstract class StandardAgent implements Agent
         return configuration;
     }
 
-    public String[] getScopes()
+    public Scopes getScopes()
     {
-        // Default scope for a DA is "DEFAULT" (RFC 2608, 12.4)
-        if (scopes == null || scopes.length == 0) return DEFAULT_SCOPES;
         return scopes;
     }
 
-    public void setScopes(String[] scopes)
+    public void setScopes(Scopes scopes)
     {
+        if (scopes == null) throw new NullPointerException();
         this.scopes = scopes;
     }
 
