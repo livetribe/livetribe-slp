@@ -158,26 +158,38 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     public void register(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        // Add the service first: if the registration with DA fails, this SA exposes anyway this service.
-        SAServiceInfo serviceToRegister = new SAServiceInfo(service);
-        addService(serviceToRegister);
-        if (isRunning()) registerService(serviceToRegister);
+        services.lock();
+        try
+        {
+            // If the service exists, unschedule its renewal
+            SAServiceInfo existing = (SAServiceInfo)services.get(service.getKey());
+            if (existing != null) existing.cancelRenewals();
+
+            // Add the service first: if the registration with DA fails, this SA exposes anyway this service.
+            SAServiceInfo serviceToRegister = new SAServiceInfo(service);
+            services.put(serviceToRegister);
+
+            if (isRunning()) registerService(serviceToRegister);
+        }
+        finally
+        {
+            services.unlock();
+        }
     }
 
     public void deregister(ServiceInfo service) throws IOException, ServiceLocationException
     {
-        SAServiceInfo serviceToRemove = removeService(service);
-        if (isRunning()) deregisterService(serviceToRemove);
-    }
+        services.lock();
+        try
+        {
+            SAServiceInfo serviceToRemove = (SAServiceInfo)services.remove(service.getKey());
 
-    private void addService(ServiceInfo service)
-    {
-        services.put(service);
-    }
-
-    private SAServiceInfo removeService(ServiceInfo service)
-    {
-        return (SAServiceInfo)services.remove(service.getKey());
+            if (isRunning()) deregisterService(serviceToRemove);
+        }
+        finally
+        {
+            services.unlock();
+        }
     }
 
     public Collection getServices()
@@ -254,7 +266,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         for (Iterator serviceInfos = servicesToRegister.iterator(); serviceInfos.hasNext();)
         {
             SAServiceInfo service = (SAServiceInfo)serviceInfos.next();
-            registerService(service, da);
+            registerServiceWithDirectoryAgent(service, da);
+            scheduleServiceRenewal(service, da);
         }
     }
 
@@ -266,19 +279,19 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             for (int i = 0; i < das.size(); ++i)
             {
                 DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
-                registerService(service, directory);
+                registerServiceWithDirectoryAgent(service, directory);
+                scheduleServiceRenewal(service, directory);
             }
         }
         else
         {
             // There are no DA deployed on the network: multicast a SrvReg as specified by RFC 3082.
             manager.multicastSrvRegNotification(service, serviceAgent, true);
+            // TODO: periodic multicast of SrvReg for service renewal ?
         }
-
-        // TODO: if the renewal is done here, also networks with no DA can get registrations renewals
     }
 
-    private void registerService(SAServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    private void registerServiceWithDirectoryAgent(SAServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
         InetAddress address = InetAddress.getByName(da.getHost());
         SrvAck srvAck = manager.tcpSrvReg(address, service, serviceAgent, true);
@@ -287,13 +300,16 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             throw new ServiceLocationException("Could not register service " + service.getServiceURL() + " to DirectoryAgent " + address, errorCode);
         if (logger.isLoggable(Level.FINE))
             logger.fine("Registered service " + service.getServiceURL() + " to DirectoryAgent " + address);
+    }
 
+    private void scheduleServiceRenewal(SAServiceInfo service, DirectoryAgentInfo da)
+    {
         long renewalPeriod = calculateRenewalPeriod(service);
         long renewalDelay = calculateRenewalDelay(service);
         if (renewalPeriod > 0)
         {
             ScheduledFuture renewal = scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
-            service.setRenewal(renewal);
+            service.addRenewal(renewal);
         }
     }
 
@@ -324,13 +340,15 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private void deregisterService(SAServiceInfo service) throws IOException, ServiceLocationException
     {
+        service.cancelRenewals();
+
         List das = findDirectoryAgents(service.getScopes());
         if (!das.isEmpty())
         {
             for (int i = 0; i < das.size(); ++i)
             {
                 DirectoryAgentInfo directory = (DirectoryAgentInfo)das.get(i);
-                deregisterService(service, directory);
+                deregisterServiceWithDirectoryAgent(service, directory);
             }
         }
         else
@@ -340,10 +358,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
     }
 
-    private void deregisterService(SAServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
+    private void deregisterServiceWithDirectoryAgent(SAServiceInfo service, DirectoryAgentInfo da) throws IOException, ServiceLocationException
     {
-        service.cancelRenewal();
-
         InetAddress address = InetAddress.getByName(da.getHost());
         SrvAck srvAck = manager.tcpSrvDeReg(address, service, serviceAgent);
         int errorCode = srvAck.getErrorCode();
@@ -644,7 +660,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             try
             {
-                registerService(service, directory);
+                registerServiceWithDirectoryAgent(service, directory);
             }
             catch (Exception x)
             {
@@ -671,22 +687,26 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private class SAServiceInfo extends ServiceInfo
     {
-        private ScheduledFuture renewal;
+        private List renewals = new ArrayList();
 
         private SAServiceInfo(ServiceInfo serviceInfo)
         {
             super(serviceInfo.getServiceType(), serviceInfo.getServiceURL(), serviceInfo.getScopes(), serviceInfo.getAttributes(), serviceInfo.getLanguage());
-            this.renewal = renewal;
         }
 
-        private void cancelRenewal()
+        private void cancelRenewals()
         {
-            if (renewal != null) renewal.cancel(false);
+            for (int i = 0; i < renewals.size(); ++i)
+            {
+                ScheduledFuture renewal = (ScheduledFuture)renewals.get(i);
+                renewal.cancel(false);
+            }
+            renewals.clear();
         }
 
-        public void setRenewal(ScheduledFuture renewal)
+        public void addRenewal(ScheduledFuture renewal)
         {
-            this.renewal = renewal;
+            renewals.add(renewal);
         }
     }
 }

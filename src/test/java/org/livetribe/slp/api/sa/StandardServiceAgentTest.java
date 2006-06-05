@@ -605,4 +605,57 @@ public class StandardServiceAgentTest extends SLPTestSupport
             socket.close();
         }
     }
+
+    /**
+     * @testng.test
+     */
+    public void testUnschedulingOfRegistrationRenewal() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        da.setConfiguration(configuration);
+        da.start();
+
+        try
+        {
+            StandardServiceAgent sa = new StandardServiceAgent();
+            sa.setConfiguration(configuration);
+            sa.start();
+
+            try
+            {
+                int lifetime = 10; // seconds
+                ServiceURL serviceURL = new ServiceURL("service:foo:bar://baz", lifetime);
+                ServiceInfo serviceInfo = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
+                sa.register(serviceInfo);
+
+                Collection services = da.getServices();
+                assert services  != null;
+                assert services.size() == 1;
+
+                // Deregister immediately, and see if also the deregistration went fine
+                sa.deregister(serviceInfo);
+
+                services = da.getServices();
+                assert services  != null;
+                assert services.size() == 0;
+
+                // Wait the whole lifetime
+                sleep(lifetime * 1000L);
+
+                services = da.getServices();
+                assert services  != null;
+                assert services.size() == 0;
+            }
+            finally
+            {
+                sa.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
 }

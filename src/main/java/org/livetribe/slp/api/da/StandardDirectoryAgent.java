@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -108,6 +109,11 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     public long getBootTime()
     {
         return bootTime;
+    }
+
+    public Collection getServices()
+    {
+        return services.getServices();
     }
 
     protected void doStart() throws IOException
