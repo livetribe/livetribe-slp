@@ -124,7 +124,7 @@ public class ServiceInfo
             mergedAttrs = thatAttrs == null ? null : thatAttrs.merge(null);
         else
             mergedAttrs = thisAttrs.merge(thatAttrs);
-        return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+        return clone(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
     }
 
     public ServiceInfo unmerge(ServiceInfo that)
@@ -135,7 +135,12 @@ public class ServiceInfo
         Attributes thisAttr = getAttributes();
         if (thisAttr == null) return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), getAttributes(), getLanguage());
         Attributes mergedAttrs = thisAttr.unmerge(thatAttr);
-        return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+        return clone(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+    }
+
+    protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
+    {
+        return new ServiceInfo(serviceType, serviceURL, scopes, attributes, language);
     }
 
     /**

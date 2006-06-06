@@ -21,12 +21,12 @@ import java.util.Locale;
 
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicInteger;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.sa.ServiceInfo;
-import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
@@ -34,8 +34,6 @@ import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
-import org.livetribe.slp.spi.net.SocketTCPConnector;
-import org.livetribe.slp.spi.net.SocketUDPConnector;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
 import org.livetribe.slp.spi.ua.StandardUserAgentManager;
@@ -60,10 +58,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testStartStop() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        daManager.setUDPConnector(new SocketUDPConnector());
-        daManager.setTCPConnector(new SocketTCPConnector());
-        da.setDirectoryAgentManager(daManager);
         da.setConfiguration(getDefaultConfiguration());
 
         assertFalse(da.isRunning());
@@ -83,7 +77,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testUnsolicitedDAAdverts() throws Exception
     {
         StandardUserAgentManager ua = new StandardUserAgentManager();
-        ua.setUDPConnector(new SocketUDPConnector());
         ua.setConfiguration(getDefaultConfiguration());
         ua.start();
 
@@ -119,10 +112,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
 
             // Start DA after UA, so that the UA is ready to listen for the UA coming up
             StandardDirectoryAgent da = new StandardDirectoryAgent();
-            StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-            daManager.setUDPConnector(new SocketUDPConnector());
-            daManager.setTCPConnector(new SocketTCPConnector());
-            da.setDirectoryAgentManager(daManager);
             da.setConfiguration(getDefaultConfiguration());
             int heartBeatPeriod = 1;
             da.setHeartBeat(heartBeatPeriod);
@@ -156,17 +145,12 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testDAAdvertOnShutdown() throws Exception
     {
         StandardUserAgentManager uaManager = new StandardUserAgentManager();
-        uaManager.setUDPConnector(new SocketUDPConnector());
         uaManager.setConfiguration(getDefaultConfiguration());
         uaManager.start();
 
         try
         {
             StandardDirectoryAgent da = new StandardDirectoryAgent();
-            StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-            daManager.setUDPConnector(new SocketUDPConnector());
-            daManager.setTCPConnector(new SocketTCPConnector());
-            da.setDirectoryAgentManager(daManager);
             da.setConfiguration(getDefaultConfiguration());
             int heartBeatPeriod = 1;
             da.setHeartBeat(heartBeatPeriod);
@@ -230,11 +214,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
         InetAddress localhost = InetAddress.getLocalHost();
 
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        SocketTCPConnector daUnicastConnector = new SocketTCPConnector();
-        daManager.setTCPConnector(daUnicastConnector);
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
@@ -243,9 +222,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             long afterBoot = System.currentTimeMillis();
 
             StandardUserAgentManager uaManager = new StandardUserAgentManager();
-            uaManager.setUDPConnector(new SocketUDPConnector());
-            SocketTCPConnector uaUnicastConnector = new SocketTCPConnector();
-            uaManager.setTCPConnector(uaUnicastConnector);
             uaManager.setConfiguration(getDefaultConfiguration());
             uaManager.start();
 
@@ -281,11 +257,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testServiceRegistration() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        SocketTCPConnector daUnicastConnector = new SocketTCPConnector();
-        daManager.setTCPConnector(daUnicastConnector);
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
@@ -294,16 +265,13 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             InetAddress localhost = InetAddress.getLocalHost();
 
             StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             saManager.setConfiguration(getDefaultConfiguration());
             saManager.start();
 
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", 13);
-                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, null);
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
 
@@ -311,14 +279,12 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
                 assert ack.getErrorCode() == 0;
 
                 StandardUserAgentManager uaManager = new StandardUserAgentManager();
-                uaManager.setUDPConnector(new SocketUDPConnector());
-                uaManager.setTCPConnector(new SocketTCPConnector());
                 uaManager.setConfiguration(getDefaultConfiguration());
                 uaManager.start();
 
                 try
                 {
-                    SrvRply srvRply = uaManager.tcpSrvRqst(localhost, serviceURL.getServiceType(), scopes, null, null);
+                    SrvRply srvRply = uaManager.tcpSrvRqst(localhost, serviceURL.getServiceType(), null, null, null);
 
                     assert srvRply != null;
                     assert srvRply.getErrorCode() == 0;
@@ -351,11 +317,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testServiceUpdate() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        SocketTCPConnector daUnicastConnector = new SocketTCPConnector();
-        daManager.setTCPConnector(daUnicastConnector);
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
@@ -364,21 +325,16 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             InetAddress localhost = InetAddress.getLocalHost();
 
             StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             saManager.setConfiguration(getDefaultConfiguration());
             saManager.start();
 
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
 
-                String language = Locale.getDefault().getLanguage();
+                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
 
-                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, language);
-
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, null);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
                 assert ack != null;
                 assert ack.getErrorCode() == 0;
@@ -417,11 +373,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testServiceUpdateOfNonRegisteredService() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        SocketTCPConnector daUnicastConnector = new SocketTCPConnector();
-        daManager.setTCPConnector(daUnicastConnector);
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
@@ -430,21 +381,18 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             InetAddress localhost = InetAddress.getLocalHost();
 
             StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             saManager.setConfiguration(getDefaultConfiguration());
             saManager.start();
 
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, Locale.getDefault().getLanguage());
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, info, false);
 
                 assert ack != null;
-                assert ServiceLocationException.INVALID_UPDATE == ack.getErrorCode();
+                assert ack.getErrorCode() == ServiceLocationException.INVALID_UPDATE;
             }
             finally
             {
@@ -463,11 +411,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     public void testServiceDeregistration() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        SocketTCPConnector daUnicastConnector = new SocketTCPConnector();
-        daManager.setTCPConnector(daUnicastConnector);
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
@@ -476,23 +419,28 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             InetAddress localhost = InetAddress.getLocalHost();
 
             StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             saManager.setConfiguration(getDefaultConfiguration());
             saManager.start();
 
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_PERMANENT);
-                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
+                Attributes attributes = new Attributes("(attr=value),tag");
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, attributes, Locale.getDefault().getLanguage());
 
-                String language = Locale.getDefault().getLanguage();
                 ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, language);
                 SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
                 assert ack != null;
                 assert ack.getErrorCode() == 0;
 
+                // Check that deregistration of attributes works
+                Attributes attrsModification = new Attributes("tag");
+                ServiceInfo update = new ServiceInfo(service.getServiceURL(), service.getScopes(), attrsModification, service.getLanguage());
+                ack = saManager.tcpSrvDeReg(localhost, update, serviceAgent);
+                assert ack != null;
+                assert ack.getErrorCode() == 0;
+
+                // Deregister the service
                 ack = saManager.tcpSrvDeReg(localhost, service, serviceAgent);
                 assert ack != null;
                 assert ack.getErrorCode() == 0;
@@ -511,7 +459,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     /**
      * @testng.test
      */
-/*
     public void testRegisterServiceInWrongScope() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
@@ -521,22 +468,66 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
 
         try
         {
-            StandardServiceAgent sa = new StandardServiceAgent();
-            sa.setConfiguration(getDefaultConfiguration());
-            sa.start();
+            InetAddress localhost = InetAddress.getLocalHost();
+
+            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+            saManager.setConfiguration(getDefaultConfiguration());
+            saManager.start();
 
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:foo://bar");
                 ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
-                sa.register(service);
+                ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
 
-                StandardUserAgent ua = new StandardUserAgent();
+                SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
+                assert ack != null;
+                assert ack.getErrorCode() == ServiceLocationException.SCOPE_NOT_SUPPORTED;
             }
             finally
             {
-                sa.stop();
+                saManager.stop();
             }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    /**
+     * @testng.test
+     */
+/*
+    public void testExpiration() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        da.setConfiguration(configuration);
+        da.start();
+
+        try
+        {
+            InetAddress localhost = InetAddress.getLocalHost();
+
+            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+            saManager.setConfiguration(configuration);
+            saManager.start();
+
+            int lifetime = 5; // seconds
+            ServiceURL serviceURL = new ServiceURL("foo://baz", lifetime);
+            ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
+            ServiceAgentInfo serviceAgent = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, null);
+
+            SrvAck ack = saManager.tcpSrvReg(localhost, service, serviceAgent, true);
+            assert ack != null;
+            assert ack.getErrorCode() == 0;
+
+            // Wait for the service to expire
+            sleep((lifetime + 1) * 1000L);
+
+            assert da.getServices().size() == 0;
         }
         finally
         {

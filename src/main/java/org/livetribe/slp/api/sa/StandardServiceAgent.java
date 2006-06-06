@@ -158,27 +158,29 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     public void register(ServiceInfo service) throws IOException, ServiceLocationException
     {
+        // Sanity checks
         if (service.getServiceURL().getLifetime() == 0) throw new ServiceLocationException("Could not register service, invalid lifetime", ServiceLocationException.INVALID_REGISTRATION);
         if (service.getLanguage() == null) throw new ServiceLocationException("Could not register service, missing language", ServiceLocationException.INVALID_REGISTRATION);
         if (!getScopes().match(service.getScopes())) throw new ServiceLocationException("Could not register service, ServiceAgent scopes do not match with service's", ServiceLocationException.SCOPE_NOT_SUPPORTED);
+
+        SAServiceInfo serviceToRegister = new SAServiceInfo(service);
 
         services.lock();
         try
         {
             // If the service exists, unschedule its renewal
-            SAServiceInfo existing = (SAServiceInfo)services.get(service.getKey());
+            SAServiceInfo existing = (SAServiceInfo)services.get(serviceToRegister.getKey());
             if (existing != null) existing.cancelRenewals();
 
             // Add the service first: if the registration with DA fails, this SA exposes anyway this service.
-            SAServiceInfo serviceToRegister = new SAServiceInfo(service);
             services.put(serviceToRegister);
-
-            if (isRunning()) registerService(serviceToRegister);
         }
         finally
         {
             services.unlock();
         }
+
+        if (isRunning()) registerService(serviceToRegister);
     }
 
     public void deregister(ServiceInfo service) throws IOException, ServiceLocationException
@@ -186,17 +188,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         if (service.getLanguage() == null) throw new ServiceLocationException("Could not deregister service, missing language", ServiceLocationException.INVALID_REGISTRATION);
         if (!getScopes().match(service.getScopes())) throw new ServiceLocationException("Could not deregister service, ServiceAgent scopes do not match with service's", ServiceLocationException.SCOPE_NOT_SUPPORTED);
 
-        services.lock();
-        try
-        {
-            SAServiceInfo serviceToRemove = (SAServiceInfo)services.remove(service.getKey());
+        SAServiceInfo serviceToRemove = (SAServiceInfo)services.remove(service.getKey());
 
-            if (isRunning()) deregisterService(serviceToRemove);
-        }
-        finally
-        {
-            services.unlock();
-        }
+        if (isRunning()) deregisterService(serviceToRemove);
     }
 
     public Collection getServices()
@@ -423,7 +417,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     protected void handleMulticastSrvRqst(SrvRqst message, InetSocketAddress address) throws ServiceLocationException
     {
         // Match previous responders
-        if (!matchPreviousResponders(message)) return;
+        if (matchPreviousResponders(message)) return;
 
         // Match scopes
         if (!getScopes().weakMatch(message.getScopes()))
@@ -479,7 +473,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
                     {
                         if (logger.isLoggable(Level.FINE))
                             logger.fine("ServiceAgent " + this + " dropping message " + message + ": already contains responder " + responder + " with id " + getIdentifier());
-                        return false;
+                        return true;
                     }
                 }
             }
@@ -487,10 +481,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.fine("ServiceAgent " + this + " dropping message " + message + ": already contains responder " + responder);
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
@@ -699,6 +693,15 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         private SAServiceInfo(ServiceInfo serviceInfo)
         {
             super(serviceInfo.getServiceType(), serviceInfo.getServiceURL(), serviceInfo.getScopes(), serviceInfo.getAttributes(), serviceInfo.getLanguage());
+        }
+
+        protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
+        {
+            ServiceInfo clone = super.clone(serviceType, serviceURL, scopes, attributes, language);
+            SAServiceInfo result = new SAServiceInfo(clone);
+            result.renewals.addAll(renewals);
+            renewals.clear();
+            return result;
         }
 
         private void cancelRenewals()
