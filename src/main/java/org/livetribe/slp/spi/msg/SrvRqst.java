@@ -65,7 +65,7 @@ public class SrvRqst extends Rqst
         Set responders = getPreviousResponders();
         byte[] previousRespondersBytes = responders == null ? EMPTY_BYTES : writeStringArray((String[])responders.toArray(new String[responders.size()]));
         int previousRespondersLength = previousRespondersBytes.length;
-        byte[] serviceTypeBytes = writeString(getServiceType().toString());
+        byte[] serviceTypeBytes = serviceTypeToBytes(getServiceType());
         int serviceTypeLength = serviceTypeBytes.length;
         byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesLength = scopesBytes.length;
@@ -123,7 +123,8 @@ public class SrvRqst extends Rqst
         int serviceTypeLength = readInt(bytes, offset, SERVICE_TYPE_LENGTH_BYTES_LENGTH);
 
         offset += SERVICE_TYPE_LENGTH_BYTES_LENGTH;
-        setServiceType(new ServiceType(readString(bytes, offset, serviceTypeLength)));
+        String serviceType = readString(bytes, offset, serviceTypeLength);
+        setServiceType(serviceType == null ? null : new ServiceType(serviceType));
 
         offset += serviceTypeLength;
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);

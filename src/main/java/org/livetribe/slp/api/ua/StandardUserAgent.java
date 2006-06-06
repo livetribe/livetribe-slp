@@ -296,7 +296,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
 
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
-        if (!getScopes().match(message.getScopes()))
+        if (!getScopes().weakMatch(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("UserAgent " + this + " dropping message " + message + ": no scopes match among UA scopes " + getScopes() + " and message scopes " + message.getScopes());

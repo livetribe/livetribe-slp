@@ -18,10 +18,25 @@ package org.livetribe.slp.spi.filter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
- * @version $Rev$ $Date$
+ * A parser that parses a string with LDAPv3 syntax, and returns a {@link Filter} that
+ * is used to match {@link Attributes} content.
+ * <br />
+ * This syntax is described in <a href="http://ietf.org/rfc/rfc2254.txt">RFC 2254</a>.
+ * String comparisons are case insensitive.
+ * <br />
+ * Examples:
+ * <br />
+ * <ul>
+ * <li><code>(a=10)</code> matches an attribute tag named <code>a</code> with value <code>10</code></li>
+ * <li><code>(&(a&gt;10)(b=true))</code> matches <code>a&gt;10</code> and <code>b=true</code></li>
+ * <li><code>(|(a&lt;=10)(b=true))</code> matches <code>a&lt;=10</code> or <code>b=true</code></li>
+ * <li><code>(!(a&gt;=10))</code> matches <code>a&lt;10</code></li>
+ * <li><code>(string=L*ve*b*))</code> matches <code>string=LiveTribe</code> but also <code>string=Loveboat</code></li>
+ * @version $Rev:157 $ $Date:2006-06-05 23:29:25 +0200 (Mon, 05 Jun 2006) $
  */
 public class FilterParser
 {

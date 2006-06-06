@@ -23,6 +23,7 @@ import java.util.Iterator;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
 
 /**
  * The RFC 2608 message header is the following:
@@ -367,5 +368,11 @@ public abstract class Message extends BytesBlock
     {
         if (scopes == null) return EMPTY_BYTES;
         return writeStringArray(scopes.asStringArray());
+    }
+
+    protected static byte[] serviceTypeToBytes(ServiceType serviceType) throws ServiceLocationException
+    {
+        if (serviceType == null) return EMPTY_BYTES;
+        return writeString(serviceType.toString());
     }
 }

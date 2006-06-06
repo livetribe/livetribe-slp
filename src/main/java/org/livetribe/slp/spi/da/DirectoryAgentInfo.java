@@ -84,7 +84,7 @@ public class DirectoryAgentInfo
     public boolean matchScopes(Scopes others)
     {
         if (others == null) return false;
-        return getScopes().match(others);
+        return getScopes().weakMatch(others);
     }
 
     public String getHost()

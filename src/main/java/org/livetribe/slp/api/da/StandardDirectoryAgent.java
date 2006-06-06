@@ -279,7 +279,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             return;
         }
 
-        if (!getScopes().match(message.getScopes()))
+        if (!getScopes().weakMatch(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " dropping message " + message + ": no scopes match among DA scopes " + getScopes() + " and message scopes " + message.getScopes());

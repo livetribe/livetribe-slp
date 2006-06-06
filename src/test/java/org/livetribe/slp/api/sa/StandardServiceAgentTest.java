@@ -7,21 +7,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
+import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.da.DirectoryAgent;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
 import org.livetribe.slp.api.ua.StandardUserAgent;
 import org.livetribe.slp.api.ua.UserAgent;
-import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.net.SocketTCPConnector;
-import org.livetribe.slp.spi.net.SocketUDPConnector;
 import org.livetribe.slp.spi.sa.StandardServiceAgentManager;
-import org.livetribe.slp.spi.ua.StandardUserAgentManager;
 
 /**
  * @version $Rev$ $Date$
@@ -42,10 +41,6 @@ public class StandardServiceAgentTest extends SLPTestSupport
     public void testStartStop() throws Exception
     {
         StandardServiceAgent sa = new StandardServiceAgent();
-        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-        saManager.setUDPConnector(new SocketUDPConnector());
-        saManager.setTCPConnector(new SocketTCPConnector());
-        sa.setServiceAgentManager(saManager);
         sa.setConfiguration(getDefaultConfiguration());
 
         assert !sa.isRunning();
@@ -64,12 +59,11 @@ public class StandardServiceAgentTest extends SLPTestSupport
      */
     public void testRegistrationOnStartup() throws Exception
     {
+        Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
+
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        daManager.setTCPConnector(new SocketTCPConnector());
         da.setConfiguration(getDefaultConfiguration());
+        da.setScopes(scopes);
         da.start();
 
         try
@@ -77,15 +71,11 @@ public class StandardServiceAgentTest extends SLPTestSupport
             sleep(500);
 
             StandardServiceAgent sa = new StandardServiceAgent();
-            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            sa.setServiceAgentManager(saManager);
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             sa.setConfiguration(getDefaultConfiguration());
+            sa.setScopes(scopes);
 
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///ssat1", ServiceURL.LIFETIME_MAXIMUM - 1);
-            Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
-            ServiceInfo service = new ServiceInfo(null, serviceURL, scopes, null, Locale.getDefault().getLanguage());
+            ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, Locale.getDefault().getLanguage());
             sa.register(service);
             sa.start();
 
@@ -94,10 +84,6 @@ public class StandardServiceAgentTest extends SLPTestSupport
                 sleep(500);
 
                 StandardUserAgent ua = new StandardUserAgent();
-                StandardUserAgentManager uaManager = new StandardUserAgentManager();
-                ua.setUserAgentManager(uaManager);
-                uaManager.setUDPConnector(new SocketUDPConnector());
-                uaManager.setTCPConnector(new SocketTCPConnector());
                 ua.setConfiguration(getDefaultConfiguration());
                 ua.start();
 
@@ -114,12 +100,12 @@ public class StandardServiceAgentTest extends SLPTestSupport
                 }
                 finally
                 {
-                    uaManager.stop();
+                    ua.stop();
                 }
             }
             finally
             {
-                saManager.stop();
+                sa.stop();
             }
         }
         finally
@@ -133,18 +119,21 @@ public class StandardServiceAgentTest extends SLPTestSupport
      */
     public void testDeregistration() throws Exception
     {
+        Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
+
         StandardDirectoryAgent da = new StandardDirectoryAgent();
         da.setConfiguration(getDefaultConfiguration());
+        da.setScopes(scopes);
         da.start();
 
         try
         {
             StandardServiceAgent sa = new StandardServiceAgent();
             sa.setConfiguration(getDefaultConfiguration());
+            sa.setScopes(scopes);
             sa.start();
 
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///ssat2", 13);
-            Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
             String language = Locale.getDefault().getLanguage();
             ServiceInfo service = new ServiceInfo(null, serviceURL, scopes, null, language);
             sa.register(service);
@@ -186,24 +175,16 @@ public class StandardServiceAgentTest extends SLPTestSupport
     public void testRegistrationWithDA() throws Exception
     {
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        daManager.setTCPConnector(new SocketTCPConnector());
         da.setConfiguration(getDefaultConfiguration());
         da.start();
 
         try
         {
             StandardServiceAgent sa = new StandardServiceAgent();
-            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            sa.setServiceAgentManager(saManager);
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             sa.setConfiguration(getDefaultConfiguration());
+
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///ssat3", ServiceURL.LIFETIME_MAXIMUM - 1);
-            Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
-            ServiceInfo service = new ServiceInfo(null, serviceURL, scopes, null, Locale.getDefault().getLanguage());
+            ServiceInfo service = new ServiceInfo(null, serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
             sa.register(service);
             sa.start();
 
@@ -217,16 +198,12 @@ public class StandardServiceAgentTest extends SLPTestSupport
                 sa.register(service);
 
                 StandardUserAgent ua = new StandardUserAgent();
-                StandardUserAgentManager uaManager = new StandardUserAgentManager();
-                ua.setUserAgentManager(uaManager);
-                uaManager.setUDPConnector(new SocketUDPConnector());
-                uaManager.setTCPConnector(new SocketTCPConnector());
                 ua.setConfiguration(getDefaultConfiguration());
                 ua.start();
 
                 try
                 {
-                    List serviceInfos = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
+                    List serviceInfos = ua.findServices(serviceURL.getServiceType(), null, null, null);
 
                     assert serviceInfos != null;
                     assert serviceInfos.size() == 1;
@@ -237,12 +214,12 @@ public class StandardServiceAgentTest extends SLPTestSupport
                 }
                 finally
                 {
-                    uaManager.stop();
+                    ua.stop();
                 }
             }
             finally
             {
-                saManager.stop();
+                sa.stop();
             }
         }
         finally
@@ -259,8 +236,7 @@ public class StandardServiceAgentTest extends SLPTestSupport
         StandardServiceAgent sa = new StandardServiceAgent();
         sa.setConfiguration(getDefaultConfiguration());
         ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://ssat4");
-        Scopes scopes = new Scopes(new String[]{"scope1"});
-        ServiceInfo service1 = new ServiceInfo(serviceURL1, scopes, null, Locale.getDefault().getLanguage());
+        ServiceInfo service1 = new ServiceInfo(serviceURL1, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
         sa.register(service1);
 
         Collection services = sa.getServices();
@@ -273,7 +249,7 @@ public class StandardServiceAgentTest extends SLPTestSupport
         try
         {
             ServiceURL serviceURL2 = new ServiceURL("service:jmx:ws://ssat5");
-            ServiceInfo service2 = new ServiceInfo(serviceURL2, new Scopes(new String[]{"scope2"}), null, Locale.getDefault().getLanguage());
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
             sa.register(service2);
 
             services = sa.getServices();
@@ -301,7 +277,7 @@ public class StandardServiceAgentTest extends SLPTestSupport
             StandardServiceAgent sa = new StandardServiceAgent();
             sa.setConfiguration(configuration);
             ServiceURL serviceURL = new ServiceURL("service:http://ssat6", ServiceURL.LIFETIME_PERMANENT);
-            sa.register(new ServiceInfo(serviceURL, null, null, Locale.getDefault().getLanguage()));
+            sa.register(new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage()));
             sa.start();
 
             try
@@ -361,10 +337,6 @@ public class StandardServiceAgentTest extends SLPTestSupport
         Configuration configuration = getDefaultConfiguration();
 
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        daManager.setTCPConnector(new SocketTCPConnector());
         da.setConfiguration(configuration);
         da.start();
 
@@ -373,15 +345,11 @@ public class StandardServiceAgentTest extends SLPTestSupport
             sleep(500);
 
             StandardServiceAgent sa = new StandardServiceAgent();
-            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-            sa.setServiceAgentManager(saManager);
-            saManager.setUDPConnector(new SocketUDPConnector());
-            saManager.setTCPConnector(new SocketTCPConnector());
             sa.setConfiguration(configuration);
             // Discover the DAs immediately
             sa.setDiscoveryStartWaitBound(0);
             ServiceURL serviceURL = new ServiceURL("service:http://ssat7", ServiceURL.LIFETIME_PERMANENT);
-            sa.register(new ServiceInfo(serviceURL, null, null, Locale.getDefault().getLanguage()));
+            sa.register(new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage()));
             sa.start();
 
             try
@@ -409,39 +377,21 @@ public class StandardServiceAgentTest extends SLPTestSupport
     /**
      * @testng.test
      */
-    public void testRegistrationWithNoLanguage() throws Exception
+    public void testRegistrationFailureNoLanguage() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
-
-        StandardDirectoryAgent da = new StandardDirectoryAgent();
-        da.setConfiguration(configuration);
-        da.start();
-
+        StandardServiceAgent sa = new StandardServiceAgent();
+        sa.setConfiguration(configuration);
+        ServiceURL serviceURL = new ServiceURL("service:http://ssat8", ServiceURL.LIFETIME_PERMANENT);
+        ServiceInfo serviceInfo = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, null);
         try
         {
-            sleep(500);
-
-            StandardServiceAgent sa = new StandardServiceAgent();
-            sa.setConfiguration(configuration);
-            ServiceURL serviceURL = new ServiceURL("service:http://ssat8", ServiceURL.LIFETIME_PERMANENT);
-
-            sa.register(new ServiceInfo(serviceURL, null, null, null));
-            sa.start();
-
-            try
-            {
-                Collection services = sa.getServices();
-                assert services != null;
-                assert services.size() == 1;
-            }
-            finally
-            {
-                sa.stop();
-            }
+            sa.register(serviceInfo);
+            throw new AssertionError();
         }
-        finally
+        catch (ServiceLocationException x)
         {
-            da.stop();
+            assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
         }
     }
 
@@ -451,43 +401,53 @@ public class StandardServiceAgentTest extends SLPTestSupport
     public void testRegistrationFailureNoLifetime() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
-
-        StandardDirectoryAgent da = new StandardDirectoryAgent();
-        da.setConfiguration(configuration);
-        da.start();
-
+        StandardServiceAgent sa = new StandardServiceAgent();
+        sa.setConfiguration(configuration);
+        ServiceURL serviceURL = new ServiceURL("service:http://ssat9", 0);
+        ServiceInfo serviceInfo = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
         try
         {
-            sleep(500);
-
-            StandardServiceAgent sa = new StandardServiceAgent();
-            sa.setConfiguration(configuration);
-            ServiceURL serviceURL = new ServiceURL("service:http://ssat9", 0);
-            sa.register(new ServiceInfo(serviceURL, null, null, Locale.getDefault().getLanguage()));
-            try
-            {
-                sa.start();
-                throw new AssertionError();
-            }
-            catch (ServiceLocationException x)
-            {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
-            }
-            finally
-            {
-                sa.stop();
-            }
+            sa.register(serviceInfo);
+            throw new AssertionError();
         }
-        finally
+        catch (ServiceLocationException x)
         {
-            da.stop();
+            assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
         }
     }
 
     /**
      * @testng.test
      */
-    public void testRegisterMultipleServices() throws Exception
+    public void testRegistrationFailureNoScopesMatch() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+        StandardServiceAgent sa = new StandardServiceAgent();
+        sa.setConfiguration(configuration);
+        sa.setScopes(new Scopes(new String[]{"sascope"}));
+        sa.start();
+
+        try
+        {
+            ServiceURL serviceURL = new ServiceURL("service:foo://bar");
+            ServiceInfo serviceInfo = new ServiceInfo(serviceURL, new Scopes(new String[]{"unsupported"}), null, Locale.getDefault().getLanguage());
+            sa.register(serviceInfo);
+            throw new AssertionError();
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getErrorCode() == ServiceLocationException.SCOPE_NOT_SUPPORTED;
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testRegistrationOfMultipleServices() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
 
@@ -503,10 +463,10 @@ public class StandardServiceAgentTest extends SLPTestSupport
             sa.setConfiguration(configuration);
 
             ServiceURL serviceURL1 = new ServiceURL("service:http://ssat10", ServiceURL.LIFETIME_DEFAULT);
-            ServiceInfo service1 = new ServiceInfo(serviceURL1, null, null, Locale.getDefault().getLanguage());
+            ServiceInfo service1 = new ServiceInfo(serviceURL1, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
             sa.register(service1);
             ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://ssat11", ServiceURL.LIFETIME_MAXIMUM);
-            ServiceInfo service2 = new ServiceInfo(serviceURL2, null, null, Locale.getDefault().getLanguage());
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
             sa.register(service2);
             sa.start();
 
@@ -567,8 +527,7 @@ public class StandardServiceAgentTest extends SLPTestSupport
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://ssat12");
-                Scopes scopes = new Scopes(new String[]{"scope1"});
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, Locale.getDefault().getLanguage());
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
                 sa.register(service);
 
                 byte[] bytes = new byte[configuration.getMTU()];
@@ -656,6 +615,89 @@ public class StandardServiceAgentTest extends SLPTestSupport
         finally
         {
             da.stop();
+        }
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testServiceRequestMatching() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardServiceAgent sa = new StandardServiceAgent();
+        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
+        sa.setServiceAgentManager(saManager);
+        SocketTCPConnector unicastConnector = new SocketTCPConnector();
+        unicastConnector.setTCPListening(true);
+        saManager.setTCPConnector(unicastConnector);
+        sa.setConfiguration(configuration);
+        sa.setScopes(new Scopes(new String[]{"DEFAULT", "ws"}));
+        sa.start();
+
+        try
+        {
+            ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host");
+            ServiceInfo serviceInfo1 = new ServiceInfo(serviceURL1, Scopes.DEFAULT, null, Locale.ENGLISH.getLanguage());
+            sa.register(serviceInfo1);
+
+            ServiceInfo serviceInfo2 = new ServiceInfo(serviceURL1, Scopes.DEFAULT, null, Locale.ITALIAN.getLanguage());
+            sa.register(serviceInfo2);
+
+            ServiceURL serviceURL2 = new ServiceURL("service:jmx:ws://host");
+            Scopes wsScopes = new Scopes(new String[]{"ws"});
+            Attributes wsAttributes = new Attributes("(port=80),(confidential=false)");
+            ServiceInfo serviceInfo3 = new ServiceInfo(serviceURL2, wsScopes, wsAttributes, Locale.ENGLISH.getLanguage());
+            sa.register(serviceInfo3);
+
+            StandardUserAgent ua = new StandardUserAgent();
+            ua.setConfiguration(configuration);
+            ua.start();
+
+            try
+            {
+                // Search for all services
+                List allResult = ua.findServices(null, null, null, null);
+                assert allResult.size() == 3;
+
+                List rmiResult = ua.findServices(new ServiceType("jmx:rmi"), null, null, null);
+                assert rmiResult.size() == 2;
+
+                List wsResult = ua.findServices(serviceURL2.getServiceType(), null, null, null);
+                assert wsResult.size() == 1;
+
+                List wrongScopesResult = ua.findServices(null, new Scopes(new String[]{"wrong"}), null, null);
+                assert wrongScopesResult.size() == 0;
+
+                List wsScopesResult = ua.findServices(null, wsScopes, null, null);
+                assert wsScopesResult.size() == 1;
+
+                List attrsResult = ua.findServices(null, null, "(&(confidential=false)(port=80))", null);
+                assert attrsResult.size() == 1;
+
+                attrsResult = ua.findServices(null, null, "(port=80)", null);
+                assert attrsResult.size() == 1;
+
+                attrsResult = ua.findServices(null, null, "(port=81)", null);
+                assert attrsResult.size() == 0;
+
+                List langResult = ua.findServices(null, null, null, Locale.ENGLISH.getLanguage());
+                assert langResult.size() == 2;
+
+                langResult = ua.findServices(null, null, null, Locale.ITALIAN.getLanguage());
+                assert langResult.size() == 1;
+
+                langResult = ua.findServices(null, null, null, Locale.GERMAN.getLanguage());
+                assert langResult.size() == 0;
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
         }
     }
 }

@@ -58,7 +58,7 @@ public class SrvReg extends Message
     {
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
-        byte[] serviceTypeBytes = writeString(getServiceType().toString());
+        byte[] serviceTypeBytes = serviceTypeToBytes(getServiceType());
         int serviceTypeLength = serviceTypeBytes.length;
         byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesLength = scopesBytes.length;
@@ -126,7 +126,8 @@ public class SrvReg extends Message
         int serviceTypeLength = readInt(bytes, offset, SERVICE_TYPE_LENGTH_BYTES_LENGTH);
 
         offset += SERVICE_TYPE_LENGTH_BYTES_LENGTH;
-        setServiceType(new ServiceType(readString(bytes, offset, serviceTypeLength)));
+        String serviceType = readString(bytes, offset, serviceTypeLength);
+        setServiceType(serviceType == null ? null : new ServiceType(serviceType));
 
         offset += serviceTypeLength;
         int scopesLength = readInt(bytes, offset, SCOPES_LENGTH_BYTES_LENGTH);

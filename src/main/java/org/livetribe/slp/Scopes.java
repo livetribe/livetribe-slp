@@ -15,7 +15,7 @@
  */
 package org.livetribe.slp;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.emory.mathcs.backport.java.util.Collections;
@@ -25,14 +25,34 @@ import edu.emory.mathcs.backport.java.util.Collections;
  */
 public class Scopes
 {
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final String DEFAULT_SCOPE = "DEFAULT";
+
+    /**
+     * The DEFAULT scope is just like any other scope, only that's used by DA and SA as their default.
+     */
     public static final Scopes DEFAULT = new Scopes(new String[]{DEFAULT_SCOPE});
 
-    private final List scopes;
+    /**
+     * The WILDCARD scope is special, as it does not match any scope, and all other scopes will match it.
+     * This is used during queries, when one wants to retrieve services registered in all scopes.
+     */
+    public static final Scopes WILDCARD = new Scopes(null);
+
+    private final String[] originalScopes;
+    private final List scopes = new ArrayList();
 
     public Scopes(String[] scopes)
     {
-        this.scopes = Arrays.asList(scopes);
+        this.originalScopes = scopes == null ? EMPTY_STRING_ARRAY : scopes;
+        if (scopes != null && scopes.length > 0)
+        {
+            for (int i = 0; i < scopes.length; ++i)
+            {
+                String scope = scopes[i];
+                this.scopes.add(scope.toLowerCase());
+            }
+        }
     }
 
     public boolean equals(Object obj)
@@ -48,25 +68,41 @@ public class Scopes
         return scopes.hashCode();
     }
 
+    /**
+     * Matches the given Scopes argument against this Scopes object.
+     * If this Scopes is the wildcard scope, always returns false.
+     * If the given Scopes is the wildcard scope, always returns true.
+     * @param other The scopes to match
+     * @return True if all scopes specified by the given Scopes argument are also scopes of this Scopes object.
+     */
     public boolean match(Scopes other)
     {
-        if (containsDefaultScope()) return true;
-        if (other == null) return false;
+        if (other == null || other.isWildcardScope()) return true;
+        if (isWildcardScope()) return false;
+        return scopes.containsAll(other.scopes);
+    }
+
+    /**
+     * Matches the given Scopes argument against this Scopes object, more weakly than {@link #match(Scopes)}.
+     * If this Scopes is the wildcard scope, always returns false.
+     * If the given Scopes is the wildcard scope, always returns true.
+     * @param other The scopes to match
+     * @return True if at least one of the scopes specified by the given Scopes argument is also a scope of this Scopes object.
+     */
+    public boolean weakMatch(Scopes other)
+    {
+        if (other == null || other.isWildcardScope()) return true;
+        if (isWildcardScope()) return false;
         return !Collections.disjoint(scopes, other.scopes);
     }
 
     public String[] asStringArray()
     {
-        return (String[])scopes.toArray(new String[scopes.size()]);
+        return originalScopes;
     }
 
-    private boolean containsDefaultScope()
+    private boolean isWildcardScope()
     {
-        for (int i = 0; i < scopes.size(); ++i)
-        {
-            String scope = (String)scopes.get(i);
-            if (scope.equalsIgnoreCase(DEFAULT_SCOPE)) return true;
-        }
-        return false;
+        return scopes.isEmpty();
     }
 }

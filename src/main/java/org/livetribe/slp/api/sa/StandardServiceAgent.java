@@ -158,6 +158,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     public void register(ServiceInfo service) throws IOException, ServiceLocationException
     {
+        if (service.getServiceURL().getLifetime() == 0) throw new ServiceLocationException("Could not register service, invalid lifetime", ServiceLocationException.INVALID_REGISTRATION);
+        if (service.getLanguage() == null) throw new ServiceLocationException("Could not register service, missing language", ServiceLocationException.INVALID_REGISTRATION);
+        if (!getScopes().match(service.getScopes())) throw new ServiceLocationException("Could not register service, ServiceAgent scopes do not match with service's", ServiceLocationException.SCOPE_NOT_SUPPORTED);
+
         services.lock();
         try
         {
@@ -179,6 +183,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     public void deregister(ServiceInfo service) throws IOException, ServiceLocationException
     {
+        if (service.getLanguage() == null) throw new ServiceLocationException("Could not deregister service, missing language", ServiceLocationException.INVALID_REGISTRATION);
+        if (!getScopes().match(service.getScopes())) throw new ServiceLocationException("Could not deregister service, ServiceAgent scopes do not match with service's", ServiceLocationException.SCOPE_NOT_SUPPORTED);
+
         services.lock();
         try
         {
@@ -419,7 +426,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         if (!matchPreviousResponders(message)) return;
 
         // Match scopes
-        if (!getScopes().match(message.getScopes()))
+        if (!getScopes().weakMatch(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + getScopes() + " and message scopes " + message.getScopes());
@@ -488,7 +495,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     protected void handleMulticastDAAdvert(DAAdvert message, InetSocketAddress address)
     {
-        if (!getScopes().match(message.getScopes()))
+        if (!getScopes().weakMatch(message.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " dropping message " + message + ": no scopes match among SA scopes " + getScopes() + " and message scopes " + message.getScopes());

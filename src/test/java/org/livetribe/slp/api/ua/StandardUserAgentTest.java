@@ -79,12 +79,11 @@ public class StandardUserAgentTest extends SLPTestSupport
      */
     public void testFindServices() throws Exception
     {
+        Scopes scopes = new Scopes(new String[]{"DEFAULT", "scope1", "scope2"});
+
         StandardDirectoryAgent da = new StandardDirectoryAgent();
-        StandardDirectoryAgentManager daManager = new StandardDirectoryAgentManager();
-        da.setDirectoryAgentManager(daManager);
-        daManager.setUDPConnector(new SocketUDPConnector());
-        daManager.setTCPConnector(new SocketTCPConnector());
         da.setConfiguration(getDefaultConfiguration());
+        da.setScopes(scopes);
         da.start();
 
         try
@@ -100,7 +99,6 @@ public class StandardUserAgentTest extends SLPTestSupport
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///suat1", 13);
-                Scopes scopes = new Scopes(new String[]{"scope1", "scope2"});
                 Attributes attributes = new Attributes("(attr=suat1)");
                 ServiceInfo service = new ServiceInfo(serviceURL, scopes, attributes, null);
                 ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
@@ -110,10 +108,6 @@ public class StandardUserAgentTest extends SLPTestSupport
                 assert ack.getErrorCode() == 0;
 
                 StandardUserAgent ua = new StandardUserAgent();
-                StandardUserAgentManager uaManager = new StandardUserAgentManager();
-                ua.setUserAgentManager(uaManager);
-                uaManager.setUDPConnector(new SocketUDPConnector());
-                uaManager.setTCPConnector(new SocketTCPConnector());
                 ua.setConfiguration(getDefaultConfiguration());
                 ua.start();
 
@@ -135,7 +129,7 @@ public class StandardUserAgentTest extends SLPTestSupport
                 }
                 finally
                 {
-                    uaManager.stop();
+                    ua.stop();
                 }
             }
             finally
@@ -407,8 +401,7 @@ public class StandardUserAgentTest extends SLPTestSupport
             try
             {
                 ServiceURL serviceURL = new ServiceURL("service:foo:bar://baz");
-                Scopes scopes = new Scopes(new String[]{"scope1"});
-                ServiceInfo service = new ServiceInfo(serviceURL, scopes, null, Locale.getDefault().getLanguage());
+                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
                 sa.register(service);
 
                 // Let the event arrive
