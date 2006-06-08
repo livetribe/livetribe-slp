@@ -21,8 +21,10 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
@@ -310,7 +312,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         if (renewalPeriod > 0)
         {
             ScheduledFuture renewal = scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
-            service.addRenewal(renewal);
+            service.addRenewal(renewal, da);
         }
     }
 
@@ -501,6 +503,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             // DA is shutting down
             uncacheDirectoryAgent(da);
+            cancelRenewals(da);
         }
         else
         {
@@ -523,6 +526,16 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
                         logger.log(Level.FINE, "ServiceAgent " + this + " dropping message " + message + ": could not register service to DA " + da, x);
                 }
             }
+        }
+    }
+
+    private void cancelRenewals(DirectoryAgentInfo da)
+    {
+        Collection allServices = getServices();
+        for (Iterator iterator = allServices.iterator(); iterator.hasNext();)
+        {
+            SAServiceInfo serviceInfo = (SAServiceInfo)iterator.next();
+            serviceInfo.cancelRenewals(da);
         }
     }
 
@@ -688,7 +701,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private class SAServiceInfo extends ServiceInfo
     {
-        private List renewals = new ArrayList();
+        private Map/*<DirectoryAgentInfo, List<ScheduledFuture>>*/ renewals = new HashMap();
 
         private SAServiceInfo(ServiceInfo serviceInfo)
         {
@@ -699,24 +712,45 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             ServiceInfo clone = super.clone(serviceType, serviceURL, scopes, attributes, language);
             SAServiceInfo result = new SAServiceInfo(clone);
-            result.renewals.addAll(renewals);
+            result.renewals.putAll(renewals);
             renewals.clear();
             return result;
         }
 
+        public void addRenewal(ScheduledFuture renewal, DirectoryAgentInfo da)
+        {
+            List futures = (List)renewals.get(da);
+            if (futures == null)
+            {
+                futures = new ArrayList();
+                renewals.put(da, futures);
+            }
+            futures.add(renewal);
+        }
+
         private void cancelRenewals()
         {
-            for (int i = 0; i < renewals.size(); ++i)
+            for (Iterator iterator = renewals.values().iterator(); iterator.hasNext();)
             {
-                ScheduledFuture renewal = (ScheduledFuture)renewals.get(i);
-                renewal.cancel(false);
+                List futures = (List)iterator.next();
+                for (int i = 0; i < futures.size(); ++i)
+                {
+                    ScheduledFuture renewal = (ScheduledFuture)futures.get(i);
+                    renewal.cancel(false);
+                }
             }
             renewals.clear();
         }
 
-        public void addRenewal(ScheduledFuture renewal)
+        private void cancelRenewals(DirectoryAgentInfo da)
         {
-            renewals.add(renewal);
+            List futures = (List)renewals.get(da);
+            if (futures == null) return;
+            for (int i = 0; i < futures.size(); ++i)
+            {
+                ScheduledFuture renewal = (ScheduledFuture)futures.get(i);
+                renewal.cancel(false);
+            }
         }
     }
 }

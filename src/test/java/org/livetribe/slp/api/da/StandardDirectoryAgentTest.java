@@ -26,6 +26,7 @@ import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
@@ -498,7 +499,6 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
     /**
      * @testng.test
      */
-/*
     public void testExpiration() throws Exception
     {
         Configuration configuration = getDefaultConfiguration();
@@ -525,7 +525,7 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             assert ack.getErrorCode() == 0;
 
             // Wait for the service to expire
-            sleep((lifetime + 1) * 1000L);
+            sleep((lifetime + 2) * 1000L);
 
             assert da.getServices().size() == 0;
         }
@@ -534,5 +534,4 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             da.stop();
         }
     }
-*/
 }

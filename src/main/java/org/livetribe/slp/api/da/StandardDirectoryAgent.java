@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -149,6 +150,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         // DirectoryAgents send unsolicited DAAdverts every heartBeat seconds (RFC 2608, 12.2)
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         scheduledExecutorService.scheduleWithFixedDelay(new UnsolicitedDAAdvert(), 0L, getHeartBeat() * 1000L, TimeUnit.MILLISECONDS);
+        scheduledExecutorService.scheduleWithFixedDelay(new ServiceExpirer(), 0L, 1, TimeUnit.SECONDS);
     }
 
     protected DirectoryAgentManager createDirectoryAgentManager()
@@ -402,6 +404,33 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "DirectoryAgent " + this + " cannot send unsolicited DAAdvert", x);
+            }
+        }
+    }
+
+    private class ServiceExpirer implements Runnable
+    {
+        public void run()
+        {
+            long now = System.currentTimeMillis();
+            services.lock();
+            try
+            {
+                for (Iterator allServices = services.getServices().iterator(); allServices.hasNext();)
+                {
+                    DAServiceInfo serviceInfo = (DAServiceInfo)allServices.next();
+                    long lifetime = serviceInfo.getServiceURL().getLifetime() * 1000L;
+                    if (serviceInfo.getRegistrationTime() + lifetime < now)
+                    {
+                        // We can safely remove, since we're iterating on a copy of the services
+                        services.remove(serviceInfo.getKey());
+                        if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + StandardDirectoryAgent.this + " removed expired service " + serviceInfo);
+                    }
+                }
+            }
+            finally
+            {
+                services.unlock();
             }
         }
     }
