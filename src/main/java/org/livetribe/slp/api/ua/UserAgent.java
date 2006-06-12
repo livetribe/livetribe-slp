@@ -22,7 +22,7 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.api.Agent;
-import org.livetribe.slp.api.ServiceRegistrationListener;
+import org.livetribe.slp.spi.MessageRegistrationListener;
 import org.livetribe.slp.spi.ua.UserAgentManager;
 
 /**
@@ -34,7 +34,7 @@ public interface UserAgent extends Agent
 
     public List findServices(ServiceType serviceType, Scopes scopes, String filter, String language) throws IOException, ServiceLocationException;
 
-    public void addServiceRegistrationListener(ServiceRegistrationListener listener);
+    public void addMessageRegistrationListener(MessageRegistrationListener listener);
 
-    public void removeServiceRegistrationListener(ServiceRegistrationListener listener);
+    public void removeMessageRegistrationListener(MessageRegistrationListener listener);
 }

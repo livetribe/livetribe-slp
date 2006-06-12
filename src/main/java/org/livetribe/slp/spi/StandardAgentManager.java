@@ -37,6 +37,7 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.Rqst;
 import org.livetribe.slp.spi.msg.SAAdvert;
+import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
@@ -276,6 +277,20 @@ public abstract class StandardAgentManager implements AgentManager
         }
     }
 
+    protected SrvRply[] convergentSrvRqst(SrvRqst message, long timeframe) throws IOException
+    {
+        SrvRqstConverger converger = new SrvRqstConverger();
+        try
+        {
+            List replies = convergentMulticastSend(message, timeframe, converger);
+            return (SrvRply[])replies.toArray(new SrvRply[replies.size()]);
+        }
+        finally
+        {
+            converger.close();
+        }
+    }
+
     /**
      * Implements the multicast convergence algorithm, with the extension of returning
      * after the specified timeframe. If the timeframe is negative, the plain multicast
@@ -415,6 +430,7 @@ public abstract class StandardAgentManager implements AgentManager
                         }
                         else
                         {
+                            if (logger.isLoggable(Level.FINER))
                                 logger.finer("Multicast convergence received a reply from known responder " + responder + ", dropping it");
                         }
                     }
@@ -465,7 +481,7 @@ public abstract class StandardAgentManager implements AgentManager
         }
 
         long end = System.currentTimeMillis();
-        if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence lasted (ms): " + (end - start));
+        if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence lasted (ms): " + (end - start) + ", returning " + result.size() + " results");
 
         return result;
     }
@@ -554,16 +570,8 @@ public abstract class StandardAgentManager implements AgentManager
                     case Message.SA_ADVERT_TYPE:
                         if (logger.isLoggable(Level.FINE))
                             logger.fine("Convergent SA message listener " + this + " received reply message from " + address + ": " + message);
-                        lock();
-                        try
-                        {
-                            ((SAAdvert)message).setResponder(address.getAddress().getHostAddress());
-                            add(message);
-                        }
-                        finally
-                        {
-                            unlock();
-                        }
+                        ((SAAdvert)message).setResponder(address.getAddress().getHostAddress());
+                        add(message);
                         break;
                     default:
                         if (logger.isLoggable(Level.FINEST))
@@ -575,6 +583,49 @@ public abstract class StandardAgentManager implements AgentManager
             {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "Convergent SA message listener " + this + " received bad message from " + address + ", ignoring", x);
+            }
+        }
+    }
+
+    private class SrvRqstConverger extends Converger
+    {
+        private final InetSocketAddress address;
+
+        public SrvRqstConverger() throws SocketException
+        {
+            address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getPort());
+        }
+
+        public void send(UDPConnector connector, byte[] bytes) throws IOException
+        {
+            connector.multicastSend(getDatagramSocket(), address, bytes);
+        }
+
+        public void handle(MessageEvent event)
+        {
+            InetSocketAddress address = event.getSocketAddress();
+            try
+            {
+                Message message = Message.deserialize(event.getMessageBytes());
+
+                switch (message.getMessageType())
+                {
+                    case Message.SRV_RPLY_TYPE:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("Convergent message listener " + this + " received reply message from " + address + ": " + message);
+                        ((SrvRply)message).setResponder(address.getAddress().getHostAddress());
+                        add(message);
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest("Convergent message listener " + this + " ignoring message received from " + address + ": " + message);
+                        break;
+                }
+            }
+            catch (ServiceLocationException x)
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Convergent message listener " + this + " received bad message from " + address + ", ignoring", x);
             }
         }
     }

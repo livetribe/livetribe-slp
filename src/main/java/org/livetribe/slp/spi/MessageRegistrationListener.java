@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.api;
+package org.livetribe.slp.spi;
 
 import java.util.EventListener;
+
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 
 /**
  * @version $Rev$ $Date$
  */
-public interface ServiceRegistrationListener extends EventListener
+public interface MessageRegistrationListener extends EventListener
 {
-    public void serviceRegistered(ServiceRegistrationEvent event);
+    public void handleSrvReg(SrvReg srvReg);
 
-    public void serviceUpdated(ServiceRegistrationEvent event);
-
-    public void serviceDeregistered(ServiceRegistrationEvent event);
-
-    public void serviceExpired(ServiceRegistrationEvent event);
+    public void handleSrvDeReg(SrvDeReg srvDeReg);
 }

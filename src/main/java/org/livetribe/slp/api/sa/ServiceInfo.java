@@ -43,6 +43,7 @@ public class ServiceInfo
     private final ServiceType serviceType;
     private final Scopes scopes;
     private final Attributes attributes;
+    private long registrationTime;
 
     public static ServiceInfo from(SrvReg message)
     {
@@ -66,11 +67,6 @@ public class ServiceInfo
         this.scopes = scopes;
         this.attributes = attributes;
     }
-
-//    public ServiceInfo clone(ServiceInfo other)
-//    {
-//        return new ServiceInfo(other.getServiceType(), other.getServiceURL(), other.getScopes(), other.getAttributes(), other.getLanguage());
-//    }
 
     public Key getKey()
     {
@@ -140,7 +136,25 @@ public class ServiceInfo
 
     protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
     {
-        return new ServiceInfo(serviceType, serviceURL, scopes, attributes, language);
+        ServiceInfo clone = new ServiceInfo(serviceType, serviceURL, scopes, attributes, language);
+        clone.setRegistrationTime(getRegistrationTime());
+        return clone;
+    }
+
+    public long getRegistrationTime()
+    {
+        return registrationTime;
+    }
+
+    public void setRegistrationTime(long registrationTime)
+    {
+        this.registrationTime = registrationTime;
+    }
+
+    public boolean isExpiredAsOf(long time)
+    {
+        long lifetime = getServiceURL().getLifetime() * 1000L;
+        return getRegistrationTime() + lifetime <= time;
     }
 
     /**

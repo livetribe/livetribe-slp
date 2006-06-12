@@ -18,20 +18,26 @@ package org.livetribe.slp;
 /**
  * @version $Rev$ $Date$
  */
-public class ServiceTypeTest extends SLPTestCase
+public class ServiceTypeTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testInvalidServiceType1() throws Exception
     {
         try
         {
             new ServiceType(null);
-            fail();
+            throw new AssertionError();
         }
         catch (NullPointerException ignored)
         {
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType1() throws Exception
     {
         ServiceType serviceType = new ServiceType("service:jmx:http");
@@ -44,6 +50,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertTrue(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType2() throws Exception
     {
         ServiceType serviceType = new ServiceType("service:jmx:http.na");
@@ -56,6 +65,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertFalse(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType3() throws Exception
     {
         ServiceType serviceType = new ServiceType("service:jmx");
@@ -68,6 +80,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertTrue(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType4() throws Exception
     {
         ServiceType serviceType = new ServiceType("service:jmx.na");
@@ -80,6 +95,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertFalse(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType5() throws Exception
     {
         ServiceType serviceType = new ServiceType("jmx:http");
@@ -92,6 +110,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertTrue(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType6() throws Exception
     {
         ServiceType serviceType = new ServiceType("jmx:http.na");
@@ -104,6 +125,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertFalse(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType7() throws Exception
     {
         ServiceType serviceType = new ServiceType("http");
@@ -116,6 +140,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertTrue(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceType8() throws Exception
     {
         ServiceType serviceType = new ServiceType("http.na");
@@ -128,6 +155,19 @@ public class ServiceTypeTest extends SLPTestCase
         assertFalse(serviceType.isNADefault());
     }
 
+    /**
+     * @testng.test
+     */
+    public void testEquals() throws Exception
+    {
+        ServiceType serviceType1 = new ServiceType("service:jmx:rmi");
+        ServiceType serviceType2 = new ServiceType("jmx:rmi");
+        assert !serviceType1.equals(serviceType2);
+    }
+
+    /**
+     * @testng.test
+     */
     public void testMatch1() throws Exception
     {
         ServiceType st1 = new ServiceType("service:jmx:rmi");
@@ -146,6 +186,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertTrue(st2.matches(st1));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatch2() throws Exception
     {
         ServiceType st1 = new ServiceType("service:jmx:rmi");
@@ -159,6 +202,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertFalse(st2.matches(st1));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatch3() throws Exception
     {
         ServiceType st1 = new ServiceType("service:jmx:http");
@@ -177,6 +223,9 @@ public class ServiceTypeTest extends SLPTestCase
         assertFalse(st2.matches(st1));
     }
 
+    /**
+     * @testng.test
+     */
     public void testMatch4() throws Exception
     {
         ServiceType st1 = new ServiceType("service:foo:rmi");
@@ -193,5 +242,16 @@ public class ServiceTypeTest extends SLPTestCase
         st2 = new ServiceType("rmi");
         assertFalse(st1.matches(st2));
         assertFalse(st2.matches(st1));
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testMatch5() throws Exception
+    {
+        ServiceType st1 = new ServiceType("service:foo:rmi");
+        ServiceType st2 = new ServiceType("foo:rmi");
+        assertTrue(st1.matches(st2));
+        assertTrue(st2.matches(st1));
     }
 }

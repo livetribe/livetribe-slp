@@ -105,4 +105,9 @@ public class Scopes
     {
         return scopes.isEmpty();
     }
+
+    public String toString()
+    {
+        return scopes.toString();
+    }
 }

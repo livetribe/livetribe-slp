@@ -26,9 +26,6 @@ import org.livetribe.slp.Scopes;
  */
 public abstract class StandardAgent implements Agent
 {
-//    protected static final String DEFAULT_SCOPE = "DEFAULT";
-//    protected static final String[] DEFAULT_SCOPES = new String[]{DEFAULT_SCOPE};
-
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private Configuration configuration;

@@ -115,7 +115,7 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             StandardDirectoryAgent da = new StandardDirectoryAgent();
             da.setConfiguration(getDefaultConfiguration());
             int heartBeatPeriod = 1;
-            da.setHeartBeat(heartBeatPeriod);
+            da.setHeartBeatPeriod(heartBeatPeriod);
             da.start();
 
             try
@@ -154,7 +154,7 @@ public class StandardDirectoryAgentTest extends SLPTestSupport
             StandardDirectoryAgent da = new StandardDirectoryAgent();
             da.setConfiguration(getDefaultConfiguration());
             int heartBeatPeriod = 1;
-            da.setHeartBeat(heartBeatPeriod);
+            da.setHeartBeatPeriod(heartBeatPeriod);
             da.start();
 
             sleep(500);

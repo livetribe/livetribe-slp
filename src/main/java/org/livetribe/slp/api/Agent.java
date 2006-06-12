@@ -17,12 +17,16 @@ package org.livetribe.slp.api;
 
 import java.io.IOException;
 
+import org.livetribe.slp.Scopes;
+
 /**
  * @version $Rev$ $Date$
  */
 public interface Agent
 {
     public void setConfiguration(Configuration configuration) throws IOException;
+
+    public void setScopes(Scopes scopes);
 
     public void start() throws Exception;
 

@@ -25,6 +25,8 @@ import org.livetribe.slp.spi.msg.SAAdvert;
  */
 public class ServiceAgentInfo
 {
+    public static final String TCP_LISTENING = "tcp-listening";
+
     private final String identifier;
     private final String url;
     private final Scopes scopes;
@@ -84,16 +86,10 @@ public class ServiceAgentInfo
         return host;
     }
 
-    public boolean equals(Object obj)
+    public boolean isTCPListening()
     {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        final ServiceAgentInfo that = (ServiceAgentInfo)obj;
-        return url.equals(that.url);
-    }
-
-    public int hashCode()
-    {
-        return url.hashCode();
+        Attributes attrs = getAttributes();
+        if (attrs == null) return false;
+        return attrs.getValue(TCP_LISTENING) != null;
     }
 }

@@ -40,4 +40,6 @@ public interface UserAgentManager extends AgentManager
     public void addNotificationListener(MessageListener listener);
 
     public void removeNotificationListener(MessageListener listener);
+
+    public SrvRply[] multicastSrvRqst(ServiceType serviceType, Scopes scopes, String filter, String language, int timeframe) throws IOException;
 }

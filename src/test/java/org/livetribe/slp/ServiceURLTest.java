@@ -18,89 +18,116 @@ package org.livetribe.slp;
 /**
  * @version $Rev$ $Date$
  */
-public class ServiceURLTest extends SLPTestCase
+public class ServiceURLTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testInvalidServiceURL1() throws Exception
     {
         try
         {
             new ServiceURL(null, ServiceURL.LIFETIME_NONE);
-            fail();
+            throw new AssertionError();
         }
         catch (NullPointerException ignored)
         {
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL1() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http://", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("", serviceURL.getHost());
-        assertEquals(ServiceURL.NO_PORT, serviceURL.getPort());
+        assert serviceURL.getPort() == ServiceURL.NO_PORT;
         assertEquals("", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL2() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http:///", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("", serviceURL.getHost());
-        assertEquals(ServiceURL.NO_PORT, serviceURL.getPort());
+        assert serviceURL.getPort() == ServiceURL.NO_PORT;
         assertEquals("/", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL3() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http://h", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("h", serviceURL.getHost());
-        assertEquals(ServiceURL.NO_PORT, serviceURL.getPort());
+        assert serviceURL.getPort() == ServiceURL.NO_PORT;
         assertEquals("", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL4() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http://h:1", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("h", serviceURL.getHost());
-        assertEquals(1, serviceURL.getPort());
+        assert serviceURL.getPort() == 1;
         assertEquals("", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL5() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http://h:13/", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("h", serviceURL.getHost());
-        assertEquals(13, serviceURL.getPort());
+        assert serviceURL.getPort() == 13;
         assertEquals("/", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL6() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http://h/p", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("h", serviceURL.getHost());
-        assertEquals(ServiceURL.NO_PORT, serviceURL.getPort());
+        assert serviceURL.getPort() == ServiceURL.NO_PORT;
         assertEquals("/p", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL7() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("http://h:9/p", ServiceURL.LIFETIME_NONE);
         assertEquals(new ServiceType("http"), serviceURL.getServiceType());
         assertEquals("h", serviceURL.getHost());
-        assertEquals(9, serviceURL.getPort());
+        assert serviceURL.getPort() == 9;
         assertEquals("/p", serviceURL.getURLPath());
     }
 
+    /**
+     * @testng.test
+     */
     public void testValidServiceURL8() throws Exception
     {
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi", ServiceURL.LIFETIME_NONE);
-        assertEquals(new ServiceType("jmx:rmi"), serviceURL.getServiceType());
+        assertEquals(new ServiceType("service:jmx:rmi"), serviceURL.getServiceType());
         assertEquals("", serviceURL.getHost());
-        assertEquals(ServiceURL.NO_PORT, serviceURL.getPort());
+        assert serviceURL.getPort() == ServiceURL.NO_PORT;
         assertEquals("/jndi/rmi:///jmxrmi", serviceURL.getURLPath());
     }
 }

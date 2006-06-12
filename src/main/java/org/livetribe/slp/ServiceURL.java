@@ -112,11 +112,17 @@ public class ServiceURL implements Serializable
 
     private void parse(String serviceURL)
     {
-        if (serviceURL.startsWith(SERVICE)) serviceURL = serviceURL.substring(SERVICE.length());
+        boolean isServiceURL = false;
+        if (serviceURL.startsWith(SERVICE))
+        {
+            isServiceURL = true;
+            serviceURL = serviceURL.substring(SERVICE.length());
+        }
 
         String authorityPrefix = "://";
         int authorityPrefixIndex = serviceURL.indexOf(authorityPrefix);
-        serviceType = new ServiceType(serviceURL.substring(0, authorityPrefixIndex));
+        serviceType = new ServiceType((isServiceURL ? SERVICE : "") + serviceURL.substring(0, authorityPrefixIndex));
+//        serviceType = new ServiceType(serviceURL.substring(0, authorityPrefixIndex));
 
         serviceURL = serviceURL.substring(authorityPrefixIndex + authorityPrefix.length());
 

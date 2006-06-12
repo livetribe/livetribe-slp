@@ -347,7 +347,7 @@ public class StandardServiceAgentTest extends SLPTestSupport
             StandardServiceAgent sa = new StandardServiceAgent();
             sa.setConfiguration(configuration);
             // Discover the DAs immediately
-            sa.setDiscoveryStartWaitBound(0);
+            sa.setDirectoryAgentDiscoveryInitialWaitBound(0);
             ServiceURL serviceURL = new ServiceURL("service:http://ssat7", ServiceURL.LIFETIME_PERMANENT);
             sa.register(new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage()));
             sa.start();
@@ -657,7 +657,8 @@ public class StandardServiceAgentTest extends SLPTestSupport
             try
             {
                 // Search for all services
-                List allResult = ua.findServices(null, null, null, null);
+                ServiceType abstractServiceType = new ServiceType("service:jmx");
+                List allResult = ua.findServices(abstractServiceType, null, null, null);
                 assert allResult.size() == 3;
 
                 List rmiResult = ua.findServices(new ServiceType("jmx:rmi"), null, null, null);
@@ -666,34 +667,161 @@ public class StandardServiceAgentTest extends SLPTestSupport
                 List wsResult = ua.findServices(serviceURL2.getServiceType(), null, null, null);
                 assert wsResult.size() == 1;
 
-                List wrongScopesResult = ua.findServices(null, new Scopes(new String[]{"wrong"}), null, null);
+                List wrongScopesResult = ua.findServices(abstractServiceType, new Scopes(new String[]{"wrong"}), null, null);
                 assert wrongScopesResult.size() == 0;
 
-                List wsScopesResult = ua.findServices(null, wsScopes, null, null);
+                List wsScopesResult = ua.findServices(abstractServiceType, wsScopes, null, null);
                 assert wsScopesResult.size() == 1;
 
-                List attrsResult = ua.findServices(null, null, "(&(confidential=false)(port=80))", null);
+                List attrsResult = ua.findServices(abstractServiceType, null, "(&(confidential=false)(port=80))", null);
                 assert attrsResult.size() == 1;
 
-                attrsResult = ua.findServices(null, null, "(port=80)", null);
+                attrsResult = ua.findServices(abstractServiceType, null, "(port=80)", null);
                 assert attrsResult.size() == 1;
 
-                attrsResult = ua.findServices(null, null, "(port=81)", null);
+                attrsResult = ua.findServices(abstractServiceType, null, "(port=81)", null);
                 assert attrsResult.size() == 0;
 
-                List langResult = ua.findServices(null, null, null, Locale.ENGLISH.getLanguage());
+                List langResult = ua.findServices(abstractServiceType, null, null, Locale.ENGLISH.getLanguage());
                 assert langResult.size() == 2;
 
-                langResult = ua.findServices(null, null, null, Locale.ITALIAN.getLanguage());
+                langResult = ua.findServices(abstractServiceType, null, null, Locale.ITALIAN.getLanguage());
                 assert langResult.size() == 1;
 
-                langResult = ua.findServices(null, null, null, Locale.GERMAN.getLanguage());
+                langResult = ua.findServices(abstractServiceType, null, null, Locale.GERMAN.getLanguage());
                 assert langResult.size() == 0;
             }
             finally
             {
                 ua.stop();
             }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testRenewalWithDA() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardDirectoryAgent da = new StandardDirectoryAgent();
+        da.setConfiguration(configuration);
+        da.start();
+
+        try
+        {
+            StandardServiceAgent sa = new StandardServiceAgent();
+            sa.setConfiguration(configuration);
+            sa.setPeriodicDirectoryAgentDiscoveryEnabled(false);
+            sa.setPeriodicServiceRenewalEnabled(false);
+            sa.start();
+
+            int lifetime = 5; // seconds
+            ServiceURL serviceURL = new ServiceURL("service:foo:bar://host", lifetime);
+            ServiceInfo serviceInfo = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.ENGLISH.getLanguage());
+
+            try
+            {
+                sa.register(serviceInfo);
+
+                // Check that the DA has it
+                assert da.getServices().size() == 1;
+
+                // Wait for the lifetime to expire
+                sleep((lifetime + 1) * 1000L);
+
+                // The renewal is disabled, the DA should be empty
+                assert da.getServices().size() == 0;
+            }
+            finally
+            {
+                sa.stop();
+            }
+
+            sa.setPeriodicServiceRenewalEnabled(true);
+            sa.start();
+
+            try
+            {
+                sa.register(serviceInfo);
+
+                // Check that the DA has it
+                assert da.getServices().size() == 1;
+
+                // Wait for the lifetime to expire
+                sleep((lifetime + 1) * 1000L);
+
+                // The renewal is enabled, the DA should have it
+                assert da.getServices().size() == 1;
+            }
+            finally
+            {
+                sa.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    /**
+     * @testng.test
+     */
+    public void testRenewalWithoutDA() throws Exception
+    {
+        Configuration configuration = getDefaultConfiguration();
+
+        StandardServiceAgent sa = new StandardServiceAgent();
+        sa.setConfiguration(configuration);
+        sa.setPeriodicDirectoryAgentDiscoveryEnabled(false);
+        sa.setPeriodicServiceRenewalEnabled(false);
+        sa.start();
+
+        int lifetime = 5; // seconds
+        ServiceURL serviceURL = new ServiceURL("service:foo:bar://host", lifetime);
+        ServiceInfo serviceInfo = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.ENGLISH.getLanguage());
+
+        try
+        {
+            sa.register(serviceInfo);
+
+            // Check that the SA has it
+            assert sa.getServices().size() == 1;
+
+            // Wait for the lifetime to expire
+            sleep((lifetime + 1) * 1000L);
+
+            assert sa.getServices().size() == 1;
+            ServiceInfo expired = (ServiceInfo)sa.getServices().iterator().next();
+            assert expired.isExpiredAsOf(System.currentTimeMillis());
+        }
+        finally
+        {
+            sa.stop();
+        }
+
+        sa.setPeriodicServiceRenewalEnabled(true);
+        sa.start();
+
+        try
+        {
+            sa.register(serviceInfo);
+
+            // Check that the SA has it
+            assert sa.getServices().size() == 1;
+
+            // Wait for the lifetime to expire
+            sleep((lifetime + 1) * 1000L);
+
+            assert sa.getServices().size() == 1;
+            ServiceInfo renewed = (ServiceInfo)sa.getServices().iterator().next();
+            assert !renewed.isExpiredAsOf(System.currentTimeMillis());
         }
         finally
         {

@@ -35,7 +35,8 @@ import org.livetribe.slp.ServiceLocationException;
  * <li><code>(&(a&gt;10)(b=true))</code> matches <code>a&gt;10</code> and <code>b=true</code></li>
  * <li><code>(|(a&lt;=10)(b=true))</code> matches <code>a&lt;=10</code> or <code>b=true</code></li>
  * <li><code>(!(a&gt;=10))</code> matches <code>a&lt;10</code></li>
- * <li><code>(string=L*ve*b*))</code> matches <code>string=LiveTribe</code> but also <code>string=Loveboat</code></li>
+ * <li><code>(name=L*ve*b*)</code> matches <code>name=LiveTribe</code> but also <code>name=Loveboat</code></li>
+ * <li><code>(foo=*)</code> matches the presence of the attribute tag named <code>foo</code></li>
  * @version $Rev:157 $ $Date:2006-06-05 23:29:25 +0200 (Mon, 05 Jun 2006) $
  */
 public class FilterParser

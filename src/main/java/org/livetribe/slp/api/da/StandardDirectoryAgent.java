@@ -20,7 +20,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -28,19 +27,18 @@ import java.util.logging.Level;
 
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
+import edu.emory.mathcs.backport.java.util.concurrent.ThreadFactory;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.da.DirectoryAgentManager;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
-import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.filter.FilterParser;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvDeReg;
@@ -56,7 +54,10 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 {
     private Attributes attributes;
     private DirectoryAgentManager manager;
-    private int heartBeat;
+    private int heartBeatPeriod;
+    private boolean periodicAdvertisement = true;
+    private boolean periodicServiceExpiration = true;
+    private int serviceExpirationPeriod = 1;
     private InetAddress address;
     private ScheduledExecutorService scheduledExecutorService;
     private long bootTime;
@@ -73,7 +74,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setHeartBeat(configuration.getDAHeartBeatPeriod());
+        setHeartBeatPeriod(configuration.getDAHeartBeatPeriod());
         if (manager != null) manager.setConfiguration(configuration);
     }
 
@@ -92,14 +93,44 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         return attributes;
     }
 
-    public int getHeartBeat()
+    public int getHeartBeatPeriod()
     {
-        return heartBeat;
+        return heartBeatPeriod;
     }
 
-    public void setHeartBeat(int heartBeat)
+    public void setHeartBeatPeriod(int heartBeatPeriod)
     {
-        this.heartBeat = heartBeat;
+        this.heartBeatPeriod = heartBeatPeriod;
+    }
+
+    public boolean isPeriodicAdvertisementEnabled()
+    {
+        return periodicAdvertisement;
+    }
+
+    public void setPeriodicAdvertisementEnabled(boolean periodicAdvertisement)
+    {
+        this.periodicAdvertisement = periodicAdvertisement;
+    }
+
+    public boolean isPeriodicServiceExpirationEnabled()
+    {
+        return periodicServiceExpiration;
+    }
+
+    public void setPeriodicServiceExpirationEnabled(boolean periodicServiceExpiration)
+    {
+        this.periodicServiceExpiration = periodicServiceExpiration;
+    }
+
+    public int getServiceExpirationPeriod()
+    {
+        return serviceExpirationPeriod;
+    }
+
+    public void setServiceExpirationPeriod(int serviceExpirationPeriod)
+    {
+        this.serviceExpirationPeriod = serviceExpirationPeriod;
     }
 
     public InetAddress getInetAddress()
@@ -142,20 +173,36 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
         manager.start();
 
-        udpListener = new UDPMessageListener();
+        udpListener = new MulticastMessageListener();
         tcpListener = new TCPMessageListener();
         manager.addMessageListener(udpListener, true);
         manager.addMessageListener(tcpListener, false);
 
+        if (scheduledExecutorService == null) scheduledExecutorService = createScheduledExecutorService();
+
         // DirectoryAgents send unsolicited DAAdverts every heartBeat seconds (RFC 2608, 12.2)
-        if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        scheduledExecutorService.scheduleWithFixedDelay(new UnsolicitedDAAdvert(), 0L, getHeartBeat() * 1000L, TimeUnit.MILLISECONDS);
-        scheduledExecutorService.scheduleWithFixedDelay(new ServiceExpirer(), 0L, 1, TimeUnit.SECONDS);
+        if (isPeriodicAdvertisementEnabled())
+            scheduledExecutorService.scheduleWithFixedDelay(new UnsolicitedDAAdvert(), 0L, getHeartBeatPeriod(), TimeUnit.SECONDS);
+        if (isPeriodicServiceExpirationEnabled())
+            scheduledExecutorService.scheduleWithFixedDelay(new ServiceExpirer(), 0L, getServiceExpirationPeriod(), TimeUnit.SECONDS);
     }
 
     protected DirectoryAgentManager createDirectoryAgentManager()
     {
         return new StandardDirectoryAgentManager();
+    }
+
+    protected ScheduledExecutorService createScheduledExecutorService()
+    {
+        return Executors.newSingleThreadScheduledExecutor(new ThreadFactory()
+        {
+            public Thread newThread(Runnable runnable)
+            {
+                Thread thread = new Thread(runnable, "SLP DirectoryAgent Scheduler");
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 
     protected void doStop() throws IOException
@@ -184,14 +231,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " dropping message " + message + ": no scopes match among DA scopes " + getScopes() + " and message scopes " + message.getScopes());
             return;
-        }
-
-        // Match filter
-        Filter filter = new FilterParser().parse(message.getFilter());
-        if (!filter.match(getAttributes()))
-        {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " dropping message " + message + ": filter " + filter + " does not match attributes");
         }
 
         // Check that's a correct multicast request for this DirectoryAgent
@@ -235,8 +274,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     protected void handleTCPSrvReg(SrvReg message, Socket socket)
     {
         ServiceInfo service = ServiceInfo.from(message);
-        DAServiceInfo serviceToRegister = new DAServiceInfo(service);
-        int errorCode = handleRegistration(serviceToRegister, !message.isFresh());
+        int errorCode = handleRegistration(service, !message.isFresh());
         try
         {
             manager.tcpSrvAck(socket, new Integer(message.getXID()), message.getLanguage(), errorCode);
@@ -248,7 +286,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         }
     }
 
-    private int handleRegistration(DAServiceInfo service, boolean update)
+    private int handleRegistration(ServiceInfo service, boolean update)
     {
         // RFC 2608, 7.0
         if (service.getLanguage() == null)
@@ -270,19 +308,18 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         return update ? updateAddService(service) : registerService(service);
     }
 
-    private int registerService(DAServiceInfo service)
+    private int registerService(ServiceInfo service)
     {
         services.put(service);
-        service.setRegistrationTime(System.currentTimeMillis());
         return 0;
     }
 
-    private int updateAddService(DAServiceInfo service)
+    private int updateAddService(ServiceInfo service)
     {
         services.lock();
         try
         {
-            DAServiceInfo existing = (DAServiceInfo)services.get(service.getKey());
+            ServiceInfo existing = services.get(service.getKey());
 
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
             if (existing == null)
@@ -299,10 +336,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             }
 
             services.updateAdd(service);
-
-            // Refresh the registration time, so that the service does not expire
-            DAServiceInfo updated = (DAServiceInfo)services.get(service.getKey());
-            updated.setRegistrationTime(System.currentTimeMillis());
 
             return 0;
         }
@@ -332,7 +365,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
         services.lock();
         try
         {
-            DAServiceInfo existing = (DAServiceInfo)services.get(service.getKey());
+            ServiceInfo existing = services.get(service.getKey());
             if (existing == null)
             {
                 if (logger.isLoggable(Level.FINE)) logger.fine("Could not find service to deregister " + service);
@@ -349,10 +382,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
             if (update)
             {
                 services.updateRemove(service);
-
-                // Refresh the registration time, so that the service does not expire
-                DAServiceInfo updated = (DAServiceInfo)services.get(service.getKey());
-                updated.setRegistrationTime(System.currentTimeMillis());
             }
             else
             {
@@ -412,26 +441,8 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
     {
         public void run()
         {
-            long now = System.currentTimeMillis();
-            services.lock();
-            try
-            {
-                for (Iterator allServices = services.getServices().iterator(); allServices.hasNext();)
-                {
-                    DAServiceInfo serviceInfo = (DAServiceInfo)allServices.next();
-                    long lifetime = serviceInfo.getServiceURL().getLifetime() * 1000L;
-                    if (serviceInfo.getRegistrationTime() + lifetime < now)
-                    {
-                        // We can safely remove, since we're iterating on a copy of the services
-                        services.remove(serviceInfo.getKey());
-                        if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + StandardDirectoryAgent.this + " removed expired service " + serviceInfo);
-                    }
-                }
-            }
-            finally
-            {
-                services.unlock();
-            }
+            List result = services.purge();
+            if (logger.isLoggable(Level.FINE)) logger.fine("DirectoryAgent " + this + " purged " + result.size() + " expired services: " + result);
         }
     }
 
@@ -442,7 +453,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
      * <li>SrvRqst, from UAs and SAs that wants to discover DAs; the reply is a DAAdvert</li>
      * </ul>
      */
-    private class UDPMessageListener implements MessageListener
+    private class MulticastMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -530,34 +541,6 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "DirectoryAgent " + this + " received bad unicast message from: " + event.getSocketAddress() + ", ignoring", x);
             }
-        }
-    }
-
-    private class DAServiceInfo extends ServiceInfo
-    {
-        private long registrationTime;
-
-        private DAServiceInfo(ServiceInfo serviceInfo)
-        {
-            super(serviceInfo.getServiceType(), serviceInfo.getServiceURL(), serviceInfo.getScopes(), serviceInfo.getAttributes(), serviceInfo.getLanguage());
-        }
-
-        protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
-        {
-            ServiceInfo clone = super.clone(serviceType, serviceURL, scopes, attributes, language);
-            DAServiceInfo result = new DAServiceInfo(clone);
-            result.registrationTime = registrationTime;
-            return result;
-        }
-
-        private long getRegistrationTime()
-        {
-            return registrationTime;
-        }
-
-        private void setRegistrationTime(long registrationTime)
-        {
-            this.registrationTime = registrationTime;
         }
     }
 }

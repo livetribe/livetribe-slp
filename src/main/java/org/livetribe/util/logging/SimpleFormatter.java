@@ -15,10 +15,10 @@
  */
 package org.livetribe.util.logging;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 
 /**
  * @version $Rev$ $Date$
@@ -32,8 +32,8 @@ public class SimpleFormatter extends Formatter
         StringBuffer result = new StringBuffer();
         result.append(record.getMillis()).append(" ");
         result.append("{").append(record.getThreadID()).append("} ");
-        result.append("[").append(record.getLoggerName()).append("] ");
-//        result.append(record.getLevel().getLocalizedName()).append(": ");
+        result.append("[").append(getSimpleLoggerName(record.getLoggerName())).append("] ");
+        result.append(record.getLevel().getLocalizedName()).append(": ");
         result.append(formatMessage(record)).append(EOL);
         Throwable x = record.getThrown();
         if (x != null)
@@ -45,5 +45,12 @@ public class SimpleFormatter extends Formatter
             result.append(sw.toString());
         }
         return result.toString();
+    }
+
+    private String getSimpleLoggerName(String loggerName)
+    {
+        int dot = loggerName.lastIndexOf('.');
+        if (dot < 0) return loggerName;
+        return loggerName.substring(dot + 1);
     }
 }

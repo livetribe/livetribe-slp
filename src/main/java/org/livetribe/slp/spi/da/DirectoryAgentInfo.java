@@ -21,7 +21,12 @@ import org.livetribe.slp.spi.msg.DAAdvert;
 
 /**
  * A POJO that holds information about an SLP DirectoryAgent.
+ * <br />
  * This class is not thread safe, and should be created and used within the same thread.
+ * <br />
+ * DirectoryAgentInfos are used as key in hash data structures, so they should implement
+ * {@link #equals(Object)} and {@link #hashCode()} correctly. Since there can be only
+ * one DirectoryAgent per host, the host address or a string containing it should be used.
  * @version $Rev$ $Date$
  */
 public class DirectoryAgentInfo

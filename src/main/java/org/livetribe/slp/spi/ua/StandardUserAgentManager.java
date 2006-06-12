@@ -94,6 +94,13 @@ public class StandardUserAgentManager extends StandardAgentManager implements Us
         return convergentSASrvRqst(request, timeframe);
     }
 
+    public SrvRply[] multicastSrvRqst(ServiceType serviceType, Scopes scopes, String filter, String language, int timeframe) throws IOException
+    {
+        SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);
+        request.setMulticast(true);
+        return convergentSrvRqst(request, timeframe);
+    }
+
     public SrvRply tcpSrvRqst(InetAddress address, ServiceType serviceType, Scopes scopes, String filter, String language) throws IOException
     {
         SrvRqst request = createSrvRqst(serviceType, scopes, filter, language);

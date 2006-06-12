@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
 
-import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.spi.AgentManager;
@@ -33,15 +32,19 @@ import org.livetribe.slp.spi.msg.SrvAck;
  */
 public interface ServiceAgentManager extends AgentManager
 {
+    public boolean isTCPListening();
+
     public DAAdvert[] multicastDASrvRqst(Scopes scopes, String filter, String language, long timeframe) throws IOException;
 
-    public void udpSAAdvert(InetSocketAddress address, String identifier, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException;
+    public void udpSAAdvert(InetSocketAddress address, ServiceAgentInfo serviceAgent, Integer xid, String language) throws IOException;
 
     public SrvAck tcpSrvReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException;
 
     public SrvAck tcpSrvDeReg(InetAddress address, ServiceInfo service, ServiceAgentInfo serviceAgent) throws IOException;
 
-    public void tcpSrvRply(Socket socket, Integer xid, String language, List serviceInfos) throws IOException;
+    public void tcpSrvRply(Socket socket, ServiceAgentInfo serviceAgent, Integer xid, String language, List serviceInfos) throws IOException;
+
+    public void udpSrvRply(InetSocketAddress address, ServiceAgentInfo serviceAgent, Integer xid, String language, List serviceInfos) throws IOException;
 
     public void multicastSrvRegNotification(ServiceInfo service, ServiceAgentInfo serviceAgent, boolean freshRegistration) throws IOException;
 

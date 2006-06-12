@@ -19,7 +19,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.EventListener;
-import java.util.EventObject;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,7 +61,7 @@ public class ConcurrentListeners
         }
     }
 
-    public void notify(String methodName, EventObject event)
+    public void notify(String methodName, Object event)
     {
         List copy = null;
         lock.lock();
@@ -84,7 +83,7 @@ public class ConcurrentListeners
         }
     }
 
-    private void invoke(Method method, Object listener, EventObject event)
+    private void invoke(Method method, Object listener, Object event)
     {
         try
         {
@@ -110,7 +109,7 @@ public class ConcurrentListeners
         }
     }
 
-    private Method getMethod(Object listener, String methodName, EventObject event)
+    private Method getMethod(Object listener, String methodName, Object event)
     {
         try
         {

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.rmi.server.UID;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import java.util.logging.Level;
 import edu.emory.mathcs.backport.java.util.concurrent.Executors;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledExecutorService;
 import edu.emory.mathcs.backport.java.util.concurrent.ScheduledFuture;
+import edu.emory.mathcs.backport.java.util.concurrent.ThreadFactory;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
@@ -43,7 +45,6 @@ import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
-import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.filter.FilterParser;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
@@ -63,8 +64,10 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 {
     private Attributes attributes;
     private String language;
-    private int discoveryStartWaitBound;
-    private long discoveryPeriod;
+    private boolean periodicDirectoryAgentDiscovery = true;
+    private int directoryAgentDiscoveryInitialWaitBound;
+    private long directoryAgentDiscoveryPeriod;
+    private boolean periodicServiceRenewal = true;
     private InetAddress address;
     private InetAddress localhost;
     private ServiceAgentManager manager;
@@ -74,7 +77,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
     private MessageListener tcpListener;
     private final ServiceInfoCache services = new ServiceInfoCache();
     private final DirectoryAgentInfoCache directoryAgents = new DirectoryAgentInfoCache();
-    private String identifier;
+    private String identifier = new UID().toString();
 
     public void setServiceAgentManager(ServiceAgentManager manager)
     {
@@ -86,16 +89,11 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         return identifier;
     }
 
-    public void setIdentifier(String identifier)
-    {
-        this.identifier = identifier;
-    }
-
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
-        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
+        setDirectoryAgentDiscoveryInitialWaitBound(configuration.getDADiscoveryStartWaitBound());
+        setDirectoryAgentDiscoveryPeriod(configuration.getDADiscoveryPeriod());
         if (manager != null) manager.setConfiguration(configuration);
     }
 
@@ -124,28 +122,48 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         return language;
     }
 
+    public boolean isPeriodicDirectoryAgentDiscoveryEnabled()
+    {
+        return periodicDirectoryAgentDiscovery;
+    }
+
+    public void setPeriodicDirectoryAgentDiscoveryEnabled(boolean periodicDirectoryAgentDiscoveryEnabled)
+    {
+        this.periodicDirectoryAgentDiscovery = periodicDirectoryAgentDiscoveryEnabled;
+    }
+
     /**
      * Sets the bound (in seconds) to the initial random delay this ServiceAgent waits
      * before attempting to discover DirectoryAgents
      */
-    public void setDiscoveryStartWaitBound(int discoveryStartWaitBound)
+    public void setDirectoryAgentDiscoveryInitialWaitBound(int directoryAgentDiscoveryInitialWaitBound)
     {
-        this.discoveryStartWaitBound = discoveryStartWaitBound;
+        this.directoryAgentDiscoveryInitialWaitBound = directoryAgentDiscoveryInitialWaitBound;
     }
 
-    public int getDiscoveryStartWaitBound()
+    public int getDirectoryAgentDiscoveryInitialWaitBound()
     {
-        return discoveryStartWaitBound;
+        return directoryAgentDiscoveryInitialWaitBound;
     }
 
-    public void setDiscoveryPeriod(long discoveryPeriod)
+    public void setDirectoryAgentDiscoveryPeriod(long directoryAgentDiscoveryPeriod)
     {
-        this.discoveryPeriod = discoveryPeriod;
+        this.directoryAgentDiscoveryPeriod = directoryAgentDiscoveryPeriod;
     }
 
-    public long getDiscoveryPeriod()
+    public long getDirectoryAgentDiscoveryPeriod()
     {
-        return discoveryPeriod;
+        return directoryAgentDiscoveryPeriod;
+    }
+
+    public boolean isPeriodicServiceRenewalEnabled()
+    {
+        return periodicServiceRenewal;
+    }
+
+    public void setPeriodicServiceRenewalEnabled(boolean periodicServiceRenewal)
+    {
+        this.periodicServiceRenewal = periodicServiceRenewal;
     }
 
     public void setInetAddress(InetAddress address)
@@ -220,21 +238,49 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         }
         manager.start();
 
-        udpListener = new UDPMessageListener();
+        udpListener = new MulticastMessageListener();
         tcpListener = new TCPMessageListener();
         manager.addMessageListener(udpListener, true);
         manager.addMessageListener(tcpListener, false);
 
-        if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
-        scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L, TimeUnit.MILLISECONDS);
+        if (scheduledExecutorService == null) scheduledExecutorService = createScheduledExecutorService();
+        long delay = new Random(System.currentTimeMillis()).nextInt(getDirectoryAgentDiscoveryInitialWaitBound() + 1);
+        if (isPeriodicDirectoryAgentDiscoveryEnabled())
+            scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDirectoryAgentDiscoveryPeriod(), TimeUnit.SECONDS);
 
         registerServices();
+
+        updateAttributes();
+    }
+
+    protected ScheduledExecutorService createScheduledExecutorService()
+    {
+        return Executors.newSingleThreadScheduledExecutor(new ThreadFactory()
+        {
+            public Thread newThread(Runnable runnable)
+            {
+                Thread thread = new Thread(runnable, "SLP ServiceAgent Scheduler");
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 
     protected ServiceAgentManager createServiceAgentManager()
     {
         return new StandardServiceAgentManager();
+    }
+
+    private void updateAttributes()
+    {
+        // TODO: RFC 2608 (8.6) suggests that ServiceAgents have an attribute 'service-type'
+        // TODO: whose value is all the service types of services represented by the SA.
+
+        if (manager.isTCPListening())
+        {
+            if (attributes == null) attributes = new Attributes();
+            attributes.put(ServiceAgentInfo.TCP_LISTENING, "true");
+        }
     }
 
     protected void doStop() throws Exception
@@ -289,8 +335,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         else
         {
             // There are no DA deployed on the network: multicast a SrvReg as specified by RFC 3082.
-            manager.multicastSrvRegNotification(service, serviceAgent, true);
-            // TODO: periodic multicast of SrvReg for service renewal ?
+            notifyServiceRegistration(service, serviceAgent);
+            scheduleServiceRenewal(service);
         }
     }
 
@@ -305,14 +351,36 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             logger.fine("Registered service " + service.getServiceURL() + " to DirectoryAgent " + address);
     }
 
+    private void notifyServiceRegistration(ServiceInfo serviceInfo, ServiceAgentInfo serviceAgent) throws IOException
+    {
+        manager.multicastSrvRegNotification(serviceInfo, serviceAgent, true);
+    }
+
     private void scheduleServiceRenewal(SAServiceInfo service, DirectoryAgentInfo da)
     {
-        long renewalPeriod = calculateRenewalPeriod(service);
-        long renewalDelay = calculateRenewalDelay(service);
-        if (renewalPeriod > 0)
+        if (isPeriodicServiceRenewalEnabled())
         {
-            ScheduledFuture renewal = scheduledExecutorService.scheduleWithFixedDelay(new RegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
-            service.addRenewal(renewal, da);
+            long renewalPeriod = calculateRenewalPeriod(service);
+            long renewalDelay = calculateRenewalDelay(service);
+            if (renewalPeriod > 0)
+            {
+                ScheduledFuture renewal = scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentRegistrationRenewal(service, da), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
+                service.addDirectoryAgentRenewal(renewal, da);
+            }
+        }
+    }
+
+    private void scheduleServiceRenewal(SAServiceInfo service)
+    {
+        if (isPeriodicServiceRenewalEnabled())
+        {
+            long renewalPeriod = calculateRenewalPeriod(service);
+            long renewalDelay = calculateRenewalDelay(service);
+            if (renewalPeriod > 0)
+            {
+                ScheduledFuture renewal = scheduledExecutorService.scheduleWithFixedDelay(new MulticastRegistrationRenewal(service), renewalDelay, renewalPeriod, TimeUnit.MILLISECONDS);
+                service.setRenewal(renewal);
+            }
         }
     }
 
@@ -357,7 +425,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         else
         {
             // There are no DA deployed on the network: multicast a SrvDeReg as specified by RFC 3082.
-            manager.multicastSrvDeRegNotification(service, serviceAgent);
+            notifyServiceDeregistration(service, serviceAgent);
         }
     }
 
@@ -370,6 +438,11 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             throw new ServiceLocationException("Could not deregister service " + service.getServiceURL() + " from DirectoryAgent " + address, errorCode);
         if (logger.isLoggable(Level.FINE))
             logger.fine("Deregistered service " + service.getServiceURL() + " from DirectoryAgent " + address);
+    }
+
+    private void notifyServiceDeregistration(ServiceInfo serviceInfo, ServiceAgentInfo serviceAgent) throws IOException
+    {
+        manager.multicastSrvDeRegNotification(serviceInfo, serviceAgent);
     }
 
     protected List findDirectoryAgents(Scopes scopes) throws IOException, ServiceLocationException
@@ -429,33 +502,43 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             return;
         }
 
-        // Match filter (see RFC 2608, 8.6)
-        Filter filter = new FilterParser().parse(message.getFilter());
-        if (!filter.match(getAttributes()))
-        {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": filter " + filter + " does not match attributes");
-        }
-
-        // Check that's a correct multicast request for this ServiceAgent
         ServiceType serviceType = message.getServiceType();
-        if (serviceType.isAbstractType() || !"service-agent".equals(serviceType.getPrincipleTypeName()))
+        if (!serviceType.isAbstractType() && "directory-agent".equals(serviceType.getPrincipleTypeName()))
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " dropping message " + message + ": expected service type 'service-agent', got " + serviceType);
+                logger.fine("ServiceAgent " + this + " dropping message " + message + ": service type '" + serviceType + "' not handled by ServiceAgents");
+            return;
         }
 
         // Replies must have the same language and XID as the request (RFC 2608, 8.0)
-        try
+        if (!serviceType.isAbstractType() && "service-agent".equals(serviceType.getPrincipleTypeName()))
         {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + address);
-            manager.udpSAAdvert(address, getIdentifier(), getScopes(), getAttributes(), new Integer(message.getXID()), message.getLanguage());
+            try
+            {
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + address);
+                manager.udpSAAdvert(address, serviceAgent, new Integer(message.getXID()), message.getLanguage());
+            }
+            catch (IOException x)
+            {
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "ServiceAgent " + this + " cannot send reply to " + address, x);
+            }
         }
-        catch (IOException x)
+        else
         {
-            if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "ServiceAgent " + this + " cannot send reply to " + address, x);
+            List matchingServices = matchServices(serviceType, message.getScopes(), message.getFilter(), message.getLanguage());
+            try
+            {
+                manager.udpSrvRply(address, serviceAgent, new Integer(message.getXID()), message.getLanguage(), matchingServices);
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("ServiceAgent " + this + " returned " + matchingServices.size() + " services of type " + message.getServiceType());
+            }
+            catch (IOException x)
+            {
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "ServiceAgent " + this + " cannot send UDP unicast reply to " + address, x);
+            }
         }
     }
 
@@ -535,7 +618,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         for (Iterator iterator = allServices.iterator(); iterator.hasNext();)
         {
             SAServiceInfo serviceInfo = (SAServiceInfo)iterator.next();
-            serviceInfo.cancelRenewals(da);
+            serviceInfo.cancelDirectoryAgentRenewals(da);
         }
     }
 
@@ -545,10 +628,9 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             logger.fine("ServiceAgent " + this + " queried via TCP for services of type " + message.getServiceType());
 
         List matchingServices = matchServices(message.getServiceType(), message.getScopes(), message.getFilter(), message.getLanguage());
-
         try
         {
-            manager.tcpSrvRply(socket, new Integer(message.getXID()), message.getLanguage(), matchingServices);
+            manager.tcpSrvRply(socket, serviceAgent, new Integer(message.getXID()), message.getLanguage(), matchingServices);
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " returned " + matchingServices.size() + " services of type " + message.getServiceType());
         }
@@ -561,6 +643,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private List matchServices(ServiceType serviceType, Scopes scopes, String filter, String language) throws ServiceLocationException
     {
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("ServiceAgent " + this + " matching ServiceType " + serviceType + ", scopes " + scopes + ", filter " + filter + ", language " + language);
         return services.match(serviceType, scopes, new FilterParser().parse(filter), language);
     }
 
@@ -572,7 +656,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      * <li>DAAdverts, from DAs that boot or shutdown; no reply, just update of internal caches</li>
      * </ul>
      */
-    private class UDPMessageListener implements MessageListener
+    private class MulticastMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -659,12 +743,12 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
      * ServiceAgent must refresh their registration with DAs before the lifetime specified
      * in the ServiceURL expires, otherwise the DA does not advertise them anymore.
      */
-    private class RegistrationRenewal implements Runnable
+    private class DirectoryAgentRegistrationRenewal implements Runnable
     {
         private final SAServiceInfo service;
         private final DirectoryAgentInfo directory;
 
-        public RegistrationRenewal(SAServiceInfo service, DirectoryAgentInfo directory)
+        public DirectoryAgentRegistrationRenewal(SAServiceInfo service, DirectoryAgentInfo directory)
         {
             this.service = service;
             this.directory = directory;
@@ -674,11 +758,37 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
         {
             try
             {
+                if (logger.isLoggable(Level.FINE)) logger.fine("Renewing registration of " + service + " with DirectoryAgent " + directory);
                 registerServiceWithDirectoryAgent(service, directory);
+                service.setRegistrationTime(System.currentTimeMillis());
             }
             catch (Exception x)
             {
-                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not renew service registration", x);
+                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not renew registration of service " + service + " with DirectoryAgent " + directory, x);
+            }
+        }
+    }
+
+    private class MulticastRegistrationRenewal implements Runnable
+    {
+        private final SAServiceInfo service;
+
+        public MulticastRegistrationRenewal(SAServiceInfo service)
+        {
+            this.service = service;
+        }
+
+        public void run()
+        {
+            try
+            {
+                if (logger.isLoggable(Level.FINE)) logger.fine("Renewing multicast notification of registration for service " + service);
+                notifyServiceRegistration(service, serviceAgent);
+                service.setRegistrationTime(System.currentTimeMillis());
+            }
+            catch (Exception x)
+            {
+                if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Could not notify service registration of service " + service, x);
             }
         }
     }
@@ -701,7 +811,8 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     private class SAServiceInfo extends ServiceInfo
     {
-        private Map/*<DirectoryAgentInfo, List<ScheduledFuture>>*/ renewals = new HashMap();
+        private final Map/*<DirectoryAgentInfo, ScheduledFuture>*/ renewals = new HashMap();
+        private ScheduledFuture renewal;
 
         private SAServiceInfo(ServiceInfo serviceInfo)
         {
@@ -717,39 +828,42 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
             return result;
         }
 
-        public void addRenewal(ScheduledFuture renewal, DirectoryAgentInfo da)
+        private void setRenewal(ScheduledFuture renewal)
         {
-            List futures = (List)renewals.get(da);
-            if (futures == null)
-            {
-                futures = new ArrayList();
-                renewals.put(da, futures);
-            }
-            futures.add(renewal);
+            this.renewal = renewal;
+        }
+
+        public void addDirectoryAgentRenewal(ScheduledFuture renewal, DirectoryAgentInfo da)
+        {
+            ScheduledFuture existingRenewal = (ScheduledFuture)renewals.get(da);
+            if (existingRenewal != null) cancelRenewal(existingRenewal);
+            renewals.put(da, renewal);
         }
 
         private void cancelRenewals()
         {
+            if (renewal != null) cancelRenewal(renewal);
             for (Iterator iterator = renewals.values().iterator(); iterator.hasNext();)
             {
-                List futures = (List)iterator.next();
-                for (int i = 0; i < futures.size(); ++i)
-                {
-                    ScheduledFuture renewal = (ScheduledFuture)futures.get(i);
-                    renewal.cancel(false);
-                }
+                ScheduledFuture renewal = (ScheduledFuture)iterator.next();
+                cancelRenewal(renewal);
             }
             renewals.clear();
         }
 
-        private void cancelRenewals(DirectoryAgentInfo da)
+        private void cancelRenewal(ScheduledFuture renewal)
+        {
+            renewal.cancel(false);
+        }
+
+        private void cancelDirectoryAgentRenewals(DirectoryAgentInfo da)
         {
             List futures = (List)renewals.get(da);
             if (futures == null) return;
             for (int i = 0; i < futures.size(); ++i)
             {
                 ScheduledFuture renewal = (ScheduledFuture)futures.get(i);
-                renewal.cancel(false);
+                cancelRenewal(renewal);
             }
         }
     }

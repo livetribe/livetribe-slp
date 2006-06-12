@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
-import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -75,6 +74,11 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         localhost = agentAddr;
     }
 
+    public boolean isTCPListening()
+    {
+        return getTCPConnector().isTCPListening();
+    }
+
     public DAAdvert[] multicastDASrvRqst(Scopes scopes, String filter, String language, long timeframe) throws IOException
     {
         SrvRqst request = new SrvRqst();
@@ -87,26 +91,26 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return convergentDASrvRqst(request, timeframe);
     }
 
-    public void udpSAAdvert(InetSocketAddress address, String identifier, Scopes scopes, Attributes attributes, Integer xid, String language) throws IOException
+    public void udpSAAdvert(InetSocketAddress address, ServiceAgentInfo serviceAgent, Integer xid, String language) throws IOException
     {
         SAAdvert advert = new SAAdvert();
         advert.setLanguage(language);
         advert.setXID(xid == null ? generateXID() : xid.intValue());
-        advert.setAttributes(attributes);
-        advert.setScopes(scopes);
+        advert.setAttributes(serviceAgent.getAttributes());
+        advert.setScopes(serviceAgent.getScopes());
         String host = localhost.getHostAddress();
         advert.setURL("service:service-agent://" + host);
-        if (identifier != null)
+        if (serviceAgent.getIdentifier() != null)
         {
             IdentifierExtension extension = new IdentifierExtension();
-            extension.setIdentifier(identifier);
+            extension.setIdentifier(serviceAgent.getIdentifier());
             extension.setHost(host);
             advert.addExtension(extension);
         }
 
         byte[] bytes = serializeMessage(advert);
 
-        if (logger.isLoggable(Level.FINEST)) logger.finest("Unicasting " + advert + " to " + address);
+        if (logger.isLoggable(Level.FINEST)) logger.finest("UDP Unicasting " + advert + " to " + address);
 
         getUDPConnector().unicastSend(null, address, bytes).close();
     }
@@ -219,9 +223,9 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         return deregistration;
     }
 
-    public void tcpSrvRply(Socket socket, Integer xid, String language, List serviceInfos) throws IOException
+    public void tcpSrvRply(Socket socket, ServiceAgentInfo serviceAgent, Integer xid, String language, List serviceInfos) throws IOException
     {
-        SrvRply srvRply = createSrvRply(xid, language, serviceInfos);
+        SrvRply srvRply = createSrvRply(serviceAgent, xid, language, serviceInfos);
         byte[] bytes = serializeMessage(srvRply);
 
         if (logger.isLoggable(Level.FINEST))
@@ -230,11 +234,29 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
         getTCPConnector().reply(socket, bytes);
     }
 
-    private SrvRply createSrvRply(Integer xid, String language, List serviceInfos)
+    public void udpSrvRply(InetSocketAddress address, ServiceAgentInfo serviceAgent, Integer xid, String language, List serviceInfos) throws IOException
+    {
+        SrvRply srvRply = createSrvRply(serviceAgent, xid, language, serviceInfos);
+        byte[] bytes = serializeMessage(srvRply);
+
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("UDP unicasting " + srvRply + " to " + address);
+
+        getUDPConnector().unicastSend(null, address, bytes).close();
+    }
+
+    private SrvRply createSrvRply(ServiceAgentInfo serviceAgent, Integer xid, String language, List serviceInfos)
     {
         SrvRply srvRply = new SrvRply();
         srvRply.setXID(xid == null ? generateXID() : xid.intValue());
         srvRply.setLanguage(language);
+        if (serviceAgent.getIdentifier() != null)
+        {
+            IdentifierExtension identifierExtension = new IdentifierExtension();
+            identifierExtension.setHost(localhost.getHostAddress());
+            identifierExtension.setIdentifier(serviceAgent.getIdentifier());
+            srvRply.addExtension(identifierExtension);
+        }
 
         for (int i = 0; i < serviceInfos.size(); ++i)
         {
@@ -269,6 +291,9 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         byte[] bytes = serializeMessage(registration);
         InetSocketAddress address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getNotificationPort());
+
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Multicasting notification " + registration + " to " + address);
+
         getUDPConnector().multicastSend(null, address, bytes).close();
     }
 
@@ -284,6 +309,9 @@ public class StandardServiceAgentManager extends StandardAgentManager implements
 
         byte[] bytes = serializeMessage(deregistration);
         InetSocketAddress address = new InetSocketAddress(getConfiguration().getMulticastAddress(), getConfiguration().getNotificationPort());
+
+        if (logger.isLoggable(Level.FINEST)) logger.finest("Multicasting notification " + deregistration + " to " + address);
+
         getUDPConnector().multicastSend(null, address, bytes).close();
     }
 }

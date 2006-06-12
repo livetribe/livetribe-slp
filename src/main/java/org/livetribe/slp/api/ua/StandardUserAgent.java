@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
@@ -32,10 +33,9 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.api.ServiceRegistrationEvent;
-import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.StandardAgent;
 import org.livetribe.slp.api.sa.ServiceInfo;
+import org.livetribe.slp.spi.MessageRegistrationListener;
 import org.livetribe.slp.spi.da.DirectoryAgentInfo;
 import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.spi.msg.AttributeListExtension;
@@ -58,8 +58,9 @@ import org.livetribe.util.ConcurrentListeners;
  */
 public class StandardUserAgent extends StandardAgent implements UserAgent
 {
-    private int discoveryStartWaitBound;
-    private long discoveryPeriod;
+    private boolean periodicDirectoryAgentDiscovery = true;
+    private int directoryAgentDiscoveryInitialWaitBound;
+    private long directoryAgentDiscoveryPeriod;
     private UserAgentManager manager;
     private MessageListener multicastMessageListener;
     private MessageListener multicastNotificationListener;
@@ -75,8 +76,8 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
     public void setConfiguration(Configuration configuration) throws IOException
     {
         super.setConfiguration(configuration);
-        setDiscoveryStartWaitBound(configuration.getDADiscoveryStartWaitBound());
-        setDiscoveryPeriod(configuration.getDADiscoveryPeriod());
+        setDirectoryAgentDiscoveryInitialWaitBound(configuration.getDADiscoveryStartWaitBound());
+        setDirectoryAgentDiscoveryPeriod(configuration.getDADiscoveryPeriod());
         if (manager != null) manager.setConfiguration(configuration);
     }
 
@@ -85,28 +86,38 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         this.scheduledExecutorService = scheduledExecutorService;
     }
 
-    public int getDiscoveryStartWaitBound()
+    public boolean isPeriodicDirectoryAgentDiscoveryEnabled()
     {
-        return discoveryStartWaitBound;
+        return periodicDirectoryAgentDiscovery;
+    }
+
+    public void setPeriodicDirectoryAgentDiscoveryEnabled(boolean periodicDirectoryAgentDiscoveryEnabled)
+    {
+        this.periodicDirectoryAgentDiscovery = periodicDirectoryAgentDiscoveryEnabled;
+    }
+
+    public int getDirectoryAgentDiscoveryInitialWaitBound()
+    {
+        return directoryAgentDiscoveryInitialWaitBound;
     }
 
     /**
      * Sets the bound (in seconds) to the initial random delay this UserAgent waits
      * before attempting to discover DirectoryAgents
      */
-    public void setDiscoveryStartWaitBound(int discoveryStartWaitBound)
+    public void setDirectoryAgentDiscoveryInitialWaitBound(int directoryAgentDiscoveryInitialWaitBound)
     {
-        this.discoveryStartWaitBound = discoveryStartWaitBound;
+        this.directoryAgentDiscoveryInitialWaitBound = directoryAgentDiscoveryInitialWaitBound;
     }
 
-    public long getDiscoveryPeriod()
+    public long getDirectoryAgentDiscoveryPeriod()
     {
-        return discoveryPeriod;
+        return directoryAgentDiscoveryPeriod;
     }
 
-    public void setDiscoveryPeriod(long discoveryPeriod)
+    public void setDirectoryAgentDiscoveryPeriod(long directoryAgentDiscoveryPeriod)
     {
-        this.discoveryPeriod = discoveryPeriod;
+        this.directoryAgentDiscoveryPeriod = directoryAgentDiscoveryPeriod;
     }
 
     protected void doStart() throws IOException
@@ -124,8 +135,9 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         manager.addNotificationListener(multicastNotificationListener);
 
         if (scheduledExecutorService == null) scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        long delay = new Random(System.currentTimeMillis()).nextInt(getDiscoveryStartWaitBound() + 1) * 1000L;
-        scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDiscoveryPeriod() * 1000L, TimeUnit.MILLISECONDS);
+        long delay = new Random(System.currentTimeMillis()).nextInt(getDirectoryAgentDiscoveryInitialWaitBound() + 1) * 1000L;
+        if (isPeriodicDirectoryAgentDiscoveryEnabled())
+            scheduledExecutorService.scheduleWithFixedDelay(new DirectoryAgentDiscovery(), delay, getDirectoryAgentDiscoveryPeriod() * 1000L, TimeUnit.MILLISECONDS);
     }
 
     protected UserAgentManager createUserAgentManager()
@@ -146,26 +158,24 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         manager.stop();
     }
 
-    public void addServiceRegistrationListener(ServiceRegistrationListener listener)
+    public void addMessageRegistrationListener(MessageRegistrationListener listener)
     {
         listeners.add(listener);
     }
 
-    public void removeServiceRegistrationListener(ServiceRegistrationListener listener)
+    public void removeMessageRegistrationListener(MessageRegistrationListener listener)
     {
         listeners.remove(listener);
     }
 
-    private void notifyServiceRegistered(ServiceInfo service)
+    private void notifyMessageRegistration(SrvReg srvReg)
     {
-        ServiceRegistrationEvent event = new ServiceRegistrationEvent(service, null);
-        listeners.notify("serviceRegistered", event);
+        listeners.notify("handleSrvReg", srvReg);
     }
 
-    private void notifyServiceDeregistered(ServiceInfo service)
+    private void notifyMessageDeregistration(SrvDeReg srvDeReg)
     {
-        ServiceRegistrationEvent event = new ServiceRegistrationEvent(null, service);
-        listeners.notify("serviceDeregistered", event);
+        listeners.notify("handleSrvDeReg", srvDeReg);
     }
 
     /**
@@ -192,13 +202,35 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
         }
         else
         {
-            List sas = findServiceAgents(scopes, null);
-            for (int i = 0; i < sas.size(); ++i)
+            List serviceAgents = findServiceAgents(scopes, null);
+            List tcpServiceAgents = new ArrayList();
+            for (Iterator iterator = serviceAgents.iterator(); iterator.hasNext();)
             {
-                ServiceAgentInfo info = (ServiceAgentInfo)sas.get(i);
+                ServiceAgentInfo serviceAgentInfo = (ServiceAgentInfo)iterator.next();
+                if (serviceAgentInfo.isTCPListening())
+                {
+                    tcpServiceAgents.add(serviceAgentInfo);
+                    iterator.remove();
+                }
+            }
+            // Query via TCP first
+            for (int i = 0; i < tcpServiceAgents.size(); ++i)
+            {
+                ServiceAgentInfo info = (ServiceAgentInfo)serviceAgents.get(i);
                 InetAddress address = InetAddress.getByName(info.getHost());
                 SrvRply srvRply = manager.tcpSrvRqst(address, serviceType, scopes, filter, language);
                 result.addAll(srvRplyToServiceInfos(srvRply, scopes, language));
+            }
+
+            // Query via multicast
+            if (!serviceAgents.isEmpty())
+            {
+                SrvRply[] srvRplys = manager.multicastSrvRqst(serviceType, scopes, filter, language, -1);
+                for (int i = 0; i < srvRplys.length; ++i)
+                {
+                    SrvRply srvRply = srvRplys[i];
+                    result.addAll(srvRplyToServiceInfos(srvRply, scopes, language));
+                }
             }
         }
         return result;
@@ -320,14 +352,12 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
 
     protected void handleMulticastSrvReg(SrvReg message)
     {
-        ServiceInfo service = ServiceInfo.from(message);
-        notifyServiceRegistered(service);
+        notifyMessageRegistration(message);
     }
 
     protected void handleMulticastSrvDeReg(SrvDeReg message)
     {
-        ServiceInfo service = ServiceInfo.from(message);
-        notifyServiceDeregistered(service);
+        notifyMessageDeregistration(message);
     }
 
     /**
@@ -383,7 +413,7 @@ public class StandardUserAgent extends StandardAgent implements UserAgent
             {
                 Message message = Message.deserialize(event.getMessageBytes());
                 if (logger.isLoggable(Level.FINEST))
-                    logger.finest("UserAgent multicast notification listener received message " + message);
+                    logger.finest("UserAgent " + this + " multicast notification listener received message " + message);
 
                 if (!message.isMulticast())
                 {

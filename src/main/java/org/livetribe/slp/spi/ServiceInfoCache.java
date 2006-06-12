@@ -38,7 +38,7 @@ import org.livetribe.slp.spi.filter.Filter;
 public class ServiceInfoCache
 {
     private final Map keysToServiceTypes = new HashMap();
-    private final Map/*<ServiceType, Map<ServiceInfo.Key, ServiceInfo>>*/ services = new HashMap();
+    private final Map/*<ServiceInfo.Key, ServiceInfo>*/ keysToServices = new HashMap();
     private Lock lock = new ReentrantLock();
 
     public void lock()
@@ -69,13 +69,8 @@ public class ServiceInfoCache
                         ", cannot be registered also under service type " + serviceType);
             keysToServiceTypes.put(service.getKey(), serviceType);
 
-            Map serviceInfos = (Map)services.get(serviceType);
-            if (serviceInfos == null)
-            {
-                serviceInfos = new HashMap();
-                services.put(serviceType, serviceInfos);
-            }
-            return (ServiceInfo)serviceInfos.put(service.getKey(), service);
+            service.setRegistrationTime(System.currentTimeMillis());
+            return (ServiceInfo)keysToServices.put(service.getKey(), service);
         }
         finally
         {
@@ -104,13 +99,7 @@ public class ServiceInfoCache
         lock();
         try
         {
-            for (Iterator allServiceInfos = services.values().iterator(); allServiceInfos.hasNext();)
-            {
-                Map serviceInfos = (Map)allServiceInfos.next();
-                ServiceInfo result = (ServiceInfo)serviceInfos.get(key);
-                if (result != null) return result;
-            }
-            return null;
+            return (ServiceInfo)keysToServices.get(key);
         }
         finally
         {
@@ -130,14 +119,13 @@ public class ServiceInfoCache
         try
         {
             ServiceType serviceType = service.resolveServiceType();
-            Map serviceInfos = (Map)services.get(serviceType);
-            if (serviceInfos == null) return null;
 
-            ServiceInfo existing = (ServiceInfo)serviceInfos.get(service.getKey());
+            ServiceInfo existing = (ServiceInfo)keysToServices.get(service.getKey());
             if (existing == null) return null;
 
             ServiceInfo merged = existing.merge(service);
-            serviceInfos.put(merged.getKey(), merged);
+            merged.setRegistrationTime(System.currentTimeMillis());
+            keysToServices.put(merged.getKey(), merged);
             return existing;
         }
         finally
@@ -158,14 +146,13 @@ public class ServiceInfoCache
         try
         {
             ServiceType serviceType = service.resolveServiceType();
-            Map serviceInfos = (Map)services.get(serviceType);
-            if (serviceInfos == null) return null;
 
-            ServiceInfo existing = (ServiceInfo)serviceInfos.get(service.getKey());
+            ServiceInfo existing = (ServiceInfo)keysToServices.get(service.getKey());
             if (existing == null) return null;
 
             ServiceInfo merged = existing.unmerge(service);
-            serviceInfos.put(merged.getKey(), merged);
+            merged.setRegistrationTime(System.currentTimeMillis());
+            keysToServices.put(merged.getKey(), merged);
             return existing;
         }
         finally
@@ -186,12 +173,7 @@ public class ServiceInfoCache
             ServiceType serviceType = (ServiceType)keysToServiceTypes.remove(key);
             if (serviceType == null) return null;
 
-            Map serviceInfos = (Map)services.get(serviceType);
-            if (serviceInfos == null) return null;
-
-            ServiceInfo existing = (ServiceInfo)serviceInfos.remove(key);
-            if (serviceInfos.isEmpty()) services.remove(serviceType);
-            return existing;
+            return (ServiceInfo)keysToServices.remove(key);
         }
         finally
         {
@@ -205,18 +187,22 @@ public class ServiceInfoCache
         lock();
         try
         {
-            if (serviceType == null)
+            for (Iterator allServiceInfos = keysToServices.values().iterator(); allServiceInfos.hasNext();)
             {
-                for (Iterator allServiceInfos = services.values().iterator(); allServiceInfos.hasNext();)
+                ServiceInfo serviceInfo = (ServiceInfo)allServiceInfos.next();
+                if (matchServiceTypes(serviceInfo.resolveServiceType(), serviceType))
                 {
-                    Map serviceInfos = (Map)allServiceInfos.next();
-                    match(result, serviceInfos, scopes, filter, language);
+                    if (matchScopes(serviceInfo.getScopes(), scopes))
+                    {
+                        if (matchAttributes(serviceInfo.getAttributes(), filter))
+                        {
+                            if (matchLanguage(serviceInfo.getLanguage(), language))
+                            {
+                                result.add(serviceInfo);
+                            }
+                        }
+                    }
                 }
-            }
-            else
-            {
-                Map serviceInfos = (Map)services.get(serviceType);
-                match(result, serviceInfos, scopes, filter, language);
             }
             return result;
         }
@@ -226,24 +212,10 @@ public class ServiceInfoCache
         }
     }
 
-    private void match(List result, Map serviceInfos, Scopes scopes, Filter filter, String language)
+    private boolean matchServiceTypes(ServiceType registered, ServiceType asked)
     {
-        if (serviceInfos == null) return;
-
-        for (Iterator allServiceInfos = serviceInfos.values().iterator(); allServiceInfos.hasNext();)
-        {
-            ServiceInfo serviceInfo = (ServiceInfo)allServiceInfos.next();
-            if (matchScopes(serviceInfo.getScopes(), scopes))
-            {
-                if (matchAttributes(serviceInfo.getAttributes(), filter))
-                {
-                    if (matchLanguage(serviceInfo.getLanguage(), language))
-                    {
-                        result.add(serviceInfo);
-                    }
-                }
-            }
-        }
+        if (asked == null) return true;
+        return registered.matches(asked);
     }
 
     private boolean matchScopes(Scopes registered, Scopes asked)
@@ -269,13 +241,7 @@ public class ServiceInfoCache
         lock();
         try
         {
-            List result = new ArrayList();
-            for (Iterator allServiceInfos = services.values().iterator(); allServiceInfos.hasNext();)
-            {
-                Map serviceInfos = (Map)allServiceInfos.next();
-                result.addAll(serviceInfos.values());
-            }
-            return result;
+            return new ArrayList(keysToServices.values());
         }
         finally
         {
@@ -289,7 +255,37 @@ public class ServiceInfoCache
         try
         {
             keysToServiceTypes.clear();
-            services.clear();
+            keysToServices.clear();
+        }
+        finally
+        {
+            unlock();
+        }
+    }
+
+    /**
+     * Purges from this cache entries whose registration time plus their lifetime
+     * is less than the current time; that is, entries that should have been renewed
+     * but for some reason they have not been.
+     * @return The list of purged entries.
+     */
+    public List purge()
+    {
+        List result = new ArrayList();
+        long now = System.currentTimeMillis();
+        lock();
+        try
+        {
+            for (Iterator iterator = getServices().iterator(); iterator.hasNext();)
+            {
+                ServiceInfo serviceInfo = (ServiceInfo)iterator.next();
+                if (serviceInfo.isExpiredAsOf(now))
+                {
+                    ServiceInfo purged = remove(serviceInfo.getKey());
+                    result.add(purged);
+                }
+            }
+            return result;
         }
         finally
         {

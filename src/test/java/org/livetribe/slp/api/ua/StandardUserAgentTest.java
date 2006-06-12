@@ -25,13 +25,14 @@ import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.api.ServiceRegistrationEvent;
-import org.livetribe.slp.api.ServiceRegistrationListener;
 import org.livetribe.slp.api.da.StandardDirectoryAgent;
 import org.livetribe.slp.api.sa.ServiceInfo;
 import org.livetribe.slp.api.sa.StandardServiceAgent;
+import org.livetribe.slp.spi.MessageRegistrationListener;
 import org.livetribe.slp.spi.da.StandardDirectoryAgentManager;
 import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.net.SocketTCPConnector;
 import org.livetribe.slp.spi.net.SocketUDPConnector;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
@@ -218,7 +219,7 @@ public class StandardUserAgentTest extends SLPTestSupport
             uaManager.setTCPConnector(new SocketTCPConnector());
             ua.setConfiguration(configuration);
             // Discover the DAs immediately
-            ua.setDiscoveryStartWaitBound(0);
+            ua.setDirectoryAgentDiscoveryInitialWaitBound(0);
             ua.start();
 
             try
@@ -300,7 +301,6 @@ public class StandardUserAgentTest extends SLPTestSupport
 
         StandardServiceAgent sa1 = new StandardServiceAgent();
         sa1.setConfiguration(configuration);
-        sa1.setIdentifier("sa1");
         ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host/suat3", ServiceURL.LIFETIME_DEFAULT);
         String language = Locale.ITALY.getLanguage();
         ServiceInfo service1 = new ServiceInfo(serviceURL1, null, null, language);
@@ -311,7 +311,6 @@ public class StandardUserAgentTest extends SLPTestSupport
         {
             StandardServiceAgent sa2 = new StandardServiceAgent();
             sa2.setConfiguration(configuration);
-            sa2.setIdentifier("sa2");
             ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://host/suat4", ServiceURL.LIFETIME_DEFAULT);
             ServiceInfo service2 = new ServiceInfo(serviceURL2, null, null, language);
             sa2.register(service2);
@@ -367,7 +366,6 @@ public class StandardUserAgentTest extends SLPTestSupport
     public void testListenForSrvRegSrvDeRegNotifications() throws Exception
     {
         StandardServiceAgent sa = new StandardServiceAgent();
-        sa.setIdentifier("sa1");
         sa.setConfiguration(getDefaultConfiguration());
         sa.start();
 
@@ -378,23 +376,17 @@ public class StandardUserAgentTest extends SLPTestSupport
             ua.start();
 
             final AtomicReference registered = new AtomicReference();
-            final AtomicReference updated = new AtomicReference();
             final AtomicReference deregistered = new AtomicReference();
-            ua.addServiceRegistrationListener(new ServiceRegistrationListener()
+            ua.addMessageRegistrationListener(new MessageRegistrationListener()
             {
-                public void serviceRegistered(ServiceRegistrationEvent event)
+                public void handleSrvReg(SrvReg srvReg)
                 {
-                    registered.set(event);
+                    registered.set(srvReg);
                 }
 
-                public void serviceUpdated(ServiceRegistrationEvent event)
+                public void handleSrvDeReg(SrvDeReg srvDeReg)
                 {
-                    updated.set(event);
-                }
-
-                public void serviceDeregistered(ServiceRegistrationEvent event)
-                {
-                    deregistered.set(event);
+                    deregistered.set(srvDeReg);
                 }
             });
 
@@ -408,11 +400,10 @@ public class StandardUserAgentTest extends SLPTestSupport
                 sleep(500);
 
                 assert registered.get() != null;
-                assert updated.get() == null;
                 assert deregistered.get() == null;
-                ServiceRegistrationEvent event = (ServiceRegistrationEvent)registered.get();
-                assert event.getPreviousServiceInfo() == null;
-                assert event.getCurrentServiceInfo().getKey().equals(service.getKey());
+                SrvReg srvReg = (SrvReg)registered.get();
+                assert srvReg.getURLEntry().toServiceURL().equals(service.getServiceURL());
+                assert srvReg.getLanguage().equals(service.getLanguage());
 
                 registered.set(null);
 
@@ -425,10 +416,10 @@ public class StandardUserAgentTest extends SLPTestSupport
 
                 assert registered.get() != null;
                 assert deregistered.get() == null;
-                event = (ServiceRegistrationEvent)registered.get();
-                assert event.getPreviousServiceInfo() == null;
-                assert event.getCurrentServiceInfo().getKey().equals(service.getKey());
-                assert !event.getCurrentServiceInfo().getAttributes().isEmpty();
+                srvReg = (SrvReg)registered.get();
+                assert srvReg.getURLEntry().toServiceURL().equals(service.getServiceURL());
+                assert srvReg.getLanguage().equals(service.getLanguage());
+                assert !srvReg.getAttributes().isEmpty();
 
                 registered.set(null);
 
@@ -439,9 +430,9 @@ public class StandardUserAgentTest extends SLPTestSupport
 
                 assert registered.get() == null;
                 assert deregistered.get() != null;
-                event = (ServiceRegistrationEvent)deregistered.get();
-                assert event.getPreviousServiceInfo() != null;
-                assert event.getCurrentServiceInfo() == null;
+                SrvDeReg srvDeReg = (SrvDeReg)deregistered.get();
+                assert srvDeReg.getURLEntry().toServiceURL().equals(service.getServiceURL());
+                assert srvDeReg.getLanguage().equals(service.getLanguage());
             }
             finally
             {

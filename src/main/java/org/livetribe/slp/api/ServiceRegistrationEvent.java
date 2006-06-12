@@ -27,20 +27,20 @@ public class ServiceRegistrationEvent extends EventObject
     private final ServiceInfo previous;
     private final ServiceInfo current;
 
-    public ServiceRegistrationEvent(ServiceInfo current, ServiceInfo previous)
+    public ServiceRegistrationEvent(Object source, ServiceInfo current, ServiceInfo previous)
     {
-        super(current != null ? current : previous);
+        super(source);
         this.current = current;
         this.previous = previous;
-    }
-
-    public ServiceInfo getPreviousServiceInfo()
-    {
-        return previous;
     }
 
     public ServiceInfo getCurrentServiceInfo()
     {
         return current;
+    }
+
+    public ServiceInfo getPreviousServiceInfo()
+    {
+        return previous;
     }
 }
