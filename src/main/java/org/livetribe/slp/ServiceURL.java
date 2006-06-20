@@ -122,7 +122,6 @@ public class ServiceURL implements Serializable
         String authorityPrefix = "://";
         int authorityPrefixIndex = serviceURL.indexOf(authorityPrefix);
         serviceType = new ServiceType((isServiceURL ? SERVICE : "") + serviceURL.substring(0, authorityPrefixIndex));
-//        serviceType = new ServiceType(serviceURL.substring(0, authorityPrefixIndex));
 
         serviceURL = serviceURL.substring(authorityPrefixIndex + authorityPrefix.length());
 
