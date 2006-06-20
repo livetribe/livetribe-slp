@@ -600,7 +600,7 @@ public class StandardServiceAgentTest extends SLPTestSupport
                 assert services  != null;
                 assert services.size() == 0;
 
-                // Wait the whole lifetime
+                // Wait the whole lifetime, renewal is done at 75% of lifetime
                 sleep(lifetime * 1000L);
 
                 services = da.getServices();
