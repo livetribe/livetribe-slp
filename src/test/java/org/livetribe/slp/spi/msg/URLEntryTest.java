@@ -15,13 +15,16 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.spi.SLPSPITestCase;
+import org.livetribe.slp.SLPTestSupport;
 
 /**
  * @version $Rev$ $Date$
  */
-public class URLEntryTest extends SLPSPITestCase
+public class URLEntryTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testSerializeDeserialize() throws Exception
     {
         URLEntry original = new URLEntry();
@@ -34,8 +37,8 @@ public class URLEntryTest extends SLPSPITestCase
         URLEntry deserialized = new URLEntry();
         int bytesCount = deserialized.deserialize(serialized, 0);
 
-        assertEquals(serialized.length, bytesCount);
-        assertEquals(original.getLifetime(), deserialized.getLifetime());
+        assert bytesCount == serialized.length;
+        assert deserialized.getLifetime() == original.getLifetime();
         assertEquals(original.getURL(), deserialized.getURL());
         // TODO: test auth blocks
 //        assertTrue(Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks()));

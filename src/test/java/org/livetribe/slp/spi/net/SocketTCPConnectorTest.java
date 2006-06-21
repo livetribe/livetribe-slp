@@ -20,22 +20,28 @@ import java.net.Socket;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.api.Configuration;
-import org.livetribe.slp.spi.SLPSPITestCase;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
 
 /**
  * @version $Rev$ $Date$
  */
-public class SocketTCPConnectorTest extends SLPSPITestCase
+public class SocketTCPConnectorTest extends SLPTestSupport
 {
+    /**
+     * @testng.configuration afterTestMethod="true"
+     */
     protected void tearDown() throws Exception
     {
         // Allow ServerSocket to shutdown completely
         sleep(500);
     }
 
+    /**
+     * @testng.test
+     */
     public void testStartStop() throws Exception
     {
         Configuration config = getDefaultConfiguration();
@@ -52,6 +58,9 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
         connector.stop();
     }
 
+    /**
+     * @testng.test
+     */
     public void testClientSendsNothing() throws Exception
     {
         Configuration config = getDefaultConfiguration();
@@ -80,7 +89,7 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
             sleep(500);
 
             assertTrue(connector.isRunning());
-            assertNull(message.get());
+            assert message.get() == null;
 
             // Check that the connector is still able to accept connections
             client = new Socket((String)null, config.getPort());
@@ -93,6 +102,9 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testClientSendsIncompleteHeader() throws Exception
     {
         Configuration config = getDefaultConfiguration();
@@ -125,7 +137,7 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
             sleep(500);
 
             assertTrue(connector.isRunning());
-            assertNull(message.get());
+            assert message.get() == null;
 
             // Check that the connector is still able to accept connections
             client = new Socket((String)null, config.getPort());
@@ -138,6 +150,9 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testClientSendsIncompleteMessage() throws Exception
     {
         Configuration config = getDefaultConfiguration();
@@ -178,7 +193,7 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
             sleep(500);
 
             assertTrue(connector.isRunning());
-            assertNull(message.get());
+            assert message.get() == null;
 
             // Check that the connector is still able to accept connections
             client = new Socket((String)null, config.getPort());
@@ -191,6 +206,9 @@ public class SocketTCPConnectorTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testClientSendsMessage() throws Exception
     {
         Configuration config = getDefaultConfiguration();

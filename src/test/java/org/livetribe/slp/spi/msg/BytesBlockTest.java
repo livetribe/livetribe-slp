@@ -15,13 +15,16 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.spi.SLPSPITestCase;
+import org.livetribe.slp.SLPTestSupport;
 
 /**
  * @version $Rev$ $Date$
  */
-public class BytesBlockTest extends SLPSPITestCase
+public class BytesBlockTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testEscaping() throws Exception
     {
         String original = "A(B)C,D\\E!F<G=H>I~J;K*L+M\rN\nO\tP Q\u20AC";
@@ -29,6 +32,9 @@ public class BytesBlockTest extends SLPSPITestCase
         assertEquals("A\\28B\\29C\\2cD\\5cE\\21F\\3cG\\3dH\\3eI\\7eJ\\3bK\\2aL\\2bM\\0dN\\0aO\\09P Q\u20AC", escaped);
     }
 
+    /**
+     * @testng.test
+     */
     public void testEscapeUnescape() throws Exception
     {
         String original = "A(B)C,D\\E!F<G=H>I~J;K*L+M\rN\nO\tP Q\u20AC";

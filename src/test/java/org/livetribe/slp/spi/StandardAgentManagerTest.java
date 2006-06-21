@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Random;
 
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicInteger;
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.msg.Message;
@@ -41,8 +42,11 @@ import org.livetribe.slp.spi.net.UDPConnector;
 /**
  * @version $Rev$ $Date$
  */
-public class StandardAgentManagerTest extends SLPSPITestCase
+public class StandardAgentManagerTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testMulticastConvergenceNoReplies() throws Exception
     {
         StandardAgentManager agent = new Agent();
@@ -71,7 +75,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                 long end = System.currentTimeMillis();
 
                 assertNotNull(replies);
-                assertEquals(0, replies.size());
+                assert replies.size() == 0;
                 long lowerBound = timeouts[0] + timeouts[1];
                 long upperBound = lowerBound + timeouts[2];
                 long elapsed = end - start;
@@ -89,6 +93,9 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testMulticastConvergenceOneReply() throws Exception
     {
         StandardAgentManager agent = new Agent();
@@ -117,7 +124,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                 long end = System.currentTimeMillis();
 
                 assertNotNull(replies);
-                assertEquals(1, replies.size());
+                assert replies.size() == 1;
                 long lowerBound = timeouts[0] + timeouts[1];
                 long upperBound = lowerBound + timeouts[2];
                 long elapsed = end - start;
@@ -135,6 +142,9 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testMulticastConvergenceOneReplyAfterOneTimeout() throws Exception
     {
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
@@ -164,7 +174,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                 long end = System.currentTimeMillis();
 
                 assertNotNull(replies);
-                assertEquals(1, replies.size());
+                assert replies.size() == 1;
                 long lowerBound = timeouts[1] + timeouts[2];
                 long upperBound = lowerBound + timeouts[3];
                 long elapsed = end - start;
@@ -182,6 +192,9 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testMulticastConvergenceTwoReplies() throws Exception
     {
         StandardAgentManager agent = new Agent();
@@ -210,7 +223,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                 long end = System.currentTimeMillis();
 
                 assertNotNull(replies);
-                assertEquals(2, replies.size());
+                assert replies.size() == 2;
                 long lowerBound = timeouts[0] + timeouts[1];
                 long upperBound = lowerBound + timeouts[2];
                 long elapsed = end - start;
@@ -228,6 +241,9 @@ public class StandardAgentManagerTest extends SLPSPITestCase
         }
     }
 
+    /**
+     * @testng.test
+     */
     public void testMulticastConvergenceFirstReplyTimeoutSecondReply() throws Exception
     {
         long[] timeouts = new long[]{100L, 200L, 300L, 400L, 500L};
@@ -257,7 +273,7 @@ public class StandardAgentManagerTest extends SLPSPITestCase
                 long end = System.currentTimeMillis();
 
                 assertNotNull(replies);
-                assertEquals(2, replies.size());
+                assert replies.size() == 2;
                 long lowerBound = timeouts[1] + timeouts[2];
                 long upperBound = lowerBound + timeouts[3];
                 long elapsed = end - start;

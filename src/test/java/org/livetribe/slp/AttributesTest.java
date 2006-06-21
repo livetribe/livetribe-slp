@@ -20,8 +20,11 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 /**
  * @version $Rev$ $Date$
  */
-public class AttributesTest extends SLPTestCase
+public class AttributesTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testParsing() throws Exception
     {
         Attributes attributes = new Attributes(null);
@@ -78,6 +81,9 @@ public class AttributesTest extends SLPTestCase
         assertEquals("\\FF\\00", attributes.getValue("b"));
     }
 
+    /**
+     * @testng.test
+     */
     public void testAsString() throws Exception
     {
         String attributeList = "(a=1,2),foo,(b=1),(separator=\\2c),(d=string),(condition=true),(bytes=\\FF\\00\\01\\0D\\09\\30)";
@@ -89,6 +95,9 @@ public class AttributesTest extends SLPTestCase
         assertEquals(original, copy);
     }
 
+    /**
+     * @testng.test
+     */
     public void testPut() throws Exception
     {
         String attributeList = "(a=1,2),foo,(b=1),(separator=\\2c),(d=string),(condition=true),(bytes=\\FF\\00\\01\\0D\\09\\30)";
@@ -106,13 +115,16 @@ public class AttributesTest extends SLPTestCase
         assertEquals(original, copy);
     }
 
+    /**
+     * @testng.test
+     */
     public void testValuesAreHomogeneus() throws Exception
     {
         String attributeList = "(a=true,\\FF\\00,string)";
         try
         {
             new Attributes(attributeList);
-            fail();
+            throw new AssertionError();
         }
         catch (ServiceLocationException x)
         {
@@ -122,9 +134,9 @@ public class AttributesTest extends SLPTestCase
         {
             Attributes attributes = new Attributes();
             attributes.put("a", new String[]{"true", "\\FF\\00", "string"});
-            fail();
+            throw new AssertionError();
         }
-        catch (ServiceLocationException e)
+        catch (ServiceLocationException x)
         {
         }
     }

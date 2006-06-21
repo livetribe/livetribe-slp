@@ -15,14 +15,17 @@
  */
 package org.livetribe.slp.spi.sa;
 
-import org.livetribe.slp.spi.SLPSPITestCase;
+import org.livetribe.slp.SLPTestSupport;
 import org.livetribe.slp.api.Configuration;
 
 /**
  * @version $Rev$ $Date$
  */
-public class StandardServiceAgentManagerTest extends SLPSPITestCase
+public class StandardServiceAgentManagerTest extends SLPTestSupport
 {
+    /**
+     * @testng.test
+     */
     public void testStartStop() throws Exception
     {
         Configuration configuration = new Configuration();
@@ -30,7 +33,7 @@ public class StandardServiceAgentManagerTest extends SLPSPITestCase
 
         StandardServiceAgentManager agent = new StandardServiceAgentManager();
         agent.setConfiguration(configuration);
-        
+
         assertFalse(agent.isRunning());
 
         agent.start();
