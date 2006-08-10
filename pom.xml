@@ -26,6 +26,12 @@
                     <target>1.4</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <tagBase>https://svn.codehaus.org/livetribe/livetribe/livetribe-slp/tags</tagBase>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -41,7 +47,9 @@
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
-<!-- Maven's SureFire plugin is broken and cannot run properly TestNG tests
+<!--
+Maven's SureFire plugin is broken and cannot run properly TestNG tests
+See http://jira.codehaus.org/browse/MSUREFIRE-134
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
