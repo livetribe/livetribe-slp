@@ -28,7 +28,7 @@
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
-                    <tagBase>https://svn.codehaus.org/livetribe/livetribe/livetribe-slp/tags</tagBase>
+                    <tagBase>https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags</tagBase>
                     <goals>deploy</goals>
                 </configuration>
             </plugin>
