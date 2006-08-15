@@ -12,7 +12,7 @@
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
     <packaging>jar</packaging>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
 
     <build>
         <defaultGoal>install</defaultGoal>
@@ -73,4 +73,10 @@ See http://jira.codehaus.org/browse/MSUREFIRE-134
         </repository>
     </repositories>
 
+
+  <scm>
+    <connection>scm:svn:https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/1.0.1</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/1.0.1</developerConnection>
+    <url>https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/1.0.1</url>
+  </scm>
 </project>
