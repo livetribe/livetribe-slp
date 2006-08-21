@@ -140,4 +140,60 @@ public class AttributesTest extends SLPTestSupport
         {
         }
     }
+
+    /**
+     * @testng.test
+     */
+    public void testOpaqueConversion() throws Exception
+    {
+        try
+        {
+            Attributes.opaqueToBytes(null);
+            throw new AssertionError();
+        }
+        catch (NullPointerException x)
+        {
+        }
+
+        try
+        {
+            Attributes.opaqueToBytes("BLAH");
+            throw new AssertionError();
+        }
+        catch (ServiceLocationException e)
+        {
+            assert e.getErrorCode() == ServiceLocationException.PARSE_ERROR;
+        }
+
+        try
+        {
+            Attributes.opaqueToBytes("\\FF00");
+            throw new AssertionError();
+        }
+        catch (ServiceLocationException e)
+        {
+            assert e.getErrorCode() == ServiceLocationException.PARSE_ERROR;
+        }
+
+        try
+        {
+            Attributes.bytesToOpaque(null);
+            throw new AssertionError();
+        }
+        catch (NullPointerException x)
+        {
+        }
+
+        byte[] bytes = new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, (byte)0x07};
+        String opaqueString = "\\FF\\CA\\FE\\BA\\BE\\07";
+
+        String bytesToOpaque = Attributes.bytesToOpaque(bytes);
+        assert bytesToOpaque != null;
+        assert bytesToOpaque.equalsIgnoreCase(opaqueString);
+
+        byte[] opaqueToBytes = Attributes.opaqueToBytes(opaqueString);
+        assert opaqueToBytes != null;
+        assert opaqueToBytes.length == bytes.length;
+        assert Arrays.equals(bytes, opaqueToBytes);
+    }
 }
