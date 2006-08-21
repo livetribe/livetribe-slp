@@ -38,7 +38,7 @@ import org.livetribe.slp.spi.filter.Filter;
 public class ServiceInfoCache
 {
     private final Map keysToServiceTypes = new HashMap();
-    private final Map/*<ServiceInfo.Key, ServiceInfo>*/ keysToServices = new HashMap();
+    private final Map/*<ServiceInfo.Key, ServiceInfo>*/ keysToServiceInfos = new HashMap();
     private Lock lock = new ReentrantLock();
 
     public void lock()
@@ -70,7 +70,7 @@ public class ServiceInfoCache
             keysToServiceTypes.put(service.getKey(), serviceType);
 
             service.setRegistrationTime(System.currentTimeMillis());
-            return (ServiceInfo)keysToServices.put(service.getKey(), service);
+            return (ServiceInfo)keysToServiceInfos.put(service.getKey(), service);
         }
         finally
         {
@@ -99,7 +99,7 @@ public class ServiceInfoCache
         lock();
         try
         {
-            return (ServiceInfo)keysToServices.get(key);
+            return (ServiceInfo)keysToServiceInfos.get(key);
         }
         finally
         {
@@ -120,12 +120,12 @@ public class ServiceInfoCache
         {
             ServiceType serviceType = service.resolveServiceType();
 
-            ServiceInfo existing = (ServiceInfo)keysToServices.get(service.getKey());
+            ServiceInfo existing = (ServiceInfo)keysToServiceInfos.get(service.getKey());
             if (existing == null) return null;
 
             ServiceInfo merged = existing.merge(service);
             merged.setRegistrationTime(System.currentTimeMillis());
-            keysToServices.put(merged.getKey(), merged);
+            keysToServiceInfos.put(merged.getKey(), merged);
             return existing;
         }
         finally
@@ -147,12 +147,12 @@ public class ServiceInfoCache
         {
             ServiceType serviceType = service.resolveServiceType();
 
-            ServiceInfo existing = (ServiceInfo)keysToServices.get(service.getKey());
+            ServiceInfo existing = (ServiceInfo)keysToServiceInfos.get(service.getKey());
             if (existing == null) return null;
 
             ServiceInfo merged = existing.unmerge(service);
             merged.setRegistrationTime(System.currentTimeMillis());
-            keysToServices.put(merged.getKey(), merged);
+            keysToServiceInfos.put(merged.getKey(), merged);
             return existing;
         }
         finally
@@ -173,7 +173,7 @@ public class ServiceInfoCache
             ServiceType serviceType = (ServiceType)keysToServiceTypes.remove(key);
             if (serviceType == null) return null;
 
-            return (ServiceInfo)keysToServices.remove(key);
+            return (ServiceInfo)keysToServiceInfos.remove(key);
         }
         finally
         {
@@ -187,7 +187,7 @@ public class ServiceInfoCache
         lock();
         try
         {
-            for (Iterator allServiceInfos = keysToServices.values().iterator(); allServiceInfos.hasNext();)
+            for (Iterator allServiceInfos = keysToServiceInfos.values().iterator(); allServiceInfos.hasNext();)
             {
                 ServiceInfo serviceInfo = (ServiceInfo)allServiceInfos.next();
                 if (matchServiceTypes(serviceInfo.resolveServiceType(), serviceType))
@@ -215,19 +215,19 @@ public class ServiceInfoCache
     private boolean matchServiceTypes(ServiceType registered, ServiceType asked)
     {
         if (asked == null) return true;
-        return registered.matches(asked);
+        return asked.matches(registered);
     }
 
     private boolean matchScopes(Scopes registered, Scopes asked)
     {
-        if (registered == null) return true;
+        if (asked == null) return true;
         return registered.match(asked);
     }
 
     private boolean matchAttributes(Attributes registered, Filter filter)
     {
         if (filter == null) return true;
-        return filter.match(registered);
+        return filter.matches(registered);
     }
 
     private boolean matchLanguage(String registered, String asked)
@@ -236,12 +236,12 @@ public class ServiceInfoCache
         return asked.equals(registered);
     }
 
-    public Collection getServices()
+    public Collection getServiceInfos()
     {
         lock();
         try
         {
-            return new ArrayList(keysToServices.values());
+            return new ArrayList(keysToServiceInfos.values());
         }
         finally
         {
@@ -255,7 +255,7 @@ public class ServiceInfoCache
         try
         {
             keysToServiceTypes.clear();
-            keysToServices.clear();
+            keysToServiceInfos.clear();
         }
         finally
         {
@@ -276,7 +276,7 @@ public class ServiceInfoCache
         lock();
         try
         {
-            for (Iterator iterator = getServices().iterator(); iterator.hasNext();)
+            for (Iterator iterator = getServiceInfos().iterator(); iterator.hasNext();)
             {
                 ServiceInfo serviceInfo = (ServiceInfo)iterator.next();
                 if (serviceInfo.isExpiredAsOf(now))

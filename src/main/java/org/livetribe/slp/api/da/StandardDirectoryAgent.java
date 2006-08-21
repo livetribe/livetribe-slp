@@ -194,7 +194,7 @@ public class StandardDirectoryAgent extends StandardAgent implements DirectoryAg
 
     public Collection getServices()
     {
-        return services.getServices();
+        return services.getServiceInfos();
     }
 
     protected void doStart() throws IOException

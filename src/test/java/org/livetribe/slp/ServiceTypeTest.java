@@ -163,6 +163,9 @@ public class ServiceTypeTest extends SLPTestSupport
         ServiceType serviceType1 = new ServiceType("service:jmx:rmi");
         ServiceType serviceType2 = new ServiceType("jmx:rmi");
         assert !serviceType1.equals(serviceType2);
+
+        serviceType2 = new ServiceType("service:jmx:rmi");
+        assert serviceType1.equals(serviceType2);
     }
 
     /**
@@ -193,13 +196,13 @@ public class ServiceTypeTest extends SLPTestSupport
     {
         ServiceType st1 = new ServiceType("service:jmx:rmi");
         ServiceType st2 = new ServiceType("service:jmx");
-        assertTrue(st1.matches(st2));
-        assertFalse(st2.matches(st1));
+        assertFalse(st1.matches(st2));
+        assertTrue(st2.matches(st1));
 
         st1 = new ServiceType("jmx:rmi");
         st2 = new ServiceType("jmx");
-        assertTrue(st1.matches(st2));
-        assertFalse(st2.matches(st1));
+        assertFalse(st1.matches(st2));
+        assertTrue(st2.matches(st1));
     }
 
     /**

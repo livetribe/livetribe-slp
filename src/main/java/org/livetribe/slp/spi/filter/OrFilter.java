@@ -31,13 +31,13 @@ public class OrFilter implements Filter
         this.filters = filters;
     }
 
-    public boolean match(Attributes attributes)
+    public boolean matches(Attributes attributes)
     {
         boolean result = false;
         for (int i = 0; i < filters.size(); ++i)
         {
             Filter filter = (Filter)filters.get(i);
-            result |= filter.match(attributes);
+            result |= filter.matches(attributes);
             if (result) break;
         }
         return result;

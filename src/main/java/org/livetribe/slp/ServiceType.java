@@ -40,11 +40,17 @@ public class ServiceType implements Serializable
         parse(type);
     }
 
+    /**
+     * Returns true if this service type begins with the string <code>service:</code>.
+     */
     public boolean isServiceURL()
     {
         return isServiceURL;
     }
 
+    /**
+     * Returns true if this service type is of the form <code>[service:]abstract:concrete</code>.
+     */
     public boolean isAbstractType()
     {
         return isAbstract;
@@ -55,26 +61,58 @@ public class ServiceType implements Serializable
         return namingAuthority.length() == 0;
     }
 
+    /**
+     * Returns the concrete type name of this service type.
+     * For service types of the form <code>[service:]foo:bar</code> returns <code>bar</code>.
+     * For service types of the form <code>[service:]foo</code> returns the empty string.
+     */
     public String getConcreteTypeName()
     {
         return concreteName;
     }
 
+    /**
+     * Returns the protocol type name of this service type.
+     * For service types of the form <code>[service:]foo:bar</code> returns <code>foo</code>.
+     * For service types of the form <code>[service:]foo</code> returns the <code>foo</code>.
+     */
     public String getPrincipleTypeName()
     {
         return protocolName;
     }
 
+    /**
+     * Returns the abstract type name of this service type.
+     * For service types of the form <code>[service:]foo:bar</code> returns <code>[service:]foo</code>.
+     * For service types of the form <code>[service:]foo</code> returns the empty string.
+     */
     public String getAbstractTypeName()
     {
         return abstractName;
     }
 
+    /**
+     * Returns the naming authority of this service type.
+     * For service types of the form <code>[service:]foo:bar.baz</code> returns <code>baz</code>.
+     * For service types of the form <code>[service:]foo.baz</code> returns <code>baz</code>.
+     * For service types of the form <code>[service:][foo:]bar</code> returns the empty string.
+     */
     public String getNamingAuthority()
     {
         return namingAuthority;
     }
 
+    /**
+     * Returns true if this service type matches the given service type, false otherwise.
+     * <br />
+     * If this service types is equal to the given service type, the service types match.
+     * <br />
+     * The <code>service:</code> prefix is not influent in matching, so
+     * <code>service:foo:bar</code> matches <code>foo:bar</code>.
+     * <br />
+     * <code>service:foo</code> matches <code>service:foo:bar</code>, <code>foo:bar</code> and <code>foo</code>.
+     * @param serviceType The service type to match against
+     */
     public boolean matches(ServiceType serviceType)
     {
         if (serviceType == null) return false;
@@ -89,14 +127,14 @@ public class ServiceType implements Serializable
             }
             else
             {
-                return getPrincipleTypeName().equals(serviceType.getPrincipleTypeName());
+                return false;
             }
         }
         else
         {
             if (serviceType.isAbstractType())
             {
-                return false;
+                return getPrincipleTypeName().equals(serviceType.getPrincipleTypeName());
             }
             else
             {

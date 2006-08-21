@@ -22,7 +22,7 @@ import org.livetribe.slp.Attributes;
  */
 public class AlwaysMatchFilter implements Filter
 {
-    public boolean match(Attributes attributes)
+    public boolean matches(Attributes attributes)
     {
         return true;
     }

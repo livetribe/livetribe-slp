@@ -26,5 +26,5 @@ public interface Filter
      * Returns true if the given attributes matches the expression represented by this filter.
      * @param attributes The attributes to match against this filter.
      */
-    public boolean match(Attributes attributes);
+    public boolean matches(Attributes attributes);
 }

@@ -33,22 +33,22 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(a=Foo)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a >= f)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a >= F)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a<=g)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a=f*o)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a=FO*)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
     }
 
     /**
@@ -61,16 +61,16 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(a=14)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a >= 10)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a<=17)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a=foo)");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
     }
 
     /**
@@ -83,22 +83,22 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(a=true)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(!(a=false))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(a>=false)");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
 
         filter = parser.parse("(a<=true)");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
 
         filter = parser.parse("(a=foo)");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
 
         filter = parser.parse("(a=10)");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
     }
 
     /**
@@ -111,10 +111,10 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(bar=*)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(foo=*)");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
     }
 
     /**
@@ -127,7 +127,7 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(((bar=*)))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
     }
 
     /**
@@ -140,7 +140,7 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(x=bar)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
     }
 
     /**
@@ -153,7 +153,7 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(x=2)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
     }
 
     /**
@@ -166,7 +166,7 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(x=true)");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
     }
 
     /**
@@ -179,24 +179,24 @@ public class FilterTest extends SLPTestSupport
         FilterParser parser = new FilterParser();
 
         Filter filter = parser.parse("(&(a=1)(b=false))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(&(a=1)(b=true))");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
 
         filter = parser.parse("(&(!(b=false))(a=1))");
-        assertFalse(filter.match(attributes));
+        assertFalse(filter.matches(attributes));
 
         filter = parser.parse("(&(!(b=true))(name=name*))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(|(name=name*)(&(!(b=true))(a=2)))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(|(name=name*)(&(!(b=true))(a=3)))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
 
         filter = parser.parse("(|(a=3)(&(!(b=true))))");
-        assertTrue(filter.match(attributes));
+        assertTrue(filter.matches(attributes));
     }
 }
