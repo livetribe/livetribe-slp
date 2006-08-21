@@ -21,27 +21,37 @@ import java.util.List;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
+ * Scopes are case insensitive string labels used to group together related services.
+ * Both DirectoryAgent and ServiceAgent have assigned one or more scopes so that they can advertise services
+ * belonging to the scopes they've been assigned. The scope assigned by default to DirectoryAgents and
+ * UserAgents is the {@link #DEFAULT} scope.
  * @version $Rev$ $Date$
  */
 public class Scopes
 {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final String DEFAULT_SCOPE = "DEFAULT";
 
     /**
-     * The DEFAULT scope is just like any other scope, only that's used by DA and SA as their default.
+     * The <code>DEFAULT</code> scope is just like any other scope, only that's used by DirectoryAgents and
+     * ServiceAgents as their default scope.
+     * @see #WILDCARD
      */
-    public static final Scopes DEFAULT = new Scopes(new String[]{DEFAULT_SCOPE});
+    public static final Scopes DEFAULT = new Scopes(new String[]{"DEFAULT"});
 
     /**
      * The WILDCARD scope is special, as it does not match any scope, and all other scopes will match it.
-     * This is used during queries, when one wants to retrieve services registered in all scopes.
+     * It may be used during queries, when one wants to retrieve services registered in all scopes.
+     * @see #DEFAULT
      */
     public static final Scopes WILDCARD = new Scopes(null);
 
     private final String[] originalScopes;
     private final List scopes = new ArrayList();
 
+    /**
+     * Creates a <code>Scopes</code> object containing the given scope strings.
+     * @param scopes The scope strings to be contained by this <code>Scopes</code> object
+     */
     public Scopes(String[] scopes)
     {
         this.originalScopes = scopes == null ? EMPTY_STRING_ARRAY : scopes;
@@ -69,41 +79,62 @@ public class Scopes
     }
 
     /**
-     * Matches the given Scopes argument against this Scopes object.
-     * If this Scopes is the wildcard scope, always returns false.
-     * If the given Scopes is the wildcard scope, always returns true.
-     * @param other The scopes to match
-     * @return True if all scopes specified by the given Scopes argument are also scopes of this Scopes object.
+     * Matches the given <code>Scopes</code> argument against this <code>Scopes</code> object.
+     * If this <code>Scopes</code> is the wildcard scope, always returns false.
+     * If the given <code>Scopes</code> is the wildcard scope, always returns true.
+     * @param other The <code>Scopes</code> to match
+     * @return True if all scopes specified by the given <code>Scopes</code> argument
+     * are also scopes of this <code>Scopes</code> object.
+     * @see #weakMatch(Scopes)
      */
     public boolean match(Scopes other)
     {
-        if (other == null || other.isWildcardScope()) return true;
         if (isWildcardScope()) return false;
+        if (other == null || other.isWildcardScope()) return true;
         return scopes.containsAll(other.scopes);
     }
 
     /**
-     * Matches the given Scopes argument against this Scopes object, more weakly than {@link #match(Scopes)}.
-     * If this Scopes is the wildcard scope, always returns false.
-     * If the given Scopes is the wildcard scope, always returns true.
-     * @param other The scopes to match
-     * @return True if at least one of the scopes specified by the given Scopes argument is also a scope of this Scopes object.
+     * Matches the given <code>Scopes</code> argument against this <code>Scopes</code> object,
+     * more weakly than {@link #match(Scopes)}.
+     * If this <code>Scopes</code> is the wildcard scope, always returns false.
+     * If the given <code>Scopes</code> is the wildcard scope, always returns true.
+     * @param other The <code>Scopes</code> to match
+     * @return True if at least one of the scopes specified by the given <code>Scopes</code> argument
+     * is also a scope of this <code>Scopes</code> object.
+     * @see #match(Scopes)
      */
     public boolean weakMatch(Scopes other)
     {
-        if (other == null || other.isWildcardScope()) return true;
         if (isWildcardScope()) return false;
+        if (other == null || other.isWildcardScope()) return true;
         return !Collections.disjoint(scopes, other.scopes);
     }
 
+    /**
+     * Returns the scope strings contained by this <code>Scopes</code> object.
+     */
     public String[] asStringArray()
     {
         return originalScopes;
     }
 
-    private boolean isWildcardScope()
+    /**
+     * Returns true if this <code>Scopes</code> object is the wildcard scope, false otherwise.
+     * @see #WILDCARD
+     */
+    public boolean isWildcardScope()
     {
-        return scopes.isEmpty();
+        return equals(WILDCARD);
+    }
+
+    /**
+     * Returns true if this <code>Scopes</code> object is the default scope, false otherwise.
+     * @see #DEFAULT
+     */
+    public boolean isDefaultScope()
+    {
+        return equals(DEFAULT);
     }
 
     public String toString()
