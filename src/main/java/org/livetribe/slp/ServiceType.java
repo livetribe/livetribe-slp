@@ -20,6 +20,26 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
+ * Services that offer the same functionalities are characterized by the same <code>ServiceType</code>.
+ * The <code>ServiceType</code> forms the initial part of a {@link ServiceURL}, and it is used to both
+ * characterize the service and to be used to lookup services that offer particular functionalities.
+ * <code>ServiceType</code>s are represented in this form:
+ * <pre>
+ * [service:][&lt;abstract-type&gt;:]&lt;concrete-type&gt;[.&lt;naming-authority&gt;]
+ * </pre>
+ * The <code>service:</code> string can be omitted, though it is normally used to identify service types
+ * exposed by SLP.
+ * <br />
+ * The <code>abstract-type</code> denotes a type name for a service that can be exposed over a number of
+ * different protocols. For example, JMX exposes connector servers (the services) over different
+ * protocols, and their service type can be <code>service:jmx:rmi</code> or <code>service:jmx:jmxmp</code>,
+ * where <code>rmi</code> and <code>jmxmp</code> are the protocols used for the wire communication.
+ * <br />
+ * The <code>concrete-type</code> denotes a type name for the protocol used by the service to expose its
+ * functionalities.
+ * <br />
+ * The <code>naming-authority</code> denotes the name of an organization that defined the service type.
+ * @see ServiceURL
  * @version $Rev$ $Date$
  */
 public class ServiceType implements Serializable
@@ -34,6 +54,10 @@ public class ServiceType implements Serializable
     private transient String concreteName;
     private transient String namingAuthority;
 
+    /**
+     * Creates a <code>ServiceType</code> parsing the given string.
+     * @param type The string to be parsed
+     */
     public ServiceType(String type)
     {
         this.type = type;
@@ -56,6 +80,9 @@ public class ServiceType implements Serializable
         return isAbstract;
     }
 
+    /**
+     * Returns true if this service type does not specify a naming authority.
+     */
     public boolean isNADefault()
     {
         return namingAuthority.length() == 0;
@@ -74,7 +101,7 @@ public class ServiceType implements Serializable
     /**
      * Returns the protocol type name of this service type.
      * For service types of the form <code>[service:]foo:bar</code> returns <code>foo</code>.
-     * For service types of the form <code>[service:]foo</code> returns the <code>foo</code>.
+     * For service types of the form <code>[service:]foo</code> returns <code>foo</code>.
      */
     public String getPrincipleTypeName()
     {
@@ -156,6 +183,9 @@ public class ServiceType implements Serializable
         return type.hashCode();
     }
 
+    /**
+     * Returns the string form of this service type, that can be passed to {@link #ServiceType(String)} to be parsed.
+     */
     public String toString()
     {
         return type;
