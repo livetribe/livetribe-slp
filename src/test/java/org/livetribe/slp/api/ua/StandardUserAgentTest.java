@@ -243,7 +243,7 @@ public class StandardUserAgentTest extends SLPTestSupport
         sa.setPort(port);
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/suat2", ServiceURL.LIFETIME_DEFAULT);
         String language = Locale.ITALY.getLanguage();
-        ServiceInfo service = new ServiceInfo(serviceURL, null, null, language);
+        ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, language);
         sa.register(service);
 
         try
@@ -286,7 +286,7 @@ public class StandardUserAgentTest extends SLPTestSupport
         sa1.setPort(port);
         ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host/suat3", ServiceURL.LIFETIME_DEFAULT);
         String language = Locale.ITALY.getLanguage();
-        ServiceInfo service1 = new ServiceInfo(serviceURL1, null, null, language);
+        ServiceInfo service1 = new ServiceInfo(serviceURL1, Scopes.DEFAULT, null, language);
         sa1.register(service1);
 
         try
@@ -296,7 +296,7 @@ public class StandardUserAgentTest extends SLPTestSupport
             StandardServiceAgent sa2 = new StandardServiceAgent();
             sa2.setPort(port);
             ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://host/suat4", ServiceURL.LIFETIME_DEFAULT);
-            ServiceInfo service2 = new ServiceInfo(serviceURL2, null, null, language);
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, Scopes.DEFAULT, null, language);
             sa2.register(service2);
 
             try

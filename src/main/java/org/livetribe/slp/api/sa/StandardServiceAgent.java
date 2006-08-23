@@ -213,7 +213,7 @@ public class StandardServiceAgent extends StandardAgent implements ServiceAgent
 
     public Collection getServices()
     {
-        return services.getServices();
+        return services.getServiceInfos();
     }
 
     protected void doStart() throws Exception

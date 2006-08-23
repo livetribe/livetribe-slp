@@ -24,13 +24,41 @@ import java.util.regex.Pattern;
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
- * SLP attributes are defined in RFC 2608, 5.0.
- * This class encapsulates operations and parsing of SLP attributes.
- *
+ * Attributes are key-value pairs that describe a service.
+ * The attribute key is called <b>tag</b>, and the attribute value can be non-valued (the tag as no value),
+ * single-valued (the tag as only one value) or multi-valued (the tag has more values).
+ * Depending on the value(s) of the tag, the attribute has a <b>type<b>; there are four defined types:
+ * <ul>
+ * <li>boolean, representing boolean values</li>
+ * <li>long, representing natural numbers</li>
+ * <li>string, representing strings</li>
+ * <li>opaque, representing bytes</li>
+ * </ul>
+ * Attribute values should be homogeneous: the attribute <code>a=1,true,\FF\00</code> is illegal, because it's not
+ * clear if the type is long, boolean, or opaque.
+ * <br />
+ * Attributes can be used by UserAgents during service lookup to select appropriate services that match required
+ * conditions.
+ * <br />
+ * Attributes can be described using a string representation, for example:
+ * <pre>
+ * String attributesString = "(a=1,2),(b=true),(bytes=\FF\CA\FE\BA\BE),(present),(description=Something Interesting)";
+ * Attributes attributes = new Attributes(attributesString);
+ * </pre>
+ * The example defines 5 attributes:
+ * <ul>
+ * <li>the first attribute has tag "a", values "1" and "2" and type "long";</li>
+ * <li>the second attribute has tag "b", value "true" and type "boolean";</li>
+ * <li>the third attribute has tag "bytes", value "\FF\CA\FE\BA\BE" and type "opaque";</li>
+ * <li>the fourth attribute has tag "present", no value, and type "presence";</li>
+ * <li>the fifth attribute has tag "description", value "Something Interesting" and type "string".</li>
+ * </ul>
  * @version $Rev$ $Date$
  */
 public class Attributes
 {
+    private static final char ESCAPE_PREFIX = '\\';
+    private static final String OPAQUE_PREFIX = ESCAPE_PREFIX + "FF";
     private static final char[] reservedChars = new char[128];
 
     static
@@ -48,10 +76,18 @@ public class Attributes
 
     private final Map attributes = new HashMap();
 
+    /**
+     * Creates an empty <code>Attributes</code> object.
+     */
     public Attributes()
     {
     }
 
+    /**
+     * Creates an <code>Attributes</code> object parsing the given <code>attributeList</code> string.
+     * @param attributeList The string containing the attributes to parse
+     * @throws ServiceLocationException If the parsing fails
+     */
     public Attributes(String attributeList) throws ServiceLocationException
     {
         parse(attributeList);
@@ -62,48 +98,146 @@ public class Attributes
         attributes.putAll(copy.attributes);
     }
 
+    /**
+     * Puts a presence tag.
+     * @param tag The tag to add
+     */
     public void put(String tag)
     {
         attributes.put(tag, new Entry(null, Entry.PRESENCE));
     }
 
+    /**
+     * Puts a tag with the specified value.
+     * @param tag The tag to add
+     * @param value The value of the tag
+     */
     public void put(String tag, String value)
     {
         attributes.put(tag, entryFromString(value));
     }
 
+    /**
+     * Puts a tag with the specified values
+     * @param tag The tag to add
+     * @param values The values of the tag
+     * @throws ServiceLocationException If the values are not of the same type
+     */
     public void put(String tag, String[] values) throws ServiceLocationException
     {
         attributes.put(tag, entryFromStringArray(values));
     }
 
+    /**
+     * Returns the <code>Entry</code> for the given tag.
+     */
     public Entry getEntry(String tag)
     {
         return (Entry)attributes.get(tag);
     }
 
+    /**
+     * Returns the value for the given tag.
+     * <br />
+     * Depending on the tag type, it returns:
+     * <ul>
+     * <li>null, if the tag is not present</li>
+     * <li>null, if the tag is present and it is a presence tag</li>
+     * <li>the tag value, if the tag is present and it is a single valued tag</li>
+     * <li>the first tag value, if the tag is present and it is a multi valued tag</li>
+     * </ul>
+     * @see #isTagPresent(String)
+     * @see #getValues(String)
+     */
     public Object getValue(String tag)
     {
         Entry entry = getEntry(tag);
         if (entry == null) return null;
+        if (entry.isPresenceType()) return null;
         return entry.getValue();
     }
 
+    /**
+     * Returns the values for the given tag.
+     * <br />
+     * Depending on the tag type, it returns:
+     * <ul>
+     * <li>null, if the tag is not present</li>
+     * <li>null, if the tag is present and it is a presence tag</li>
+     * <li>the tag value, wrapped in an Object[] of length 1, if the tag is present and it is a single valued tag</li>
+     * <li>the tag values, if the tag is present and it is a multi valued tag</li>
+     * </ul>
+     * @see #isTagPresent(String)
+     * @see #getValue(String)
+     */
     public Object[] getValues(String tag)
     {
         Entry entry = getEntry(tag);
         if (entry == null) return null;
+        if (entry.isPresenceType()) return null;
         return entry.getValues();
     }
 
+    /**
+     * Returns true if this <code>Attributes</code> object is empty.
+     */
     public boolean isEmpty()
     {
         return attributes.isEmpty();
     }
 
+    /**
+     * Returns true if the given tag is present in this <code>Attributes</code> object.
+     * @see Entry#isPresenceType()
+     */
     public boolean isTagPresent(String tag)
     {
         return attributes.containsKey(tag);
+    }
+
+    /**
+     * Returns a byte array containing the bytes parsed from the given opaque string, except the initial opaque prefix \FF.
+     * @param opaqueString The opaque string containing the bytes to parse
+     * @throws ServiceLocationException If the parsing fails
+     * @see #bytesToOpaque(byte[])
+     */
+    public static byte[] opaqueToBytes(String opaqueString) throws ServiceLocationException
+    {
+        if (!opaqueString.startsWith(OPAQUE_PREFIX)) throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, ServiceLocationException.PARSE_ERROR);
+        if (opaqueString.length() % 3 != 0) throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", ServiceLocationException.PARSE_ERROR);
+
+        byte[] result = new byte[(opaqueString.length() - OPAQUE_PREFIX.length()) / 3];
+        int position = 0;
+        int index = OPAQUE_PREFIX.length();
+        while (index < opaqueString.length())
+        {
+            if (opaqueString.charAt(index) != ESCAPE_PREFIX) throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, ServiceLocationException.PARSE_ERROR);
+            ++index;
+            String hexString = opaqueString.substring(index, index + 2);
+            result[position] = (byte)(Integer.parseInt(hexString, 16) & 0xFF);
+            ++position;
+            index += 2;
+        }
+        return result;
+    }
+
+    /**
+     * Returns an opaque string containing the escaped sequence of the given bytes, including the initial opaque prefix \FF.
+     * @param bytes The bytes to escape into an opaque string
+     * @see #opaqueToBytes(String)
+     */
+    public static String bytesToOpaque(byte[] bytes)
+    {
+        StringBuffer result = new StringBuffer();
+        result.append(OPAQUE_PREFIX);
+        for (int i = 0; i < bytes.length; ++i)
+        {
+            result.append(ESCAPE_PREFIX);
+            int code = bytes[i] & 0xFF;
+            if (code < 16) result.append("0");
+            result.append(Integer.toHexString(code).toUpperCase());
+        }
+        return result.toString();
     }
 
     private void parse(String attributeList) throws ServiceLocationException
@@ -233,7 +367,7 @@ public class Attributes
         {
             char ch = escaped.charAt(i);
             // The backslash is a reserved character, but is present in escaped strings, skip it
-            if (ch != '\\' && ch < reservedChars.length && reservedChars[ch] == ch)
+            if (ch != ESCAPE_PREFIX && ch < reservedChars.length && reservedChars[ch] == ch)
                 throw new ServiceLocationException("Illegal character '" + ch + "' in " + escaped, ServiceLocationException.PARSE_ERROR);
         }
     }
@@ -251,7 +385,7 @@ public class Attributes
             char c = value.charAt(i);
             if (c < reservedChars.length && reservedChars[c] == c)
             {
-                result.append("\\");
+                result.append(ESCAPE_PREFIX);
                 int code = c & 0xFF;
                 if (code < 16) result.append("0");
                 result.append(Integer.toHexString(code));
@@ -270,7 +404,7 @@ public class Attributes
         for (int i = 0; i < value.length(); ++i)
         {
             char c = value.charAt(i);
-            if (c == '\\')
+            if (c == ESCAPE_PREFIX)
             {
                 String codeString = value.substring(i + 1, i + 3);
                 int code = Integer.parseInt(codeString, 16);
@@ -281,7 +415,7 @@ public class Attributes
                 }
                 else
                 {
-                    throw new ServiceLocationException("Unknown escaped character \\" + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.PARSE_ERROR);
+                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.PARSE_ERROR);
                 }
             }
             else
@@ -306,6 +440,10 @@ public class Attributes
         return attributes.hashCode();
     }
 
+    /**
+     * Returns a string representation of this <code>Attributes</code> object, that can be passed to
+     * {@link #Attributes(String)} to be parsed.
+     */
     public String asString()
     {
         TreeMap orderedAttributes = new TreeMap(attributes);
@@ -343,6 +481,9 @@ public class Attributes
         return result.toString();
     }
 
+    /**
+     * @see #asString()
+     */
     public String toString()
     {
         return asString();
@@ -375,7 +516,7 @@ public class Attributes
 
     private boolean isOpaque(String value)
     {
-        return value.startsWith("\\FF");
+        return value.startsWith(OPAQUE_PREFIX);
     }
 
     private Entry entryFromStringArray(String[] values) throws ServiceLocationException
@@ -411,6 +552,16 @@ public class Attributes
         }
     }
 
+    /**
+     * Merges the attributes of this <code>Attributes</code> object with the attributes of the given <code>Attributes</code>
+     * object into a new <code>Attributes</code> object.
+     * If the given <code>Attributes</code> is null, a clone of this <code>Attributes</code> object will be returned.
+     * If this <code>Attributes</code> contains a tag that exists in the given <code>Attributes</code>, the merged
+     * <code>Attributes</code> will contain the entry from the given <code>Attributes</code> object (overwriting the one
+     * from this <code>Attributes</code> object).
+     * @param that The <code>Attributes</code> to merge with
+     * @return A new <code>Attributes</code> object containing the merged attributes.
+     */
     public Attributes merge(Attributes that)
     {
         Attributes result = new Attributes(this);
@@ -418,6 +569,15 @@ public class Attributes
         return result;
     }
 
+    /**
+     * Unmerges the attributes of this <code>Attributes</code> object with the attributes of the given <code>Attributes</code>
+     * object into a new <code>Attributes</code> object.
+     * If the given <code>Attributes</code> is null, a clone of this <code>Attributes</code> object will be returned.
+     * The unmerged <code>Attributes</code> will contain only the attributes present in this <code>Attributes</code> object
+     * but not in the given <code>Attributes</code> object.
+     * @param that The <code>Attributes</code> to unmerge with
+     * @return A new <code>Attributes</code> object containing the unmerged attributes.
+     */
     public Attributes unmerge(Attributes that)
     {
         Attributes result = new Attributes(this);
@@ -425,6 +585,10 @@ public class Attributes
         return result;
     }
 
+    /**
+     * Represent the attribute value within the {@link Attributes} class.
+     * An <code>Entry</code> encapsulates the attribute value(s) and type.
+     */
     public static class Entry
     {
         private static final int STRING = 1;
@@ -449,37 +613,60 @@ public class Attributes
             return type;
         }
 
+        /**
+         * Returns true if this entry is of type string.
+         */
         public boolean isStringType()
         {
             return type == STRING;
         }
 
+        /**
+         * Returns true if this entry is of type long (a natural number).
+         */
         public boolean isLongType()
         {
             return type == LONG;
         }
 
+        /**
+         * Returns true if this entry is of type boolean.
+         */
         public boolean isBooleanType()
         {
             return type == BOOLEAN;
         }
 
+        /**
+         * Returns true if this entry is of type opaque.
+         */
         public boolean isOpaqueType()
         {
             return type == OPAQUE;
         }
 
+        /**
+         * Returns true if this entry represent only the presence of a tag with no value.
+         */
         public boolean isPresenceType()
         {
             return type == PRESENCE;
         }
 
+        /**
+         * Returns the value of this entry (in case it is single valued), or the first value of this entry
+         * (in case it is multivalued).
+         */
         public Object getValue()
         {
             if (valueIsArray) return ((Object[])value)[0];
             return value;
         }
 
+        /**
+         * Returns the values of this entry (in case it is multivalued), or the value of this entry, wrapped in an array
+         * of length 1 (in case it is single valued).
+         */
         public Object[] getValues()
         {
             if (valueIsArray) return (Object[])value;

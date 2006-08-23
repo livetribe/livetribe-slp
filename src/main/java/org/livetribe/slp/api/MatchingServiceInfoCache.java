@@ -94,6 +94,11 @@ public class MatchingServiceInfoCache implements MessageRegistrationListener
         return services.get(key);
     }
 
+    public Collection getServiceInfos()
+    {
+        return services.getServiceInfos();
+    }
+
     public boolean updateAdd(ServiceInfo service)
     {
         if (matches(service))
@@ -158,7 +163,7 @@ public class MatchingServiceInfoCache implements MessageRegistrationListener
         {
             if (matchingScopes == null || matchingScopes.match(serviceInfo.getScopes()))
             {
-                if (matchingFilter == null || matchingFilter.match(serviceInfo.getAttributes()))
+                if (matchingFilter == null || matchingFilter.matches(serviceInfo.getAttributes()))
                 {
                     if (matchingLanguage == null || matchingLanguage.equals(serviceInfo.getLanguage()))
                     {

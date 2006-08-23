@@ -20,14 +20,44 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
+ * A ServiceURL represents the location of a service.
+ * A client given a ServiceURL should be able to contact the remote service that the ServiceURL
+ * represents with the information carried by the ServiceURL itself.
+ * A ServiceURL is a URI that defines at least scheme and address portion, and that may have the
+ * <code>service:</code> scheme.
+ * <br />
+ * ServiceURLs have a lifetime, used to denote the period of time over which the service is
+ * available.
+ * @see ServiceType
  * @version $Rev$ $Date$
  */
 public class ServiceURL implements Serializable
 {
+    /**
+     * The constant used to denote that the service did not specify a port.
+     */
     public static final int NO_PORT = 0;
+
+    /**
+     * The constant used to denote that this service URL has no lifetime.
+     * It is wrong to advertise services with no lifetime, but this constant can be used to create
+     * ServiceURLs used to perform activities different from service registration.
+     */
     public static final int LIFETIME_NONE = 0;
+
+    /**
+     * The constant used to denote the default lifetime of service URLs (3 hours).
+     */
     public static final int LIFETIME_DEFAULT = 10800;
+
+    /**
+     * The constant used to denote the maximum value for the lifetime of service URLs.
+     */
     public static final int LIFETIME_MAXIMUM = 65535;
+
+    /**
+     * The constant used to denote that this service URL has an infinite lifetime.
+     */
     public static final int LIFETIME_PERMANENT = -1;
 
     private static final String SERVICE = "service:";
@@ -39,11 +69,20 @@ public class ServiceURL implements Serializable
     private int port;
     private String path;
 
+    /**
+     * Creates a <code>ServiceURL</code> parsing the given string, with a {@link #LIFETIME_DEFAULT default lifetime}.
+     * @param url The string to be parsed
+     */
     public ServiceURL(String url)
     {
         this(url, LIFETIME_DEFAULT);
     }
 
+    /**
+     * Creates a <code>ServiceURL</code> parsing the given string, with the specified lifetime, in seconds.
+     * @param url The string to be parsed
+     * @param lifetime The lifetime, in seconds, for this service URL
+     */
     public ServiceURL(String url, int lifetime)
     {
         this.url = url;
@@ -51,36 +90,58 @@ public class ServiceURL implements Serializable
         parse(url);
     }
 
+    /**
+     * Returns the {@link ServiceType} of this service URL.
+     */
     public ServiceType getServiceType()
     {
         return serviceType;
     }
 
+    /**
+     * Returns the network layer transport identifier, which is the empty string for the IP transport.
+     */
     public String getTransport()
     {
         return "";
     }
 
+    /**
+     * Returns the host portion of this service URL.
+     */
     public String getHost()
     {
         return host;
     }
 
+    /**
+     * Returns the port number of this service URL.
+     * @see #NO_PORT
+     */
     public int getPort()
     {
         return port;
     }
 
+    /**
+     * Returns the path of this service URL.
+     */
     public String getURLPath()
     {
         return path;
     }
 
+    /**
+     * Returns the lifetime, in seconds, of this service URL.
+     */
     public int getLifetime()
     {
         return lifetime;
     }
 
+    /**
+     * Returns the string form of this service URL, that can be passed to {@link #ServiceURL(String)} to be parsed.
+     */
     public String getURL()
     {
         return url;
@@ -105,6 +166,9 @@ public class ServiceURL implements Serializable
         parse(getURL());
     }
 
+    /**
+     * @see #getURL()
+     */
     public String toString()
     {
         return getURL();

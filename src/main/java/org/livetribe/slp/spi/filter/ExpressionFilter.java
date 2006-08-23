@@ -41,10 +41,10 @@ public class ExpressionFilter implements Filter
         if (!EQ.equals(operator) && rhs.indexOf(ANY) >= 0) throw new ServiceLocationException("Invalid filter " + this + ": wildcard matching is only allowed with operator " + EQ, ServiceLocationException.PARSE_ERROR);
     }
 
-    public boolean match(Attributes attributes)
+    public boolean matches(Attributes attributes)
     {
         if (attributes == null) return false;
-        
+
         Attributes.Entry entry = attributes.getEntry(lhs);
         if (entry == null) return false;
 

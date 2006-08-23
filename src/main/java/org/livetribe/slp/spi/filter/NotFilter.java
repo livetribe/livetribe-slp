@@ -29,8 +29,8 @@ public class NotFilter implements Filter
         this.filter = filter;
     }
 
-    public boolean match(Attributes attributes)
+    public boolean matches(Attributes attributes)
     {
-        return !filter.match(attributes);
+        return !filter.matches(attributes);
     }
 }
