@@ -20,7 +20,7 @@ import junit.framework.TestCase;
 /**
  * @version $Rev$ $Date$
  */
-public class SLPTestSupport extends TestCase
+public abstract class SLPTestSupport extends TestCase
 {
     protected void sleep(long time)
     {
