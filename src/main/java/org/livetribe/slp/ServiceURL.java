@@ -15,8 +15,6 @@
  */
 package org.livetribe.slp;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
@@ -33,6 +31,8 @@ import java.io.Serializable;
  */
 public class ServiceURL implements Serializable
 {
+    private static final long serialVersionUID = 2989950945471457682L;
+
     /**
      * The constant used to denote that the service did not specify a port.
      */
@@ -86,6 +86,8 @@ public class ServiceURL implements Serializable
     public ServiceURL(String url, int lifetime)
     {
         this.url = url;
+        if (lifetime != LIFETIME_PERMANENT && (lifetime < LIFETIME_NONE || lifetime > LIFETIME_MAXIMUM))
+            throw new IllegalArgumentException("Lifetime must be between " + LIFETIME_NONE + " and " + LIFETIME_MAXIMUM);
         this.lifetime = lifetime;
         parse(url);
     }
@@ -158,12 +160,6 @@ public class ServiceURL implements Serializable
     public int hashCode()
     {
         return getURL().hashCode();
-    }
-
-    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException
-    {
-        ois.defaultReadObject();
-        parse(getURL());
     }
 
     /**

@@ -15,135 +15,99 @@
  */
 package org.livetribe.slp;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
+
+import org.testng.annotations.Test;
 
 /**
  * @version $Rev$ $Date$
  */
-public class AttributesTest extends SLPTestSupport
+public class AttributesTest
 {
-    /**
-     * @testng.test
-     */
+    @Test
     public void testParsing() throws Exception
     {
-        Attributes attributes = new Attributes(null);
-        assertTrue(attributes.isEmpty());
+        Attributes attributes = Attributes.NONE;
+        assert attributes.isEmpty();
 
         String attributeList = "(a=1,2),foo,(b=1),(separator=\\2c)";
-        attributes = new Attributes(attributeList);
-        assertTrue(Arrays.equals(new Object[]{new Long(1), new Long(2)}, attributes.getValues("a")));
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
-        assertEquals(new Long(1), attributes.getValue("b"));
-        assertEquals(",", attributes.getValue("separator"));
+        attributes = Attributes.from(attributeList);
+        assert Arrays.equals(new Object[]{1, 2}, attributes.valueFor("a").getValues());
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
+        assert Integer.valueOf(1).equals(attributes.valueFor("b").getValue());
+        assert ",".equals(attributes.valueFor("separator").getValue());
 
         attributeList = "bar,(a=1,2),foo,(b=1),(separator=\\2c)";
-        attributes = new Attributes(attributeList);
-        assertTrue(attributes.isTagPresent("bar"));
-        assertEquals(null, attributes.getValue("bar"));
-        assertTrue(Arrays.equals(new Object[]{new Long(1), new Long(2)}, attributes.getValues("a")));
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
-        assertEquals(new Long(1), attributes.getValue("b"));
-        assertEquals(",", attributes.getValue("separator"));
+        attributes = Attributes.from(attributeList);
+        assert attributes.containsTag("bar");
+        assert attributes.valueFor("bar").getValue() == null;
+        assert Arrays.equals(new Object[]{1, 2}, attributes.valueFor("a").getValues());
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
+        assert Integer.valueOf(1).equals(attributes.valueFor("b").getValue());
+        assert ",".equals(attributes.valueFor("separator").getValue());
 
         attributeList = "foo, bar";
-        attributes = new Attributes(attributeList);
-        assertTrue(attributes.isTagPresent("bar"));
-        assertEquals(null, attributes.getValue("bar"));
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
+        attributes = Attributes.from(attributeList);
+        assert attributes.containsTag("bar");
+        assert attributes.valueFor("bar").getValue() == null;
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
 
         attributeList = "foo, bar, ";
-        attributes = new Attributes(attributeList);
-        assertTrue(attributes.isTagPresent("bar"));
-        assertEquals(null, attributes.getValue("bar"));
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
+        attributes = Attributes.from(attributeList);
+        assert attributes.containsTag("bar");
+        assert attributes.valueFor("bar").getValue() == null;
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
 
         attributeList = "foo, (a =1 ), bar, (b = true ) ";
-        attributes = new Attributes(attributeList);
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
-        assertEquals(new Long(1), attributes.getValue("a"));
-        assertTrue(attributes.isTagPresent("bar"));
-        assertEquals(null, attributes.getValue("bar"));
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
-        assertEquals(Boolean.TRUE, attributes.getValue("b"));
+        attributes = Attributes.from(attributeList);
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
+        assert Integer.valueOf(1).equals(attributes.valueFor("a").getValue());
+        assert attributes.containsTag("bar");
+        assert attributes.valueFor("bar").getValue() == null;
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
+        assert Boolean.TRUE.equals(attributes.valueFor("b").getValue());
 
         attributeList = "foo, (a =bar ,baz ), (b = \\FF\\00 ) ";
-        attributes = new Attributes(attributeList);
-        assertTrue(attributes.isTagPresent("foo"));
-        assertEquals(null, attributes.getValue("foo"));
-        assertTrue(Arrays.equals(new Object[]{"bar", "baz"}, attributes.getValues("a")));
-        assertEquals("\\FF\\00", attributes.getValue("b"));
+        attributes = Attributes.from(attributeList);
+        assert attributes.containsTag("foo");
+        assert attributes.valueFor("foo").getValue() == null;
+        assert Arrays.equals(new Object[]{"bar", "baz"}, attributes.valueFor("a").getValues());
+        assert Arrays.equals(new byte[]{(byte)0}, (byte[])attributes.valueFor("b").getValue());
     }
 
-    /**
-     * @testng.test
-     */
+    @Test
     public void testAsString() throws Exception
     {
         String attributeList = "(a=1,2),foo,(b=1),(separator=\\2c),(d=string),(condition=true),(bytes=\\FF\\00\\01\\0D\\09\\30)";
-        Attributes original = new Attributes(attributeList);
+        Attributes original = Attributes.from(attributeList);
 
         String asString = original.asString();
-        Attributes copy = new Attributes(asString);
+        Attributes copy = Attributes.from(asString);
 
-        assertEquals(original, copy);
+        assert original.equals(copy);
     }
 
-    /**
-     * @testng.test
-     */
-    public void testPut() throws Exception
-    {
-        String attributeList = "(a=1,2),foo,(b=1),(separator=\\2c),(d=string),(condition=true),(bytes=\\FF\\00\\01\\0D\\09\\30)";
-        Attributes original = new Attributes(attributeList);
-
-        Attributes copy = new Attributes();
-        copy.put("a", new String[]{"1","2"});
-        copy.put("foo");
-        copy.put("b", "1");
-        copy.put("separator", ",");
-        copy.put("d", "string");
-        copy.put("condition", "true");
-        copy.put("bytes", "\\FF\\00\\01\\0D\\09\\30");
-
-        assertEquals(original, copy);
-    }
-
-    /**
-     * @testng.test
-     */
+    @Test
     public void testValuesAreHomogeneus() throws Exception
     {
         String attributeList = "(a=true,\\FF\\00,string)";
         try
         {
-            new Attributes(attributeList);
+            Attributes.from(attributeList);
             throw new AssertionError();
         }
-        catch (ServiceLocationException x)
-        {
-        }
-
-        try
-        {
-            Attributes attributes = new Attributes();
-            attributes.put("a", new String[]{"true", "\\FF\\00", "string"});
-            throw new AssertionError();
-        }
-        catch (ServiceLocationException x)
+        catch (ServiceLocationException ignored)
         {
         }
     }
 
-    /**
-     * @testng.test
-     */
+    @Test
     public void testOpaqueConversion() throws Exception
     {
         try
@@ -151,7 +115,7 @@ public class AttributesTest extends SLPTestSupport
             Attributes.opaqueToBytes(null);
             throw new AssertionError();
         }
-        catch (NullPointerException x)
+        catch (NullPointerException ignored)
         {
         }
 
@@ -180,7 +144,7 @@ public class AttributesTest extends SLPTestSupport
             Attributes.bytesToOpaque(null);
             throw new AssertionError();
         }
-        catch (NullPointerException x)
+        catch (NullPointerException ignored)
         {
         }
 
@@ -195,5 +159,47 @@ public class AttributesTest extends SLPTestSupport
         assert opaqueToBytes != null;
         assert opaqueToBytes.length == bytes.length;
         assert Arrays.equals(bytes, opaqueToBytes);
+    }
+
+    @Test
+    public void testEscapeTagUnescapeTag()
+    {
+        String tag = "a!(),<=>\\~\t\n\r_*";
+        String escapedTag = Attributes.escapeTag(tag);
+        String unescapedTag = Attributes.unescapeTag(escapedTag);
+        assert unescapedTag.equals(tag);
+    }
+
+    @Test
+    public void testEscapeValueUnescapeValue()
+    {
+        String value = "a!(),<=>\\~";
+        String escapedValue = Attributes.escapeValue(value);
+        String unescapedValue = Attributes.unescapeValue(escapedValue);
+        assert unescapedValue.equals(value);
+    }
+
+    @Test
+    public void testEscapedTag()
+    {
+        String tag = "tag!"; // Character '!' is not allowed in tag, must be escaped
+        Integer value = 1;
+        Attributes attributes = Attributes.from("(" + Attributes.escapeTag(tag) + "=" + value + ")");
+        assert value.equals(attributes.valueFor(tag).getValue());
+    }
+
+    @Test
+    public void testEscapedValue()
+    {
+        String tag = "tag";
+        String value = "<1>";
+        Attributes attributes = Attributes.from("(" + tag + "=" + Attributes.escapeValue(value) + ")");
+        assert value.equals(attributes.valueFor(tag).getValue());
+    }
+
+    @Test
+    public void testSerializeDeserialize()
+    {
+//        Attributes attributes = Attributes.from("a=1,b=true,c=long string,d=\\FF\\CA\\FE\\BA\\BE");
     }
 }

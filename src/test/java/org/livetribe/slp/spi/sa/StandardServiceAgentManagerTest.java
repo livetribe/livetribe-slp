@@ -15,33 +15,31 @@
  */
 package org.livetribe.slp.spi.sa;
 
-import org.livetribe.slp.SLPTestSupport;
-
 /**
  * @version $Rev$ $Date$
  */
-public class StandardServiceAgentManagerTest extends SLPTestSupport
+public class StandardServiceAgentManagerTest
 {
-    /**
-     * @testng.test
-     */
-    public void testStartStop() throws Exception
-    {
-        StandardServiceAgentManager agent = new StandardServiceAgentManager();
-        agent.setPort(getPort());
-
-        assertFalse(agent.isRunning());
-
-        agent.start();
-        assertTrue(agent.isRunning());
-
-        agent.stop();
-        assertFalse(agent.isRunning());
-
-        agent.start();
-        assertTrue(agent.isRunning());
-
-        agent.stop();
-        assertFalse(agent.isRunning());
-    }
+//    /**
+//     * @testng.test
+//     */
+//    public void testStartStop() throws Exception
+//    {
+//        StandardServiceAgentManager agent = new StandardServiceAgentManager();
+//        agent.setPort(getPort());
+//
+//        assertFalse(agent.isRunning());
+//
+//        agent.start();
+//        assertTrue(agent.isRunning());
+//
+//        agent.stop();
+//        assertFalse(agent.isRunning());
+//
+//        agent.start();
+//        assertTrue(agent.isRunning());
+//
+//        agent.stop();
+//        assertFalse(agent.isRunning());
+//    }
 }

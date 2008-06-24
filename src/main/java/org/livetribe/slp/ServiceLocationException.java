@@ -18,10 +18,14 @@ package org.livetribe.slp;
 /**
  * Thrown when something goes wrong in Service Location Protocol operations.
  * Details about what happened are provided by a {@link #getErrorCode() error code}.
+ * This exception is normally unrecoverable, so it extends {@link RuntimeException}.
+ *
  * @version $Rev$ $Date$
  */
-public class ServiceLocationException extends Exception
+public class ServiceLocationException extends RuntimeException
 {
+    private static final long serialVersionUID = -201386891259786148L;
+
     /**
      * Error code indicating that DirectoryAgents or ServiceAgents have information
      * in other languages other than the one requested.

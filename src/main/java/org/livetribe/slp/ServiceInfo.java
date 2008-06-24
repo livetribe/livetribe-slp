@@ -15,8 +15,10 @@
  */
 package org.livetribe.slp;
 
-import org.livetribe.slp.spi.msg.SrvDeReg;
-import org.livetribe.slp.spi.msg.SrvReg;
+import java.util.concurrent.TimeUnit;
+
+import org.livetribe.slp.srv.msg.SrvDeReg;
+import org.livetribe.slp.srv.msg.SrvReg;
 
 /**
  * This class represents a service, exposed by ServiceAgents and cached by DirectoryAgents.
@@ -33,9 +35,10 @@ import org.livetribe.slp.spi.msg.SrvReg;
  * {@link Attributes} are not involved in service equality since they can contain
  * locale-specific information (for example: <code>(color=Yellow)</code> with language English,
  * and <code>(color=Giallo)</code> with language Italian.
+ *
+ * @version $Rev$ $Date$
  * @see ServiceURL
  * @see Attributes
- * @version $Rev$ $Date$
  */
 public class ServiceInfo
 {
@@ -50,7 +53,7 @@ public class ServiceInfo
      */
     public static ServiceInfo from(SrvReg message)
     {
-        return new ServiceInfo(message.getServiceType(), message.getURLEntry().toServiceURL(), message.getScopes(), message.getAttributes(), message.getLanguage());
+        return new ServiceInfo(message.getServiceType(), message.getURLEntry().toServiceURL(), message.getLanguage(), message.getScopes(), message.getAttributes());
     }
 
     /**
@@ -58,19 +61,20 @@ public class ServiceInfo
      */
     public static ServiceInfo from(SrvDeReg message)
     {
-        return new ServiceInfo(message.getURLEntry().toServiceURL(), message.getScopes(), message.getTags(), message.getLanguage());
+        return new ServiceInfo(message.getURLEntry().toServiceURL(), message.getLanguage(), message.getScopes(), message.getTags());
     }
 
     /**
      * Creates a <code>ServiceInfo</code> from a the given arguments.
+     *
      * @param serviceURL The service URL of the service
-     * @param scopes The scopes of the service
+     * @param scopes     The scopes of the service
      * @param attributes The attributes of the service
-     * @param language The language of the service
+     * @param language   The language of the service
      */
-    public ServiceInfo(ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
+    public ServiceInfo(ServiceURL serviceURL, String language, Scopes scopes, Attributes attributes)
     {
-        this(null, serviceURL, scopes, attributes, language);
+        this(null, serviceURL, language, scopes, attributes);
     }
 
     /**
@@ -78,7 +82,7 @@ public class ServiceInfo
      * constructor should be preferred to this one, as it does not introduce ambiguity between the
      * <code>ServiceType</code> argument and the <code>ServiceType</code> of the <code>ServiceURL</code> argument.
      */
-    public ServiceInfo(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
+    public ServiceInfo(ServiceType serviceType, ServiceURL serviceURL, String language, Scopes scopes, Attributes attributes)
     {
         this.key = new Key(serviceURL, language);
         this.serviceType = serviceType;
@@ -97,6 +101,7 @@ public class ServiceInfo
     /**
      * Returns the <code>ServiceType</code> as provided to the constructors; prefer {@link #resolveServiceType()}
      * to get the <code>ServiceType</code> of this <code>ServiceInfo</code>.
+     *
      * @see #resolveServiceType()
      */
     public ServiceType getServiceType()
@@ -129,14 +134,6 @@ public class ServiceInfo
     }
 
     /**
-     * Returns whether this <code>ServiceInfo</code> has attributes or not.
-     */
-    public boolean hasAttributes()
-    {
-        return attributes != null && !attributes.isEmpty();
-    }
-
-    /**
      * Returns the language of this <code>ServiceInfo</code>.
      */
     public String getLanguage()
@@ -160,50 +157,48 @@ public class ServiceInfo
     /**
      * Merges the attributes of this <code>ServiceInfo</code> with the attributes of the given <code>ServiceInfo</code>,
      * provided the two <code>ServiceInfo</code>s have the same {@link #getKey() key}.
+     *
      * @param that The <code>ServiceInfo</code> to merge with
      * @return A newly created <code>ServiceInfo</code>, result of the merge, or null if this <code>ServiceInfo</code>
-     * and the given <code>ServiceInfo</code> do not have the same {@link #getKey() key}.
+     *         and the given <code>ServiceInfo</code> do not have the same {@link #getKey() key}.
      * @see Attributes#merge(Attributes)
      */
-    public ServiceInfo merge(ServiceInfo that)
+    public ServiceInfo merge(Attributes thatAttrs)
     {
-        if (!getKey().equals(that.getKey())) return null;
         Attributes thisAttrs = getAttributes();
-        Attributes thatAttrs = that.getAttributes();
         Attributes mergedAttrs = null;
         if (thisAttrs == null)
             mergedAttrs = thatAttrs == null ? null : thatAttrs.merge(null);
         else
             mergedAttrs = thisAttrs.merge(thatAttrs);
-        return clone(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+        return clone(getServiceType(), getServiceURL(), getLanguage(), getScopes(), mergedAttrs);
     }
 
     /**
      * Unmerges the attributes of this <code>ServiceInfo</code> with the attributes of the given <code>ServiceInfo</code>,
      * provided the two <code>ServiceInfo</code>s have the same {@link #getKey() key}.
+     *
      * @param that The <code>ServiceInfo</code> to unmerge with
      * @return A newly created <code>ServiceInfo</code>, result of the unmerge, or null if this <code>ServiceInfo</code>
-     * and the given <code>ServiceInfo</code> do not have the same {@link #getKey() key}.
+     *         and the given <code>ServiceInfo</code> do not have the same {@link #getKey() key}.
      * @see Attributes#unmerge(Attributes)
      */
-    public ServiceInfo unmerge(ServiceInfo that)
+    public ServiceInfo unmerge(Attributes thatAttr)
     {
-        if (!getKey().equals(that.getKey())) return null;
-        Attributes thatAttr = that.getAttributes();
         if (thatAttr == null || thatAttr.isEmpty()) return null;
         Attributes thisAttr = getAttributes();
-        if (thisAttr == null) return new ServiceInfo(getServiceType(), getServiceURL(), getScopes(), getAttributes(), getLanguage());
+        if (thisAttr == null) return new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), getScopes(), getAttributes());
         Attributes mergedAttrs = thisAttr.unmerge(thatAttr);
-        return clone(getServiceType(), getServiceURL(), getScopes(), mergedAttrs, getLanguage());
+        return clone(getServiceType(), getServiceURL(), getLanguage(), getScopes(), mergedAttrs);
     }
 
     /**
      * Returns a new clone of this <code>ServiceInfo</code> with the given arguments.
      * Subclasses may override to clone additional state.
      */
-    protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, Scopes scopes, Attributes attributes, String language)
+    protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, String language, Scopes scopes, Attributes attributes)
     {
-        ServiceInfo clone = new ServiceInfo(serviceType, serviceURL, scopes, attributes, language);
+        ServiceInfo clone = new ServiceInfo(serviceType, serviceURL, language, scopes, attributes);
         clone.setRegistrationTime(getRegistrationTime());
         return clone;
     }
@@ -224,21 +219,29 @@ public class ServiceInfo
         this.registrationTime = registrationTime;
     }
 
+    public boolean expires()
+    {
+        int lifetime = getServiceURL().getLifetime();
+        return lifetime != ServiceURL.LIFETIME_PERMANENT;
+    }
+
     /**
      * Returns true if the <code>ServiceURL</code>'s lifetime is expired, since its registration, as of the specified time.
+     *
      * @param time The time, in milliseconds, to check if the lifetime is expired.
      * @see #getRegistrationTime()
      * @see ServiceURL#getLifetime()
      */
     public boolean isExpiredAsOf(long time)
     {
-        long lifetime = getServiceURL().getLifetime() * 1000L;
-        return getRegistrationTime() + lifetime <= time;
+        if (!expires()) return false;
+        long lifetimeMillis = TimeUnit.SECONDS.toMillis(getServiceURL().getLifetime());
+        return getRegistrationTime() + lifetimeMillis <= time;
     }
 
     /**
-     * Services in SLP are identified by their ServiceURL and their language.
-     * This class encapsulates this service identity.
+     * Services are identified by their ServiceURL and their language.
+     * This class encapsulates the service identity.
      */
     public static class Key
     {
@@ -247,10 +250,11 @@ public class ServiceInfo
 
         /**
          * Creates a new <code>Key</code> object.
+         *
          * @param serviceURL The ServiceURL of the service
-         * @param language The language of the service
+         * @param language   The language of the service
          */
-        public Key(ServiceURL serviceURL, String language)
+        private Key(ServiceURL serviceURL, String language)
         {
             this.serviceURL = serviceURL;
             this.language = language;
@@ -275,7 +279,7 @@ public class ServiceInfo
         /**
          * Returns the ServiceURL of this key.
          */
-        public ServiceURL getServiceURL()
+        private ServiceURL getServiceURL()
         {
             return serviceURL;
         }
@@ -283,7 +287,7 @@ public class ServiceInfo
         /**
          * Returns the language of this key.
          */
-        public String getLanguage()
+        private String getLanguage()
         {
             return language;
         }

@@ -15,44 +15,47 @@
  */
 package org.livetribe.slp;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-
 /**
- * Attributes are key-value pairs that describe a service.
+ * Attributes are a comma separated list of key-value pairs that describe a service.
  * The attribute key is called <b>tag</b>, and the attribute value can be non-valued (the tag as no value),
  * single-valued (the tag as only one value) or multi-valued (the tag has more values).
- * Depending on the value(s) of the tag, the attribute has a <b>type<b>; there are four defined types:
+ * Depending on the value(s) of the tag, the attribute has a <b>type</b>; there are four defined types:
  * <ul>
  * <li>boolean, representing boolean values</li>
- * <li>long, representing natural numbers</li>
+ * <li>integer, representing natural numbers</li>
  * <li>string, representing strings</li>
- * <li>opaque, representing bytes</li>
+ * <li>opaque, representing an array of bytes</li>
  * </ul>
- * Attribute values should be homogeneous: the attribute <code>a=1,true,\FF\00</code> is illegal, because it's not
- * clear if the type is long, boolean, or opaque.
+ * Attribute values should be homogeneous: the attribute <code>(a=1,true,\FF\00)</code> is illegal, because it's not
+ * clear if the type is integer, boolean, or opaque.
  * <br />
  * Attributes can be used by UserAgents during service lookup to select appropriate services that match required
  * conditions.
  * <br />
- * Attributes can be described using a string representation, for example:
+ * Attributes can be described using a string representation; a valued or multi-valued attribute must be enclosed in
+ * parenthesis, while for non-valued attributes (also called <em>presence attribute</em>) the parenthesis may be
+ * omitted, for example:
  * <pre>
- * String attributesString = "(a=1,2),(b=true),(bytes=\FF\CA\FE\BA\BE),(present),(description=Something Interesting)";
- * Attributes attributes = new Attributes(attributesString);
+ * String attributesString = "(a=1,2),(b=true),(bytes=\FF\CA\FE\BA\BE),(present),alsoPresent,(description=Something Interesting)";
+ * Attributes attributes = Attributes.from(attributesString);
  * </pre>
- * The example defines 5 attributes:
+ * The example defines 6 attributes:
  * <ul>
- * <li>the first attribute has tag "a", values "1" and "2" and type "long";</li>
+ * <li>the first attribute has tag "a", values "1" and "2" and type "integer";</li>
  * <li>the second attribute has tag "b", value "true" and type "boolean";</li>
  * <li>the third attribute has tag "bytes", value "\FF\CA\FE\BA\BE" and type "opaque";</li>
  * <li>the fourth attribute has tag "present", no value, and type "presence";</li>
- * <li>the fifth attribute has tag "description", value "Something Interesting" and type "string".</li>
+ * <li>the fifth attribute has tag "alsoPresent", no value, and type "presence";</li>
+ * <li>the sixth attribute has tag "description", value "Something Interesting" and type "string".</li>
  * </ul>
+ *
  * @version $Rev$ $Date$
  */
 public class Attributes
@@ -60,6 +63,7 @@ public class Attributes
     private static final char ESCAPE_PREFIX = '\\';
     private static final String OPAQUE_PREFIX = ESCAPE_PREFIX + "FF";
     private static final char[] reservedChars = new char[128];
+    private static final char[] reservedTagChars = new char[128];
 
     static
     {
@@ -72,23 +76,39 @@ public class Attributes
         reservedChars['>'] = '>';
         reservedChars['\\'] = '\\';
         reservedChars['~'] = '~';
+        System.arraycopy(reservedChars, 0, reservedTagChars, 0, reservedChars.length);
+        reservedTagChars['\t'] = '\t';
+        reservedTagChars['\n'] = '\n';
+        reservedTagChars['\r'] = '\r';
+        reservedTagChars['_'] = '_';
+        reservedTagChars['*'] = '*';
     }
 
-    private final Map attributes = new HashMap();
+    public static final Attributes NONE = Attributes.from(null);
 
     /**
-     * Creates an empty <code>Attributes</code> object.
-     */
-    public Attributes()
-    {
-    }
-
-    /**
-     * Creates an <code>Attributes</code> object parsing the given <code>attributeList</code> string.
-     * @param attributeList The string containing the attributes to parse
+     * Creates an <code>Attributes</code> object parsing the given escaped attributes string.
+     * An escaped attributes string is an attribute list as defined in RFC 2608, 5.0, where
+     * tags that contain reserved characters are escaped, where string values that contain
+     * reserved characters are escaped and where bytes are converted to an opaque (escaped) string.
+     *
+     * @param escapedAttributesString The string containing the attributes to parse
      * @throws ServiceLocationException If the parsing fails
+     * @see #escapeTag
+     * @see #escapeString
+     * @see #escapeBytes
      */
-    public Attributes(String attributeList) throws ServiceLocationException
+    public static Attributes from(String escapedAttributesString)
+    {
+        return new Attributes(escapedAttributesString);
+    }
+
+    /**
+     * Maps unescaped tags to the corrispondent value
+     */
+    private final Map<String, Entry> attributes = new HashMap<String, Entry>();
+
+    private Attributes(String attributeList)
     {
         parse(attributeList);
     }
@@ -99,41 +119,12 @@ public class Attributes
     }
 
     /**
-     * Puts a presence tag.
-     * @param tag The tag to add
+     * Returns the <code>Entry</code> for the given unescaped tag.
      */
-    public void put(String tag)
+    public Entry valueFor(String unescapedTag)
     {
-        attributes.put(tag, new Entry(null, Entry.PRESENCE));
-    }
-
-    /**
-     * Puts a tag with the specified value.
-     * @param tag The tag to add
-     * @param value The value of the tag
-     */
-    public void put(String tag, String value)
-    {
-        attributes.put(tag, entryFromString(value));
-    }
-
-    /**
-     * Puts a tag with the specified values
-     * @param tag The tag to add
-     * @param values The values of the tag
-     * @throws ServiceLocationException If the values are not of the same type
-     */
-    public void put(String tag, String[] values) throws ServiceLocationException
-    {
-        attributes.put(tag, entryFromStringArray(values));
-    }
-
-    /**
-     * Returns the <code>Entry</code> for the given tag.
-     */
-    public Entry getEntry(String tag)
-    {
-        return (Entry)attributes.get(tag);
+        Entry entry = attributes.get(unescapedTag);
+        return entry == null ? Entry.NULL_ENTRY : entry;
     }
 
     /**
@@ -146,16 +137,17 @@ public class Attributes
      * <li>the tag value, if the tag is present and it is a single valued tag</li>
      * <li>the first tag value, if the tag is present and it is a multi valued tag</li>
      * </ul>
-     * @see #isTagPresent(String)
+     *
+     * @see #containsTag(String)
      * @see #getValues(String)
      */
-    public Object getValue(String tag)
-    {
-        Entry entry = getEntry(tag);
-        if (entry == null) return null;
-        if (entry.isPresenceType()) return null;
-        return entry.getValue();
-    }
+//    public Object getValue(String tag)
+//    {
+//        Entry entry = getEntry(tag);
+//        if (entry == null) return null;
+//        if (entry.isPresenceType()) return null;
+//        return entry.getValue();
+//    }
 
     /**
      * Returns the values for the given tag.
@@ -167,16 +159,17 @@ public class Attributes
      * <li>the tag value, wrapped in an Object[] of length 1, if the tag is present and it is a single valued tag</li>
      * <li>the tag values, if the tag is present and it is a multi valued tag</li>
      * </ul>
-     * @see #isTagPresent(String)
+     *
+     * @see #containsTag(String)
      * @see #getValue(String)
      */
-    public Object[] getValues(String tag)
-    {
-        Entry entry = getEntry(tag);
-        if (entry == null) return null;
-        if (entry.isPresenceType()) return null;
-        return entry.getValues();
-    }
+//    public Object[] getValues(String tag)
+//    {
+//        Entry entry = getEntry(tag);
+//        if (entry == null) return null;
+//        if (entry.isPresenceType()) return null;
+//        return entry.getValues();
+//    }
 
     /**
      * Returns true if this <code>Attributes</code> object is empty.
@@ -187,31 +180,36 @@ public class Attributes
     }
 
     /**
-     * Returns true if the given tag is present in this <code>Attributes</code> object.
+     * Returns true if the given unescaped tag is present in this <code>Attributes</code> object.
+     *
      * @see Entry#isPresenceType()
      */
-    public boolean isTagPresent(String tag)
+    public boolean containsTag(String unescapedTag)
     {
-        return attributes.containsKey(tag);
+        return attributes.containsKey(unescapedTag);
     }
 
     /**
      * Returns a byte array containing the bytes parsed from the given opaque string, except the initial opaque prefix \FF.
+     *
      * @param opaqueString The opaque string containing the bytes to parse
      * @throws ServiceLocationException If the parsing fails
      * @see #bytesToOpaque(byte[])
      */
     public static byte[] opaqueToBytes(String opaqueString) throws ServiceLocationException
     {
-        if (!opaqueString.startsWith(OPAQUE_PREFIX)) throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, ServiceLocationException.PARSE_ERROR);
-        if (opaqueString.length() % 3 != 0) throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", ServiceLocationException.PARSE_ERROR);
+        if (!opaqueString.startsWith(OPAQUE_PREFIX))
+            throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, ServiceLocationException.PARSE_ERROR);
+        if (opaqueString.length() % 3 != 0)
+            throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", ServiceLocationException.PARSE_ERROR);
 
         byte[] result = new byte[(opaqueString.length() - OPAQUE_PREFIX.length()) / 3];
         int position = 0;
         int index = OPAQUE_PREFIX.length();
         while (index < opaqueString.length())
         {
-            if (opaqueString.charAt(index) != ESCAPE_PREFIX) throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, ServiceLocationException.PARSE_ERROR);
+            if (opaqueString.charAt(index) != ESCAPE_PREFIX)
+                throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, ServiceLocationException.PARSE_ERROR);
             ++index;
             String hexString = opaqueString.substring(index, index + 2);
             result[position] = (byte)(Integer.parseInt(hexString, 16) & 0xFF);
@@ -223,56 +221,171 @@ public class Attributes
 
     /**
      * Returns an opaque string containing the escaped sequence of the given bytes, including the initial opaque prefix \FF.
+     *
      * @param bytes The bytes to escape into an opaque string
      * @see #opaqueToBytes(String)
      */
     public static String bytesToOpaque(byte[] bytes)
     {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(OPAQUE_PREFIX);
-        for (int i = 0; i < bytes.length; ++i)
+        for (byte aByte : bytes)
         {
             result.append(ESCAPE_PREFIX);
-            int code = bytes[i] & 0xFF;
+            int code = aByte & 0xFF;
             if (code < 16) result.append("0");
             result.append(Integer.toHexString(code).toUpperCase());
         }
         return result.toString();
     }
 
-    private void parse(String attributeList) throws ServiceLocationException
+    /**
+     * Escapes the given tag string following RFC 2608, 5.0.
+     * For example, the tag string <code>&lt;A&gt;</code> will be converted into the string
+     * <code>\3cA\3e</code>.
+     * @param tag the tag string to escape
+     * @return the escaped tag string
+     * @see #unescapeTag(String)
+     */
+    public static String escapeTag(String tag)
     {
-        if (attributeList == null) return;
+        return escape(tag, reservedTagChars);
+    }
 
-        StringBuffer nonPairs = new StringBuffer();
-        int start = 0;
-        while (start < attributeList.length())
+    private static String escape(String value, char[] reserved)
+    {
+        value = value.trim();
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < value.length(); ++i)
         {
-            int open = attributeList.indexOf('(', start);
+            char c = value.charAt(i);
+            if (c < reserved.length && reserved[c] == c)
+            {
+                result.append(ESCAPE_PREFIX);
+                int code = c & 0xFF;
+                if (code < 16) result.append("0");
+                result.append(Integer.toHexString(code));
+            }
+            else
+            {
+                result.append(c);
+            }
+        }
+        return result.toString();
+    }
+
+    /**
+     * Unescapes the given escaped tag following RFC 2608, 5.0.
+     * For example, the escaped tag string <code>\3cA\3e</code> will be converted into
+     * <code>&lt;A&gt;</code>.
+     * @param escapedTag the tag string to unescape
+     * @return the unescaped tag
+     * @throws ServiceLocationException if the escaping is wrong
+     * @see #escapeTag(String)
+     */
+    public static String unescapeTag(String escapedTag) throws ServiceLocationException
+    {
+        // Check that the escaped tag does not contain reserved characters
+        checkEscaped(escapedTag, reservedTagChars);
+
+        // Unescape the tag
+        return unescape(escapedTag, reservedTagChars);
+    }
+
+    private static String unescape(String value, char[] reserved)
+    {
+        value = value.trim();
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < value.length(); ++i)
+        {
+            char c = value.charAt(i);
+            if (c == ESCAPE_PREFIX)
+            {
+                String codeString = value.substring(i + 1, i + 3);
+                int code = Integer.parseInt(codeString, 16);
+                if (code < reserved.length && reserved[code] == code)
+                {
+                    builder.append(reserved[code]);
+                    i += 2;
+                }
+                else
+                {
+                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.PARSE_ERROR);
+                }
+            }
+            else
+            {
+                builder.append(c);
+            }
+        }
+        return builder.toString().trim();
+    }
+
+    private static void checkEscaped(String value, char[] reserved) throws ServiceLocationException
+    {
+        if (value.trim().length() == 0)
+            throw new ServiceLocationException("Escaped string could not be the empty string", ServiceLocationException.PARSE_ERROR);
+        for (int i = 0; i < value.length(); ++i)
+        {
+            char ch = value.charAt(i);
+            // The backslash is a reserved character, but is present in escaped strings, skip it
+            if (ch != ESCAPE_PREFIX && ch < reserved.length && reserved[ch] == ch)
+                throw new ServiceLocationException("Illegal character '" + ch + "' in " + value, ServiceLocationException.PARSE_ERROR);
+        }
+    }
+
+    /**
+     * Escapes the given value string following RFC 2608, 5.0.
+     * @param unescapedValue the value string to escape
+     * @return the escaped value string
+     */
+    public static String escapeValue(String unescapedValue)
+    {
+        return escape(unescapedValue, reservedChars);
+    }
+
+    public static String unescapeValue(String escapedValue)
+    {
+        // Check that the escaped value does not contain reserved characters
+        checkEscaped(escapedValue, reservedChars);
+
+        // Unescape the value
+        return unescape(escapedValue, reservedTagChars);
+    }
+
+    private void parse(String escapedAttributeList) throws ServiceLocationException
+    {
+        if (escapedAttributeList == null) return;
+
+        StringBuilder nonPairs = new StringBuilder();
+        int start = 0;
+        while (start < escapedAttributeList.length())
+        {
+            int open = escapedAttributeList.indexOf('(', start);
             if (open < 0)
             {
-                String remaining = attributeList.substring(start);
+                String remaining = escapedAttributeList.substring(start);
                 nonPairs.append(remaining);
                 start += remaining.length();
             }
             else
             {
-                int close = attributeList.indexOf(')', open);
+                int close = escapedAttributeList.indexOf(')', open);
                 if (close < 0)
-                    throw new ServiceLocationException("Missing ')' in attribute list " + attributeList, ServiceLocationException.PARSE_ERROR);
-                nonPairs.append(attributeList.substring(start, open));
-                String pair = attributeList.substring(open, close + 1);
-                parseAttribute(pair, attributeList);
+                    throw new ServiceLocationException("Missing ')' in attribute list " + escapedAttributeList, ServiceLocationException.PARSE_ERROR);
+                nonPairs.append(escapedAttributeList.substring(start, open));
+                String pair = escapedAttributeList.substring(open, close + 1);
+                parseAttribute(pair, escapedAttributeList);
                 start = close + 1;
             }
         }
 
         // Only tags, no pairs
         String[] attributes = nonPairs.toString().split(",", 0);
-        for (int i = 0; i < attributes.length; ++i)
+        for (String attribute : attributes)
         {
-            String attribute = attributes[i].trim();
-            if (attribute.length() > 0) parseAttribute(attribute, attributeList);
+            attribute = attribute.trim();
+            if (attribute.length() > 0) parseAttribute(attribute, escapedAttributeList);
         }
     }
 
@@ -292,138 +405,25 @@ public class Attributes
                 throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing '=' in " + attribute, ServiceLocationException.PARSE_ERROR);
 
             String escapedTag = pair.substring(0, equals);
-            String unescapedTag = checkAndUnescapeTag(escapedTag);
+            String unescapedTag = unescapeTag(escapedTag);
 
             String value = pair.substring(equals + 1).trim();
             if (value.indexOf(',') >= 0)
             {
                 // It's a list of values
-                String[] values = value.split(",", -1);
-                if (values.length > 0)
-                {
-                    for (int i = 0; i < values.length; ++i) values[i] = checkAndUnescapeValue(values[i]);
-                    put(unescapedTag, values);
-                }
+                String[] values = value.split(",");
+                attributes.put(unescapedTag, entryFromStringArray(values));
             }
             else
             {
-                value = checkAndUnescapeValue(value);
-                put(unescapedTag, value);
+                attributes.put(unescapedTag, entryFromString(value));
             }
         }
         else
         {
-            attribute = checkAndUnescapeTag(attribute);
-            put(attribute);
+            String unescapedTag = unescapeTag(attribute);
+            attributes.put(unescapedTag, new Entry(null, Entry.PRESENCE));
         }
-    }
-
-    private String checkAndUnescapeTag(String escapedTag) throws ServiceLocationException
-    {
-        // Check that the escaped tag does not contain reserved characters
-        checkEscaped(escapedTag);
-
-        // Check if the tag is unescapable; wrong escaping will be detected here
-        String unescaped = unescape(escapedTag).trim();
-        if (unescaped.length() == 0)
-            throw new ServiceLocationException("Attribute tag could not be the empty string", ServiceLocationException.PARSE_ERROR);
-
-        // Check disallowed characters in unescaped tag
-        if (unescaped.indexOf('\t') >= 0 ||
-                unescaped.indexOf('\r') >= 0 ||
-                unescaped.indexOf('\n') >= 0 ||
-                unescaped.indexOf('*') >= 0 ||
-                unescaped.indexOf('_') >= 0)
-            throw new ServiceLocationException("Illegal character in attribute tag " + unescaped, ServiceLocationException.PARSE_ERROR);
-
-        return unescaped;
-    }
-
-    private String checkAndUnescapeValue(String escaped) throws ServiceLocationException
-    {
-        escaped = escaped.trim();
-
-        // Special case: the value is opaque
-        if (isOpaque(escaped)) return escaped;
-
-        // Check that the escaped value does not contain reserved characters
-        checkEscaped(escaped);
-
-        // Check if the value is unescapable; wrong escaping will be detected here
-        return unescape(escaped).trim();
-    }
-
-    /**
-     * Checks that the given escaped string does not contain reserved characters.
-     * For example, the string <code>foo,bar</code> will throw a ServiceLocationException (the comma is a reserved character),
-     * while the string <code>foo\2cbar<code> will pass the check.
-     *
-     * @param escaped The string to check, it's assumed that's escaped.
-     * @throws ServiceLocationException If a reserved character is contained in the string
-     */
-    private void checkEscaped(String escaped) throws ServiceLocationException
-    {
-        for (int i = 0; i < escaped.length(); ++i)
-        {
-            char ch = escaped.charAt(i);
-            // The backslash is a reserved character, but is present in escaped strings, skip it
-            if (ch != ESCAPE_PREFIX && ch < reservedChars.length && reservedChars[ch] == ch)
-                throw new ServiceLocationException("Illegal character '" + ch + "' in " + escaped, ServiceLocationException.PARSE_ERROR);
-        }
-    }
-
-    private String escape(String value)
-    {
-        if (value == null) return null;
-
-        // Do not escape already escaped sequence of bytes
-        if (isOpaque(value)) return value;
-
-        StringBuffer result = new StringBuffer();
-        for (int i = 0; i < value.length(); ++i)
-        {
-            char c = value.charAt(i);
-            if (c < reservedChars.length && reservedChars[c] == c)
-            {
-                result.append(ESCAPE_PREFIX);
-                int code = c & 0xFF;
-                if (code < 16) result.append("0");
-                result.append(Integer.toHexString(code));
-            }
-            else
-            {
-                result.append(c);
-            }
-        }
-        return result.toString();
-    }
-
-    private String unescape(String value) throws ServiceLocationException
-    {
-        StringBuffer result = new StringBuffer();
-        for (int i = 0; i < value.length(); ++i)
-        {
-            char c = value.charAt(i);
-            if (c == ESCAPE_PREFIX)
-            {
-                String codeString = value.substring(i + 1, i + 3);
-                int code = Integer.parseInt(codeString, 16);
-                if (code < reservedChars.length && reservedChars[code] == code)
-                {
-                    result.append(reservedChars[code]);
-                    i += 2;
-                }
-                else
-                {
-                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.PARSE_ERROR);
-                }
-            }
-            else
-            {
-                result.append(c);
-            }
-        }
-        return result.toString();
     }
 
     public boolean equals(Object obj)
@@ -443,36 +443,42 @@ public class Attributes
     /**
      * Returns a string representation of this <code>Attributes</code> object, that can be passed to
      * {@link #Attributes(String)} to be parsed.
+     * @return the escaped attribute list string
      */
     public String asString()
     {
-        TreeMap orderedAttributes = new TreeMap(attributes);
-
-        StringBuffer result = new StringBuffer();
-        for (Iterator entries = orderedAttributes.entrySet().iterator(); entries.hasNext();)
+        TreeMap<String, Entry> orderedAttributes = new TreeMap<String, Entry>(attributes);
+        StringBuilder result = new StringBuilder();
+        for (Iterator<Map.Entry<String, Entry>> entries = orderedAttributes.entrySet().iterator(); entries.hasNext();)
         {
-            Map.Entry mapEntry = (Map.Entry)entries.next();
-            String tag = (String)mapEntry.getKey();
-            Entry entry = (Entry)mapEntry.getValue();
+            Map.Entry<String, Entry> mapEntry = entries.next();
+            String tag = mapEntry.getKey();
+            Entry entry = mapEntry.getValue();
             if (entry.isPresenceType())
             {
-                result.append(escape(tag));
+                result.append(escapeTag(tag));
             }
             else
             {
-                result.append("(").append(escape(tag)).append("=");
+                result.append("(").append(escapeTag(tag)).append("=");
                 if (entry.valueIsArray)
                 {
                     Object[] values = entry.getValues();
                     for (int i = 0; i < values.length; ++i)
                     {
                         if (i > 0) result.append(",");
-                        result.append(escape(String.valueOf(values[i])));
+                        if (entry.isOpaqueType())
+                            result.append(bytesToOpaque((byte[])values[i]));
+                        else
+                            result.append(escapeValue(String.valueOf(values[i])));
                     }
                 }
                 else
                 {
-                    result.append(escape(String.valueOf(entry.getValue())));
+                    if (entry.isOpaqueType())
+                        result.append(bytesToOpaque((byte[])entry.getValue()));
+                    else
+                        result.append(escapeValue(String.valueOf(entry.getValue())));
                 }
                 result.append(")");
             }
@@ -492,16 +498,16 @@ public class Attributes
     private Entry entryFromString(String value)
     {
         // Is it opaque ?
-        if (isOpaque(value)) return new Entry(value, Entry.OPAQUE);
+        if (isOpaque(value)) return new Entry(opaqueToBytes(value), Entry.OPAQUE);
 
         // Is it a number ?
-        if (isNaturalNumber(value)) return new Entry(Long.valueOf(value), Entry.LONG);
+        if (isInteger(value)) return new Entry(Integer.valueOf(value), Entry.INTEGER);
 
         // Is it a boolean ?
         if (isBoolean(value)) return new Entry(Boolean.valueOf(value), Entry.BOOLEAN);
 
         // Then it's a string
-        return new Entry(value, Entry.STRING);
+        return new Entry(unescapeValue(value), Entry.STRING);
     }
 
     private boolean isBoolean(String value)
@@ -509,12 +515,12 @@ public class Attributes
         return "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
     }
 
-    private boolean isNaturalNumber(String value)
+    private boolean isInteger(String value)
     {
         return Pattern.matches("[0-9]+", value);
     }
 
-    private boolean isOpaque(String value)
+    private static boolean isOpaque(String value)
     {
         return value.startsWith(OPAQUE_PREFIX);
     }
@@ -544,7 +550,8 @@ public class Attributes
         else
         {
             // It's not homogeneous, and there is one opaque entry: RFC 2608, 5.0 says it's illegal.
-            if (opaquePresent) throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one entry is opaque: " + Arrays.asList(values), ServiceLocationException.PARSE_ERROR);
+            if (opaquePresent)
+                throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one entry is opaque: " + Arrays.asList(values), ServiceLocationException.PARSE_ERROR);
 
             Object[] entryValues = new Object[values.length];
             System.arraycopy(values, 0, entryValues, 0, values.length);
@@ -559,6 +566,7 @@ public class Attributes
      * If this <code>Attributes</code> contains a tag that exists in the given <code>Attributes</code>, the merged
      * <code>Attributes</code> will contain the entry from the given <code>Attributes</code> object (overwriting the one
      * from this <code>Attributes</code> object).
+     *
      * @param that The <code>Attributes</code> to merge with
      * @return A new <code>Attributes</code> object containing the merged attributes.
      */
@@ -575,6 +583,7 @@ public class Attributes
      * If the given <code>Attributes</code> is null, a clone of this <code>Attributes</code> object will be returned.
      * The unmerged <code>Attributes</code> will contain only the attributes present in this <code>Attributes</code> object
      * but not in the given <code>Attributes</code> object.
+     *
      * @param that The <code>Attributes</code> to unmerge with
      * @return A new <code>Attributes</code> object containing the unmerged attributes.
      */
@@ -588,11 +597,14 @@ public class Attributes
     /**
      * Represent the attribute value within the {@link Attributes} class.
      * An <code>Entry</code> encapsulates the attribute value(s) and type.
+     * The values are unescaped, so for example opaque strings are stored as byte[].
      */
     public static class Entry
     {
+        private static final Entry NULL_ENTRY = new Entry(null, 0);
+
         private static final int STRING = 1;
-        private static final int LONG = 2;
+        private static final int INTEGER = 2;
         private static final int BOOLEAN = 3;
         private static final int OPAQUE = 4;
         private static final int PRESENCE = 5;
@@ -622,11 +634,11 @@ public class Attributes
         }
 
         /**
-         * Returns true if this entry is of type long (a natural number).
+         * Returns true if this entry is of type integer.
          */
-        public boolean isLongType()
+        public boolean isIntegerType()
         {
-            return type == LONG;
+            return type == INTEGER;
         }
 
         /**
@@ -659,6 +671,7 @@ public class Attributes
          */
         public Object getValue()
         {
+            if (isPresenceType()) return null;
             if (valueIsArray) return ((Object[])value)[0];
             return value;
         }
@@ -669,6 +682,7 @@ public class Attributes
          */
         public Object[] getValues()
         {
+            if (isPresenceType()) return null;
             if (valueIsArray) return (Object[])value;
             return new Object[]{value};
         }

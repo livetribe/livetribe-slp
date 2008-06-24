@@ -15,8 +15,6 @@
  */
 package org.livetribe.slp;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /**
@@ -44,6 +42,7 @@ import java.io.Serializable;
  */
 public class ServiceType implements Serializable
 {
+    private static final long serialVersionUID = 4196123698679426411L;
     private static final String SERVICE = "service:";
 
     private final String type;
@@ -186,15 +185,9 @@ public class ServiceType implements Serializable
     /**
      * Returns the string form of this service type, that can be passed to {@link #ServiceType(String)} to be parsed.
      */
-    public String toString()
+    public String asString()
     {
         return type;
-    }
-
-    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException
-    {
-        ois.defaultReadObject();
-        parse(type);
     }
 
     private void parse(String serviceType)
@@ -239,5 +232,11 @@ public class ServiceType implements Serializable
         {
             namingAuthority = "";
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return asString();
     }
 }

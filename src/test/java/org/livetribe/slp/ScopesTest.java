@@ -15,69 +15,92 @@
  */
 package org.livetribe.slp;
 
+import java.util.Arrays;
+
+import org.testng.annotations.Test;
+
 /**
  * @version $Rev$ $Date$
  */
-public class ScopesTest extends SLPTestSupport
+public class ScopesTest
 {
-    /**
-     * @testng.test
-     */
+    @Test
     public void testCaseInsensitivity() throws Exception
     {
-        Scopes scopes1 = new Scopes(new String[]{"SCOPE"});
-        Scopes scopes2 = new Scopes(new String[]{"scope"});
+        Scopes scopes1 = Scopes.from("SCOPE");
+        Scopes scopes2 = Scopes.from("scope");
 
         assert scopes1.equals(scopes2);
     }
 
-    /**
-     * @testng.test
-     */
+    @Test
     public void testMatch() throws Exception
     {
         Scopes scopes1 = Scopes.DEFAULT;
-        Scopes scopes2 = new Scopes(new String[]{"scope"});
+        Scopes scopes2 = Scopes.from("scope");
 
         assert !scopes1.match(scopes2);
         assert !scopes2.match(scopes1);
 
-        scopes1 = new Scopes(new String[]{"scope1", "scope2"});
-        scopes2 = new Scopes(new String[]{"scope2"});
+        scopes1 = Scopes.from("scope1", "scope2");
+        scopes2 = Scopes.from("scope2");
 
         assert scopes1.match(scopes2);
         assert !scopes2.match(scopes1);
 
-        // The special wildcard scope matches no scopes, and will be matched by all scopes
-        scopes1 = Scopes.WILDCARD;
-        scopes2 = new Scopes(new String[]{"scope2"});
+        // The special none scope matches no scopes, and is matched by all scopes
+        scopes1 = Scopes.NONE;
+        scopes2 = Scopes.from("scope2");
 
         assert !scopes1.match(scopes2);
         assert scopes2.match(scopes1);
+
+        // The special any scope matches all scopes, and is matched by no scope
+        scopes1 = Scopes.ANY;
+        scopes2 = Scopes.from("scope2");
+
+        assert scopes1.match(scopes2);
+        assert !scopes2.match(scopes1);
     }
 
-    /**
-     * @testng.test
-     */
+    @Test
     public void testWeakMatch() throws Exception
     {
         Scopes scopes1 = Scopes.DEFAULT;
-        Scopes scopes2 = new Scopes(new String[]{"scope"});
+        Scopes scopes2 = Scopes.from("scope");
 
         assert !scopes1.weakMatch(scopes2);
         assert !scopes2.weakMatch(scopes1);
 
-        scopes1 = new Scopes(new String[]{"scope1", "scope2"});
-        scopes2 = new Scopes(new String[]{"scope2"});
+        scopes1 = Scopes.from("scope1", "scope2");
+        scopes2 = Scopes.from("scope2");
 
         assert scopes1.weakMatch(scopes2);
         assert scopes2.weakMatch(scopes1);
 
-        // The special wildcard scope matches no scopes, and will be matched by all scopes
-        scopes1 = Scopes.WILDCARD;
-        scopes2 = new Scopes(new String[]{"scope2"});
+        // The special empty scope matches no scopes, and will be matched by all scopes
+        scopes1 = Scopes.NONE;
+        scopes2 = Scopes.from("scope2");
 
         assert !scopes1.weakMatch(scopes2);
         assert scopes2.weakMatch(scopes1);
+
+        // The special any scope matches all scopes, and is matched by no scope
+        scopes1 = Scopes.ANY;
+        scopes2 = Scopes.from("scope2");
+
+        assert scopes1.match(scopes2);
+        assert !scopes2.match(scopes1);
+    }
+
+    @Test
+    public void testEscapeUnescape()
+    {
+        Scopes scopes = Scopes.from("*");
+        assert !scopes.equals(Scopes.ANY);
+
+        String[] reserved = new String[]{"!", "(", ")", "*", "+", ",", ";", "<", "=", ">", "\\", "~"};
+        scopes = Scopes.from(reserved);
+        assert Arrays.equals(scopes.asStringArray(), reserved);
     }
 }
