@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 the original author or authors
+ * Copyright 2005-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public class SrvRqstConverger extends Converger<SrvRply>
         super(udpConnector, settings);
     }
 
-    protected SrvRply handle(byte[] rplyBytes, InetSocketAddress address)
+    protected SrvRply convert(byte[] rplyBytes, InetSocketAddress address)
     {
         Message message = Message.deserialize(rplyBytes);
         if (Message.SRV_RPLY_TYPE != message.getMessageType())
@@ -42,9 +42,6 @@ public class SrvRqstConverger extends Converger<SrvRply>
                 logger.finest("Ignoring message received from " + address + ": " + message + ", expecting SrvRply");
             return null;
         }
-
-        SrvRply srvRply = (SrvRply)message;
-        srvRply.setResponder(address.getAddress().getHostAddress());
-        return srvRply;
+        return (SrvRply)message;
     }
 }

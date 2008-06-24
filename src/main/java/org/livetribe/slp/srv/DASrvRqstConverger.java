@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 the original author or authors
+ * Copyright 2005-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public class DASrvRqstConverger extends Converger<DAAdvert>
         super(udpConnector, settings);
     }
 
-    protected DAAdvert handle(byte[] rplyBytes, InetSocketAddress address)
+    protected DAAdvert convert(byte[] rplyBytes, InetSocketAddress address)
     {
         Message message = Message.deserialize(rplyBytes);
         if (Message.DA_ADVERT_TYPE != message.getMessageType())
@@ -42,9 +42,6 @@ public class DASrvRqstConverger extends Converger<DAAdvert>
                 logger.finest("Ignoring message received from " + address + ": " + message + ", expecting DAAdvert");
             return null;
         }
-
-        DAAdvert daAdvert = (DAAdvert)message;
-        daAdvert.setResponder(address.getAddress().getHostAddress());
-        return daAdvert;
+        return (DAAdvert)message;
     }
 }

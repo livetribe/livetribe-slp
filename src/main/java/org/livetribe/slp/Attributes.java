@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 the original author or authors
+ * Copyright 2006-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,27 +33,26 @@ import java.util.regex.Pattern;
  * <li>string, representing strings</li>
  * <li>opaque, representing an array of bytes</li>
  * </ul>
- * Attribute values should be homogeneous: the attribute <code>(a=1,true,\FF\00)</code> is illegal, because it's not
- * clear if the type is integer, boolean, or opaque.
+ * Attribute values should be homogeneous: the attribute <code>(a=1,true,hello)</code> is illegal, because it's not
+ * clear if the type is integer, boolean, or string.
  * <br />
  * Attributes can be used by UserAgents during service lookup to select appropriate services that match required
  * conditions.
  * <br />
  * Attributes can be described using a string representation; a valued or multi-valued attribute must be enclosed in
- * parenthesis, while for non-valued attributes (also called <em>presence attribute</em>) the parenthesis may be
+ * parenthesis, while for non-valued attributes (also called <em>presence attribute</em>) the parenthesis must be
  * omitted, for example:
  * <pre>
- * String attributesString = "(a=1,2),(b=true),(bytes=\FF\CA\FE\BA\BE),(present),alsoPresent,(description=Something Interesting)";
+ * String attributesString = "(a=1,2),(b=true),(bytes=\FF\CA\FE\BA\BE),present,(description=Something Interesting)";
  * Attributes attributes = Attributes.from(attributesString);
  * </pre>
  * The example defines 6 attributes:
  * <ul>
  * <li>the first attribute has tag "a", values "1" and "2" and type "integer";</li>
  * <li>the second attribute has tag "b", value "true" and type "boolean";</li>
- * <li>the third attribute has tag "bytes", value "\FF\CA\FE\BA\BE" and type "opaque";</li>
+ * <li>the third attribute has tag "bytes", value is an array of four bytes (0xCA, 0xFE, 0xBA, 0xBE) and type "opaque";</li>
  * <li>the fourth attribute has tag "present", no value, and type "presence";</li>
- * <li>the fifth attribute has tag "alsoPresent", no value, and type "presence";</li>
- * <li>the sixth attribute has tag "description", value "Something Interesting" and type "string".</li>
+ * <li>the fifth attribute has tag "description", value "Something Interesting" and type "string".</li>
  * </ul>
  *
  * @version $Rev$ $Date$
@@ -93,13 +92,15 @@ public class Attributes
      * reserved characters are escaped and where bytes are converted to an opaque (escaped) string.
      *
      * @param escapedAttributesString The string containing the attributes to parse
+     * @return a new instance of Attributes obtained parsing the given string
      * @throws ServiceLocationException If the parsing fails
-     * @see #escapeTag
-     * @see #escapeString
-     * @see #escapeBytes
+     * @see #escapeTag(String)
+     * @see #escapeValue(String)
+     * @see #bytesToOpaque(byte[])
      */
     public static Attributes from(String escapedAttributesString)
     {
+        if (escapedAttributesString == null || escapedAttributesString.trim().length() == 0) return NONE;
         return new Attributes(escapedAttributesString);
     }
 
@@ -119,7 +120,9 @@ public class Attributes
     }
 
     /**
-     * Returns the <code>Entry</code> for the given unescaped tag.
+     * @param unescapedTag the unescaped tag
+     * @return the <code>Entry</code> for the given unescaped tag.
+     * @see #escapeTag(String)
      */
     public Entry valueFor(String unescapedTag)
     {
@@ -128,51 +131,7 @@ public class Attributes
     }
 
     /**
-     * Returns the value for the given tag.
-     * <br />
-     * Depending on the tag type, it returns:
-     * <ul>
-     * <li>null, if the tag is not present</li>
-     * <li>null, if the tag is present and it is a presence tag</li>
-     * <li>the tag value, if the tag is present and it is a single valued tag</li>
-     * <li>the first tag value, if the tag is present and it is a multi valued tag</li>
-     * </ul>
-     *
-     * @see #containsTag(String)
-     * @see #getValues(String)
-     */
-//    public Object getValue(String tag)
-//    {
-//        Entry entry = getEntry(tag);
-//        if (entry == null) return null;
-//        if (entry.isPresenceType()) return null;
-//        return entry.getValue();
-//    }
-
-    /**
-     * Returns the values for the given tag.
-     * <br />
-     * Depending on the tag type, it returns:
-     * <ul>
-     * <li>null, if the tag is not present</li>
-     * <li>null, if the tag is present and it is a presence tag</li>
-     * <li>the tag value, wrapped in an Object[] of length 1, if the tag is present and it is a single valued tag</li>
-     * <li>the tag values, if the tag is present and it is a multi valued tag</li>
-     * </ul>
-     *
-     * @see #containsTag(String)
-     * @see #getValue(String)
-     */
-//    public Object[] getValues(String tag)
-//    {
-//        Entry entry = getEntry(tag);
-//        if (entry == null) return null;
-//        if (entry.isPresenceType()) return null;
-//        return entry.getValues();
-//    }
-
-    /**
-     * Returns true if this <code>Attributes</code> object is empty.
+     * @return true if this <code>Attributes</code> object is empty.
      */
     public boolean isEmpty()
     {
@@ -180,8 +139,8 @@ public class Attributes
     }
 
     /**
-     * Returns true if the given unescaped tag is present in this <code>Attributes</code> object.
-     *
+     * @param unescapedTag the unescaped tag
+     * @return true if the given unescaped tag is present in this <code>Attributes</code> object.
      * @see Entry#isPresenceType()
      */
     public boolean containsTag(String unescapedTag)
@@ -190,9 +149,14 @@ public class Attributes
     }
 
     /**
-     * Returns a byte array containing the bytes parsed from the given opaque string, except the initial opaque prefix \FF.
+     * Returns a byte array containing the bytes parsed from the given opaque string,
+     * except the initial opaque prefix \FF.
+     * <br />
+     * For example the string <code>\FF\CA\FE</code> will be converted into the byte array
+     * <code>[0xCA, 0xFE]</code>.
      *
      * @param opaqueString The opaque string containing the bytes to parse
+     * @return the byte array obtained from parsing the given string
      * @throws ServiceLocationException If the parsing fails
      * @see #bytesToOpaque(byte[])
      */
@@ -220,9 +184,14 @@ public class Attributes
     }
 
     /**
-     * Returns an opaque string containing the escaped sequence of the given bytes, including the initial opaque prefix \FF.
+     * Returns an opaque string containing the escaped sequence of the given bytes,
+     * including the initial opaque prefix \FF.
+     * <br />
+     * For example the byte array <code>[0xCA, 0xFE]</code> will be converted into the string
+     * <code>\FF\CA\FE</code>.
      *
      * @param bytes The bytes to escape into an opaque string
+     * @return the opaque string obtained escaping the given bytes
      * @see #opaqueToBytes(String)
      */
     public static String bytesToOpaque(byte[] bytes)
@@ -241,8 +210,10 @@ public class Attributes
 
     /**
      * Escapes the given tag string following RFC 2608, 5.0.
-     * For example, the tag string <code>&lt;A&gt;</code> will be converted into the string
-     * <code>\3cA\3e</code>.
+     * <br />
+     * For example, the tag string <code>file_path</code> will be converted into the string
+     * <code>file\5fpath</code>, since the character '_' is reserved in tags.
+     *
      * @param tag the tag string to escape
      * @return the escaped tag string
      * @see #unescapeTag(String)
@@ -276,8 +247,9 @@ public class Attributes
 
     /**
      * Unescapes the given escaped tag following RFC 2608, 5.0.
-     * For example, the escaped tag string <code>\3cA\3e</code> will be converted into
-     * <code>&lt;A&gt;</code>.
+     * For example, the escaped tag string <code>file\5fpath</code> will be converted into
+     * <code>file_path</code>.
+     *
      * @param escapedTag the tag string to unescape
      * @return the unescaped tag
      * @throws ServiceLocationException if the escaping is wrong
@@ -335,15 +307,30 @@ public class Attributes
     }
 
     /**
-     * Escapes the given value string following RFC 2608, 5.0.
+     * Escapes the given unescaped value string following RFC 2608, 5.0.
+     * <br />
+     * For example, the string value <code>&lt;A&gt;</code> will be converted into the string
+     * <code>\3cA\3e</code>, since the characters '<' and '>' are reserved in values.
+
      * @param unescapedValue the value string to escape
      * @return the escaped value string
+     * @see #unescapeValue(String)
      */
     public static String escapeValue(String unescapedValue)
     {
         return escape(unescapedValue, reservedChars);
     }
 
+    /**
+     * Unescapes the given escaped value string following RFC 2608, 5.0.
+     * <br />
+     * For example, the string value <code>\3cA\3e</code> will be converted into the string
+     * <code>&lt;A&gt;</code>.
+     *
+     * @param escapedValue the value string to unescape
+     * @return the unescaped value string
+     * @see #escapeValue(String)
+     */
     public static String unescapeValue(String escapedValue)
     {
         // Check that the escaped value does not contain reserved characters
@@ -443,6 +430,7 @@ public class Attributes
     /**
      * Returns a string representation of this <code>Attributes</code> object, that can be passed to
      * {@link #Attributes(String)} to be parsed.
+     *
      * @return the escaped attribute list string
      */
     public String asString()
@@ -626,7 +614,7 @@ public class Attributes
         }
 
         /**
-         * Returns true if this entry is of type string.
+         * @return whether this entry is of type string.
          */
         public boolean isStringType()
         {
@@ -634,7 +622,7 @@ public class Attributes
         }
 
         /**
-         * Returns true if this entry is of type integer.
+         * @return whether this entry is of type integer.
          */
         public boolean isIntegerType()
         {
@@ -642,7 +630,7 @@ public class Attributes
         }
 
         /**
-         * Returns true if this entry is of type boolean.
+         * @return whether this entry is of type boolean.
          */
         public boolean isBooleanType()
         {
@@ -650,7 +638,7 @@ public class Attributes
         }
 
         /**
-         * Returns true if this entry is of type opaque.
+         * @return whether this entry is of type opaque.
          */
         public boolean isOpaqueType()
         {
@@ -658,7 +646,7 @@ public class Attributes
         }
 
         /**
-         * Returns true if this entry represent only the presence of a tag with no value.
+         * @return whether this entry represent only the presence of a tag with no value.
          */
         public boolean isPresenceType()
         {
@@ -666,7 +654,7 @@ public class Attributes
         }
 
         /**
-         * Returns the value of this entry (in case it is single valued), or the first value of this entry
+         * @return the value of this entry (in case it is single valued), or the first value of this entry
          * (in case it is multivalued).
          */
         public Object getValue()
@@ -677,7 +665,7 @@ public class Attributes
         }
 
         /**
-         * Returns the values of this entry (in case it is multivalued), or the value of this entry, wrapped in an array
+         * @return the values of this entry (in case it is multivalued), or the value of this entry, wrapped in an array
          * of length 1 (in case it is single valued).
          */
         public Object[] getValues()

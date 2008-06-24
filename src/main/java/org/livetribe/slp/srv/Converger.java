@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 the original author or authors
+ * Copyright 2005-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,26 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Keys;
+import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.msg.IdentifierExtension;
 import org.livetribe.slp.srv.msg.Rply;
 import org.livetribe.slp.srv.msg.Rqst;
 import org.livetribe.slp.srv.net.UDPConnector;
 
 /**
+ * Encapsulates the multicast convergence algorithm. <br />
+ * SLP uses multicast convergence for discovery.
+ * The goal of multicast convergence is to send a number of requests separated by a wait time; interested parties
+ * that receive a request send a reply accordingly. Every reply carries (implicitely or explicitely) an indentifier
+ * of the interested party. The requests are sent multiple times to increase the chances to reach all interested
+ * parties, since a non-reliable protocol (UDP) is used to send the requests.
+ * Every time a reply is received, the indentifier of the interested party is added to the next request, and
+ * interested parties do not reply to requests that contain their own identifier.
+ * When two consecutive wait times elapse, the algorithm exits and returns the non-duplicate replies that have been
+ * received (if any).
+ *
  * @version $Revision$ $Date$
  */
 public abstract class Converger<T extends Rply>
@@ -54,13 +65,48 @@ public abstract class Converger<T extends Rply>
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(Keys.MULTICAST_TIMEOUTS_KEY))
-            multicastTimeouts = settings.get(Keys.MULTICAST_TIMEOUTS_KEY);
+            setMulticastTimeouts(settings.get(Keys.MULTICAST_TIMEOUTS_KEY));
         if (settings.containsKey(Keys.MULTICAST_MAX_WAIT_KEY))
-            multicastMaxWait = settings.get(Keys.MULTICAST_MAX_WAIT_KEY);
+            setMulticastMaxWait(settings.get(Keys.MULTICAST_MAX_WAIT_KEY));
         if (settings.containsKey(Keys.MAX_TRANSMISSION_UNIT_KEY))
-            maxTransmissionUnit = settings.get(Keys.MAX_TRANSMISSION_UNIT_KEY);
+            setMaxTransmissionUnit(settings.get(Keys.MAX_TRANSMISSION_UNIT_KEY));
     }
 
+    public void setMulticastTimeouts(int[] multicastTimeouts)
+    {
+        this.multicastTimeouts = multicastTimeouts;
+    }
+
+    public void setMulticastMaxWait(int multicastMaxWait)
+    {
+        this.multicastMaxWait = multicastMaxWait;
+    }
+
+    public void setMaxTransmissionUnit(int maxTransmissionUnit)
+    {
+        this.maxTransmissionUnit = maxTransmissionUnit;
+    }
+
+    /**
+     * Callback for the beginning of the convergence algorithm.
+     * It normally creates and returns a DatagramSocket that is used to send requests and to receive replies.
+     *
+     * @return the DatagramSocket to be used to send requests and receive replies
+     * @see #convergenceEnd(DatagramSocket)
+     */
+    protected DatagramSocket convergenceBegin()
+    {
+        return udpConnector.newDatagramSocket();
+    }
+
+    /**
+     * Performs the multicast convergence algorithm, sending the given request many times and waiting for replies
+     * or for a timeout to elapse.
+     *
+     * @param rqst the request to send
+     * @return a list of replies received
+     * @see #convergenceBegin()
+     */
     public List<T> converge(Rqst rqst)
     {
         if (logger.isLoggable(Level.FINER)) logger.finer("Multicast convergence max wait (ms): " + multicastMaxWait);
@@ -72,7 +118,7 @@ public abstract class Converger<T extends Rply>
         Set<String> previousResponders = new HashSet<String>();
         Set<IdentifierExtension> previousResponderIdentifiers = new HashSet<IdentifierExtension>();
 
-        DatagramSocket datagramSocket = udpConnector.newDatagramSocket();
+        DatagramSocket datagramSocket = convergenceBegin();
 
         long start = System.currentTimeMillis();
 
@@ -105,13 +151,13 @@ public abstract class Converger<T extends Rply>
             if (rqstBytes.length > maxTransmissionUnit)
             {
                 if (logger.isLoggable(Level.FINER))
-                    logger.finer("Multicast convergence exit, message greater than MTU");
+                    logger.finer("Multicast convergence exit, message bigger than maxTransmissionUnit");
                 break;
             }
 
             // Send and wait for the response up to the timeout at timeoutIndex
             if (logger.isLoggable(Level.FINE)) logger.fine("Multicast convergence sending " + rqst);
-            List<T> rplys = multicastSendAndReceive(datagramSocket, rqstBytes, multicastTimeouts[timeoutIndex]);
+            List<T> rplys = manycastSendAndReceive(datagramSocket, rqstBytes, multicastTimeouts[timeoutIndex]);
 
             boolean newMessages = false;
             for (T rply : rplys)
@@ -129,28 +175,28 @@ public abstract class Converger<T extends Rply>
                 if (newResponder)
                 {
                     if (logger.isLoggable(Level.FINER))
-                        logger.finer("Multicast convergence received a reply from new responder " + responder);
+                        logger.finer("Multicast convergence received a reply from new responder " + responder + " (" + (identifierExtension == null ? "" : identifierExtension.getIdentifier()) + ")");
                     result.add(rply);
                     newMessages = true;
                 }
                 else
                 {
                     if (logger.isLoggable(Level.FINER))
-                        logger.finer("Multicast convergence received a reply from known responder " + responder);
+                        logger.finer("Multicast convergence received a reply from known responder " + responder + " (" + (identifierExtension == null ? "" : identifierExtension.getIdentifier()) + ")");
 
                     if (identifierExtension != null)
                     {
                         if (newResponderIdentifier)
                         {
                             if (logger.isLoggable(Level.FINER))
-                                logger.finer("Multicast convergence received a reply from new responder with id " + identifierExtension.getIdentifier() + " - " + responder);
+                                logger.finer("Multicast convergence received a reply from new responder " + responder + " (" + identifierExtension.getIdentifier() + ")");
                             result.add(rply);
                             newMessages = true;
                         }
                         else
                         {
                             if (logger.isLoggable(Level.FINER))
-                                logger.finer("Multicast convergence received a reply from known responder with id " + identifierExtension.getIdentifier() + " - " + responder + ", dropping it");
+                                logger.finer("Multicast convergence received a reply from known responder " + responder + " (" + identifierExtension.getIdentifier() + "), dropping it");
                         }
                     }
                     else
@@ -187,7 +233,7 @@ public abstract class Converger<T extends Rply>
             }
         }
 
-        datagramSocket.close();
+        convergenceEnd(datagramSocket);
 
         long end = System.currentTimeMillis();
         if (logger.isLoggable(Level.FINE))
@@ -196,7 +242,16 @@ public abstract class Converger<T extends Rply>
         return result;
     }
 
-    private List<T> multicastSendAndReceive(DatagramSocket datagramSocket, byte[] rqstBytes, int timeout)
+    /**
+     * Sends the given request bytes, then waits at most for the given timeout for replies.
+     * For each reply, sets the responder address.
+     *
+     * @param datagramSocket the socket to use to send and receive
+     * @param rqstBytes      the request bytes to send
+     * @param timeout        the max time to wait for a reply
+     * @return a list of replies received
+     */
+    protected List<T> manycastSendAndReceive(DatagramSocket datagramSocket, byte[] rqstBytes, int timeout)
     {
         List<T> result = new ArrayList<T>();
 
@@ -207,12 +262,37 @@ public abstract class Converger<T extends Rply>
         {
             byte[] data = new byte[packet.getLength()];
             System.arraycopy(packet.getData(), packet.getOffset(), data, 0, data.length);
-            T rply = handle(data, (InetSocketAddress)packet.getSocketAddress());
-            if (rply != null) result.add(rply);
+            InetSocketAddress address = (InetSocketAddress)packet.getSocketAddress();
+            T rply = convert(data, address);
+            if (rply != null)
+            {
+                rply.setResponder(address.getAddress().getHostAddress());
+                result.add(rply);
+            }
         }
 
         return result;
     }
 
-    protected abstract T handle(byte[] rplyBytes, InetSocketAddress address);
+    /**
+     * Callback for the end of the multicast convergence algorithm.
+     * It normally closes the DatagramSocket used to send requests and receive replies
+     *
+     * @param datagramSocket the socket to close
+     * @see #convergenceBegin()
+     */
+    protected void convergenceEnd(DatagramSocket datagramSocket)
+    {
+        datagramSocket.close();
+    }
+
+    /**
+     * Converts the given reply bytes into a {@link Rply} message.
+     * If null is returned, it is like the reply did not arrive.
+     *
+     * @param rplyBytes the bytes to convert
+     * @param address
+     * @return a reply message or null if the message bytes are not a proper reply
+     */
+    protected abstract T convert(byte[] rplyBytes, InetSocketAddress address);
 }
