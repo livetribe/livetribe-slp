@@ -25,19 +25,21 @@ import org.livetribe.slp.srv.msg.SrvReg;
  * <br />
  * In SLP, services are distinguished by their {@link ServiceURL} and by their language; these two elements
  * form the {@link Key key} of the service. Two service registration with the same key overwrite each other.
+ * The {@link Key} class must used to put services into hash structures.
+ * <br />
+ * {@link Attributes} are not involved in service equality since they can contain
+ * locale-specific information (for example: <code>(color=Yellow)</code> with language English,
+ * and <code>(color=Giallo)</code> with language Italian.
  * <br />
  * IMPLEMENTATION NOTES:
  * There is an asymmetry in SLP that allows <code>(ServiceURL1, language1)</code>
  * to be registered under two different ServiceTypes (this is allowed by the format of
  * {@link SrvReg}), but not deregistered from one ServiceType only (as {@link SrvDeReg}
  * does not support an additional ServiceType field).
- * <br />
- * {@link Attributes} are not involved in service equality since they can contain
- * locale-specific information (for example: <code>(color=Yellow)</code> with language English,
- * and <code>(color=Giallo)</code> with language Italian.
  *
  * @version $Rev$ $Date$
  * @see ServiceURL
+ * @see Scopes
  * @see Attributes
  */
 public class ServiceInfo
@@ -46,22 +48,28 @@ public class ServiceInfo
     private final ServiceType serviceType;
     private final Scopes scopes;
     private final Attributes attributes;
-    private long registrationTime;
+    private volatile long registrationTime;
 
     /**
      * Creates a <code>ServiceInfo</code> from a SrvReg message.
+     *
+     * @param srvReg the SrvReg message to convert into a ServiceInfo
+     * @return a new ServiceInfo from the given message
      */
-    public static ServiceInfo from(SrvReg message)
+    public static ServiceInfo from(SrvReg srvReg)
     {
-        return new ServiceInfo(message.getServiceType(), message.getURLEntry().toServiceURL(), message.getLanguage(), message.getScopes(), message.getAttributes());
+        return new ServiceInfo(srvReg.getServiceType(), srvReg.getURLEntry().toServiceURL(), srvReg.getLanguage(), srvReg.getScopes(), srvReg.getAttributes());
     }
 
     /**
      * Creates a <code>ServiceInfo</code> from a SrvDeReg message.
+     *
+     * @param srvDeReg the SrvDeReg message to convert into a ServiceInfo
+     * @return a new ServiceInfo from the given message
      */
-    public static ServiceInfo from(SrvDeReg message)
+    public static ServiceInfo from(SrvDeReg srvDeReg)
     {
-        return new ServiceInfo(message.getURLEntry().toServiceURL(), message.getLanguage(), message.getScopes(), message.getTags());
+        return new ServiceInfo(srvDeReg.getURLEntry().toServiceURL(), srvDeReg.getLanguage(), srvDeReg.getScopes(), srvDeReg.getTags());
     }
 
     /**
@@ -78,9 +86,15 @@ public class ServiceInfo
     }
 
     /**
-     * Creates a <code>ServiceInfo</code> from the given arguments; the {@link #ServiceInfo(ServiceURL, Scopes, Attributes, String)}
+     * Creates a <code>ServiceInfo</code> from the given arguments; the {@link #ServiceInfo(ServiceURL, String, Scopes, Attributes)}
      * constructor should be preferred to this one, as it does not introduce ambiguity between the
      * <code>ServiceType</code> argument and the <code>ServiceType</code> of the <code>ServiceURL</code> argument.
+     *
+     * @param serviceType The service type of the service
+     * @param serviceURL  The service URL of the service
+     * @param scopes      The scopes of the service
+     * @param attributes  The attributes of the service
+     * @param language    The language of the service
      */
     public ServiceInfo(ServiceType serviceType, ServiceURL serviceURL, String language, Scopes scopes, Attributes attributes)
     {
@@ -91,7 +105,7 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the key of this <code>ServiceInfo</code>.
+     * @return the key of this <code>ServiceInfo</code>.
      */
     public Key getKey()
     {
@@ -99,9 +113,11 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the <code>ServiceType</code> as provided to the constructors; prefer {@link #resolveServiceType()}
-     * to get the <code>ServiceType</code> of this <code>ServiceInfo</code>.
+     * Returns the <code>ServiceType</code> as provided to the
+     * {@link #ServiceInfo(ServiceType, ServiceURL, String, Scopes, Attributes) constructor};
+     * prefer {@link #resolveServiceType()} to get the <code>ServiceType</code> of this <code>ServiceInfo</code>.
      *
+     * @return the service type provided to the {@link #ServiceInfo(ServiceType, ServiceURL, String, Scopes, Attributes) constructor}
      * @see #resolveServiceType()
      */
     public ServiceType getServiceType()
@@ -110,7 +126,7 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the <code>ServiceURL</code> of this <code>ServiceInfo</code>.
+     * @return the <code>ServiceURL</code> of this <code>ServiceInfo</code>.
      */
     public ServiceURL getServiceURL()
     {
@@ -118,7 +134,7 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the <code>Scopes</code> of this <code>ServiceInfo</code>.
+     * @return the <code>Scopes</code> of this <code>ServiceInfo</code>.
      */
     public Scopes getScopes()
     {
@@ -126,7 +142,7 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the <code>Attributes</code> of this <code>ServiceInfo</code>.
+     * @return the <code>Attributes</code> of this <code>ServiceInfo</code>.
      */
     public Attributes getAttributes()
     {
@@ -134,7 +150,7 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the language of this <code>ServiceInfo</code>.
+     * @return the language of this <code>ServiceInfo</code>.
      */
     public String getLanguage()
     {
@@ -142,10 +158,13 @@ public class ServiceInfo
     }
 
     /**
-     * Returns the <code>ServiceType</code> as provided to the
-     * {@link #ServiceInfo(ServiceType, ServiceURL, Scopes, Attributes, String) constructor};
-     * if this value is null, returns the <code>ServiceType</code> of the <code>ServiceURL</code>
-     * of this <code>ServiceInfo</code>.
+     * Resolves the service type of this service, returning the service type provided in the
+     * {@link #ServiceInfo(ServiceType, ServiceURL, String, Scopes, Attributes) constructor} if not null,
+     * otherwise the <code>ServiceType</code> of the <code>ServiceURL</code>.
+     *
+     * @return the service type of this service after resolution
+     * @see #getServiceType()
+     * @see #getServiceURL()
      */
     public ServiceType resolveServiceType()
     {
@@ -155,15 +174,14 @@ public class ServiceInfo
     }
 
     /**
-     * Merges the attributes of this <code>ServiceInfo</code> with the attributes of the given <code>ServiceInfo</code>,
-     * provided the two <code>ServiceInfo</code>s have the same {@link #getKey() key}.
+     * Adds the given Attributes to the Attributes of this <code>ServiceInfo</code>, returning a new instance of
+     * ServiceInfo containing the sum of the Attributes; the current instance of ServiceInfo is left unaltered.
      *
-     * @param that The <code>ServiceInfo</code> to merge with
-     * @return A newly created <code>ServiceInfo</code>, result of the merge, or null if this <code>ServiceInfo</code>
-     *         and the given <code>ServiceInfo</code> do not have the same {@link #getKey() key}.
+     * @param thatAttrs The <code>Attributes</code> to add to this instance's Attributes
+     * @return A newly created <code>ServiceInfo</code> containing of the sum of the Attributes
      * @see Attributes#merge(Attributes)
      */
-    public ServiceInfo merge(Attributes thatAttrs)
+    public ServiceInfo addAttributes(Attributes thatAttrs)
     {
         Attributes thisAttrs = getAttributes();
         Attributes mergedAttrs = null;
@@ -171,40 +189,44 @@ public class ServiceInfo
             mergedAttrs = thatAttrs == null ? null : thatAttrs.merge(null);
         else
             mergedAttrs = thisAttrs.merge(thatAttrs);
-        return clone(getServiceType(), getServiceURL(), getLanguage(), getScopes(), mergedAttrs);
+        return clone(getScopes(), mergedAttrs);
     }
 
     /**
-     * Unmerges the attributes of this <code>ServiceInfo</code> with the attributes of the given <code>ServiceInfo</code>,
-     * provided the two <code>ServiceInfo</code>s have the same {@link #getKey() key}.
+     * Removes the given Attributes from the Attributes of this <code>ServiceInfo</code>, returning a new instance of
+     * ServiceInfo containing the difference of the Attributes; the current instance of ServiceInfo is left unaltered.
+     * The given Attributes may only contain the tags to remove (values are not considered).
      *
-     * @param that The <code>ServiceInfo</code> to unmerge with
-     * @return A newly created <code>ServiceInfo</code>, result of the unmerge, or null if this <code>ServiceInfo</code>
-     *         and the given <code>ServiceInfo</code> do not have the same {@link #getKey() key}.
+     * @param thatAttrs The <code>Attributes</code> tags to remove from this instance's Attributes
+     * @return A newly created <code>ServiceInfo</code> containing the difference of the Attributes
      * @see Attributes#unmerge(Attributes)
      */
-    public ServiceInfo unmerge(Attributes thatAttr)
+    public ServiceInfo removeAttributes(Attributes thatAttrs)
     {
-        if (thatAttr == null || thatAttr.isEmpty()) return null;
+        if (thatAttrs == null || thatAttrs.isEmpty()) return null;
         Attributes thisAttr = getAttributes();
-        if (thisAttr == null) return new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), getScopes(), getAttributes());
-        Attributes mergedAttrs = thisAttr.unmerge(thatAttr);
-        return clone(getServiceType(), getServiceURL(), getLanguage(), getScopes(), mergedAttrs);
+        if (thisAttr == null)
+            return new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), getScopes(), getAttributes());
+        Attributes mergedAttrs = thisAttr.unmerge(thatAttrs);
+        return clone(getScopes(), mergedAttrs);
     }
 
     /**
-     * Returns a new clone of this <code>ServiceInfo</code> with the given arguments.
+     * Clones this <code>ServiceInfo</code> using the given arguments.
      * Subclasses may override to clone additional state.
+     *
+     * @param newAttributes the Attributes that the clone must have
+     * @return a new ServiceInfo instance
      */
-    protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, String language, Scopes scopes, Attributes attributes)
+    protected ServiceInfo clone(Scopes scopes, Attributes newAttributes)
     {
-        ServiceInfo clone = new ServiceInfo(serviceType, serviceURL, language, scopes, attributes);
+        ServiceInfo clone = new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), scopes, newAttributes);
         clone.setRegistrationTime(getRegistrationTime());
         return clone;
     }
 
     /**
-     * Returns the registration time of this <code>ServiceInfo</code>, in milliseconds since the Unix epoch.
+     * @return the registration time of this <code>ServiceInfo</code>, in milliseconds since the Unix epoch.
      */
     public long getRegistrationTime()
     {
@@ -213,12 +235,18 @@ public class ServiceInfo
 
     /**
      * Set the registration time of this <code>ServiceInfo</code>, in milliseconds since the Unix epoch.
+     *
+     * @param registrationTime the new registration time
      */
     public void setRegistrationTime(long registrationTime)
     {
         this.registrationTime = registrationTime;
     }
 
+    /**
+     * @return whether this service expires or not
+     * @see ServiceURL#LIFETIME_PERMANENT
+     */
     public boolean expires()
     {
         int lifetime = getServiceURL().getLifetime();
@@ -226,9 +254,8 @@ public class ServiceInfo
     }
 
     /**
-     * Returns true if the <code>ServiceURL</code>'s lifetime is expired, since its registration, as of the specified time.
-     *
-     * @param time The time, in milliseconds, to check if the lifetime is expired.
+     * @param time The time, in milliseconds since the Unix epoch, to check for expiration
+     * @return true if the <code>ServiceURL</code>'s lifetime is expired, since its registration, as of the specified time.
      * @see #getRegistrationTime()
      * @see ServiceURL#getLifetime()
      */
@@ -240,8 +267,8 @@ public class ServiceInfo
     }
 
     /**
+     * Encapsulates the service identity.
      * Services are identified by their ServiceURL and their language.
-     * This class encapsulates the service identity.
      */
     public static class Key
     {
@@ -277,7 +304,7 @@ public class ServiceInfo
         }
 
         /**
-         * Returns the ServiceURL of this key.
+         * @return the ServiceURL of this key.
          */
         private ServiceURL getServiceURL()
         {
@@ -285,7 +312,7 @@ public class ServiceInfo
         }
 
         /**
-         * Returns the language of this key.
+         * @return the language of this key.
          */
         private String getLanguage()
         {

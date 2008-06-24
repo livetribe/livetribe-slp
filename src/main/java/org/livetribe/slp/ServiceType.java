@@ -19,6 +19,7 @@ import java.io.Serializable;
 
 /**
  * Services that offer the same functionalities are characterized by the same <code>ServiceType</code>.
+ * <br />
  * The <code>ServiceType</code> forms the initial part of a {@link ServiceURL}, and it is used to both
  * characterize the service and to be used to lookup services that offer particular functionalities.
  * <code>ServiceType</code>s are represented in this form:
@@ -37,8 +38,9 @@ import java.io.Serializable;
  * functionalities.
  * <br />
  * The <code>naming-authority</code> denotes the name of an organization that defined the service type.
- * @see ServiceURL
+ *
  * @version $Rev$ $Date$
+ * @see ServiceURL
  */
 public class ServiceType implements Serializable
 {
@@ -55,6 +57,7 @@ public class ServiceType implements Serializable
 
     /**
      * Creates a <code>ServiceType</code> parsing the given string.
+     *
      * @param type The string to be parsed
      */
     public ServiceType(String type)
@@ -64,7 +67,7 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns true if this service type begins with the string <code>service:</code>.
+     * @return whether this service type begins with the string <code>service:</code>.
      */
     public boolean isServiceURL()
     {
@@ -72,7 +75,7 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns true if this service type is of the form <code>[service:]abstract:concrete</code>.
+     * @return whether this service type is of the form <code>[service:]abstract:concrete</code>.
      */
     public boolean isAbstractType()
     {
@@ -80,7 +83,7 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns true if this service type does not specify a naming authority.
+     * @return whether this service type does not specify a naming authority.
      */
     public boolean isNADefault()
     {
@@ -88,9 +91,10 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns the concrete type name of this service type.
      * For service types of the form <code>[service:]foo:bar</code> returns <code>bar</code>.
      * For service types of the form <code>[service:]foo</code> returns the empty string.
+     *
+     * @return the concrete type name of this service type.
      */
     public String getConcreteTypeName()
     {
@@ -98,9 +102,10 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns the protocol type name of this service type.
      * For service types of the form <code>[service:]foo:bar</code> returns <code>foo</code>.
      * For service types of the form <code>[service:]foo</code> returns <code>foo</code>.
+     *
+     * @return the protocol type name of this service type.
      */
     public String getPrincipleTypeName()
     {
@@ -108,9 +113,10 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns the abstract type name of this service type.
      * For service types of the form <code>[service:]foo:bar</code> returns <code>[service:]foo</code>.
      * For service types of the form <code>[service:]foo</code> returns the empty string.
+     *
+     * @return the abstract type name of this service type.
      */
     public String getAbstractTypeName()
     {
@@ -118,10 +124,11 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns the naming authority of this service type.
      * For service types of the form <code>[service:]foo:bar.baz</code> returns <code>baz</code>.
      * For service types of the form <code>[service:]foo.baz</code> returns <code>baz</code>.
      * For service types of the form <code>[service:][foo:]bar</code> returns the empty string.
+     *
+     * @return the naming authority of this service type.
      */
     public String getNamingAuthority()
     {
@@ -129,7 +136,7 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns true if this service type matches the given service type, false otherwise.
+     * Matches this service type against the given service type.
      * <br />
      * If this service types is equal to the given service type, the service types match.
      * <br />
@@ -137,7 +144,9 @@ public class ServiceType implements Serializable
      * <code>service:foo:bar</code> matches <code>foo:bar</code>.
      * <br />
      * <code>service:foo</code> matches <code>service:foo:bar</code>, <code>foo:bar</code> and <code>foo</code>.
+     *
      * @param serviceType The service type to match against
+     * @return whether this service type matches the given service type
      */
     public boolean matches(ServiceType serviceType)
     {
@@ -183,7 +192,7 @@ public class ServiceType implements Serializable
     }
 
     /**
-     * Returns the string form of this service type, that can be passed to {@link #ServiceType(String)} to be parsed.
+     * @return the string form of this service type, that can be passed to {@link #ServiceType(String)} to be parsed.
      */
     public String asString()
     {

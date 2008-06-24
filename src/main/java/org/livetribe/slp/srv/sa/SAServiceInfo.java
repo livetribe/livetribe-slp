@@ -22,8 +22,6 @@ import java.util.concurrent.ScheduledFuture;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 
 /**
@@ -41,9 +39,9 @@ public class SAServiceInfo extends ServiceInfo
         super(serviceInfo.getServiceType(), serviceInfo.getServiceURL(), serviceInfo.getLanguage(), serviceInfo.getScopes(), serviceInfo.getAttributes());
     }
 
-    protected ServiceInfo clone(ServiceType serviceType, ServiceURL serviceURL, String language, Scopes scopes, Attributes attributes)
+    protected ServiceInfo clone(Scopes scopes, Attributes attributes)
     {
-        ServiceInfo clone = super.clone(serviceType, serviceURL, language, scopes, attributes);
+        ServiceInfo clone = super.clone(scopes, attributes);
         SAServiceInfo result = new SAServiceInfo(clone);
         result.renewals.putAll(renewals);
         result.notificationRenewal = notificationRenewal;

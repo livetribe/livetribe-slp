@@ -182,7 +182,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
             if (previous == null)
                 throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.INVALID_UPDATE);
 
-            current = (T)previous.merge(attributes);
+            current = (T)previous.addAttributes(attributes);
             current.setRegistrationTime(System.currentTimeMillis());
             keysToServiceInfos.put(current.getKey(), current);
         }
@@ -215,7 +215,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
             if (previous == null)
                 throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.INVALID_UPDATE);
 
-            current = (T)previous.unmerge(attributes);
+            current = (T)previous.removeAttributes(attributes);
             current.setRegistrationTime(System.currentTimeMillis());
             keysToServiceInfos.put(current.getKey(), current);
         }

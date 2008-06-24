@@ -157,7 +157,7 @@ public class ServiceLocationException extends RuntimeException
     }
 
     /**
-     * Returns the error code that specifies the problem that caused this exception.
+     * @return the error code that specifies the problem that caused this exception.
      */
     public int getErrorCode()
     {

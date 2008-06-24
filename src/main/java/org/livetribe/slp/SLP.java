@@ -15,10 +15,10 @@
  */
 package org.livetribe.slp;
 
-import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
+import org.livetribe.slp.settings.Keys;
+import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.Factories;
 import org.livetribe.slp.ua.UserAgent;
 import org.livetribe.slp.ua.UserAgentClient;
@@ -30,24 +30,44 @@ import org.livetribe.slp.ua.UserAgentClient;
  */
 public class SLP
 {
+    /**
+     * @param settings the configuration for the UserAgentClient
+     * @return a new UserAgentClient with the given configuration
+     */
     public static UserAgentClient newUserAgentClient(Settings settings)
     {
         UserAgentClient.Factory factory = Factories.newInstance(settings, Keys.UA_CLIENT_FACTORY_KEY);
         return factory.newUserAgentClient(settings);
     }
 
+    /**
+     * Creates a new UserAgent with the given configuration; the UserAgent must be started.
+     *
+     * @param settings the configuration for the UserAgent
+     * @return a new UserAgent with the given configuration
+     */
     public static UserAgent newUserAgent(Settings settings)
     {
         UserAgent.Factory factory = Factories.newInstance(settings, Keys.UA_FACTORY_KEY);
         return factory.newUserAgent(settings);
     }
 
+    /**
+     * @param settings the configuration for the ServiceAgentClient
+     * @return a new ServiceAgentClient with the given configuration
+     */
     public static ServiceAgentClient newServiceAgentClient(Settings settings)
     {
         ServiceAgentClient.Factory factory = Factories.newInstance(settings, Keys.SA_CLIENT_FACTORY_KEY);
         return factory.newServiceAgentClient(settings);
     }
 
+    /**
+     * Creates a new ServiceAgent with the given configuration; the ServiceAgent must be started.
+     *
+     * @param settings the configuration for the ServiceAgent
+     * @return a new ServiceAgent with the given configuration
+     */
     public static ServiceAgent newServiceAgent(Settings settings)
     {
         ServiceAgent.Factory factory = Factories.newInstance(settings, Keys.SA_FACTORY_KEY);

@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 /**
  * Attributes are a comma separated list of key-value pairs that describe a service.
+ * <br />
  * The attribute key is called <b>tag</b>, and the attribute value can be non-valued (the tag as no value),
  * single-valued (the tag as only one value) or multi-valued (the tag has more values).
  * Depending on the value(s) of the tag, the attribute has a <b>type</b>; there are four defined types:
@@ -92,7 +93,7 @@ public class Attributes
      * reserved characters are escaped and where bytes are converted to an opaque (escaped) string.
      *
      * @param escapedAttributesString The string containing the attributes to parse
-     * @return a new instance of Attributes obtained parsing the given string
+     * @return a new Attributes instance obtained parsing the given string
      * @throws ServiceLocationException If the parsing fails
      * @see #escapeTag(String)
      * @see #escapeValue(String)
@@ -311,7 +312,7 @@ public class Attributes
      * <br />
      * For example, the string value <code>&lt;A&gt;</code> will be converted into the string
      * <code>\3cA\3e</code>, since the characters '<' and '>' are reserved in values.
-
+     *
      * @param unescapedValue the value string to escape
      * @return the escaped value string
      * @see #unescapeValue(String)
@@ -655,7 +656,7 @@ public class Attributes
 
         /**
          * @return the value of this entry (in case it is single valued), or the first value of this entry
-         * (in case it is multivalued).
+         *         (in case it is multivalued).
          */
         public Object getValue()
         {
@@ -666,7 +667,7 @@ public class Attributes
 
         /**
          * @return the values of this entry (in case it is multivalued), or the value of this entry, wrapped in an array
-         * of length 1 (in case it is single valued).
+         *         of length 1 (in case it is single valued).
          */
         public Object[] getValues()
         {

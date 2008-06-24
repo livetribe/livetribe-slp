@@ -22,6 +22,7 @@ import java.util.List;
 
 /**
  * Scopes are case insensitive string labels used to group together related services.
+ * <br />
  * Both DirectoryAgent and ServiceAgent have assigned one or more scopes so that they can advertise services
  * belonging to the scopes they've been assigned. The scope assigned by default to DirectoryAgents and
  * UserAgents is the {@link #DEFAULT} scope.
@@ -60,18 +61,24 @@ public class Scopes
 
     /**
      * The {@link #NONE} scope is special, as it does not match any other scope, but any other scopes can match it.
-     * It may be used during queries, when one wants to retrieve services registered in all scopes.
+     * It may be used during queries, when one wants to retrieve services registered in any other scopes.
      *
      * @see #ANY
      */
     public static final Scopes NONE = new Scopes(new String[0], true);
 
     /**
-     * The {@link ANY} scope is special, as it matches any other scope, but no other scope can match it.
-     * It is the opposite of {@link NONE}.
+     * The {@link #ANY} scope is special, as it matches any other scope, but no other scope can match it.
+     * It is the opposite of {@link #NONE}.
      */
     public static final Scopes ANY = new Scopes(new String[]{"*"}, false);
 
+    /**
+     * Creates a Scopes object from the given strings.
+     *
+     * @param scopes the scope strings
+     * @return a new Scope instance
+     */
     public static Scopes from(String... scopes)
     {
         if (scopes == null || scopes.length == 0) return NONE;
@@ -83,7 +90,8 @@ public class Scopes
     /**
      * Creates a <code>Scopes</code> object containing the given scope strings.
      *
-     * @param scopes The scope strings to be contained by this <code>Scopes</code> object
+     * @param scopes the scope strings to be contained by this <code>Scopes</code> object
+     * @param escape true if the strings must be escaped, false if the string must not be escaped
      */
     private Scopes(String[] scopes, boolean escape)
     {
@@ -108,14 +116,15 @@ public class Scopes
     }
 
     /**
-     * Matches the given <code>Scopes</code> argument against this <code>Scopes</code> object. <br />
+     * Matches the given <code>Scopes</code> argument against this <code>Scopes</code> object.
+     * <br />
      * If this <code>Scopes</code> is the {@link #NONE} scope, always returns false. <br />
      * If this <code>Scopes</code> is the {@link #ANY} scope, always returns true. <br />
      * If the given <code>Scopes</code> is the {@link #NONE} scope, always returns true. <br />
      * If the given <code>Scopes</code> is the {@link #ANY} scope, always returns false. <br />
      *
-     * @param other The <code>Scopes</code> to match
-     * @return True if all scopes specified by the given <code>Scopes</code> argument
+     * @param other the <code>Scopes</code> to match
+     * @return true if all scopes specified by the given <code>Scopes</code> argument
      *         are also scopes of this <code>Scopes</code> object.
      * @see #weakMatch(Scopes)
      */
@@ -130,14 +139,15 @@ public class Scopes
 
     /**
      * Matches the given <code>Scopes</code> argument against this <code>Scopes</code> object,
-     * more weakly than {@link #match(Scopes)}. <br />
+     * more weakly than {@link #match(Scopes)}.
+     * <br />
      * If this <code>Scopes</code> is the {@link #NONE} scope, always returns false. <br />
      * If this <code>Scopes</code> is the {@link #ANY} scope, always returns true. <br />
      * If the given <code>Scopes</code> is the {@link #NONE} scope, always returns true. <br />
      * If the given <code>Scopes</code> is the {@link #ANY} scope, always returns false. <br />
      *
-     * @param other The <code>Scopes</code> to match
-     * @return True if at least one of the scopes specified by the given <code>Scopes</code> argument
+     * @param other the <code>Scopes</code> to match
+     * @return true if at least one of the scopes specified by the given <code>Scopes</code> argument
      *         is also a scope of this <code>Scopes</code> object.
      * @see #match(Scopes)
      */
@@ -151,7 +161,7 @@ public class Scopes
     }
 
     /**
-     * Returns the scope strings contained by this <code>Scopes</code> object.
+     * @return the scope strings contained by this <code>Scopes</code> object.
      */
     public String[] asStringArray()
     {
@@ -159,7 +169,7 @@ public class Scopes
         for (int i = 0; i < scopes.size(); ++i)
         {
             String string = scopes.get(i);
-            strings[i] = decode(string);
+            strings[i] = unescape(string);
         }
         return strings;
     }
@@ -183,8 +193,7 @@ public class Scopes
     }
 
     /**
-     * Returns true if this <code>Scopes</code> object is the default scope, false otherwise.
-     *
+     * @return true if this <code>Scopes</code> object is the default scope, false otherwise.
      * @see #DEFAULT
      */
     public boolean isDefaultScope()
@@ -200,8 +209,9 @@ public class Scopes
     /**
      * Escapes the scope string following RFC 2608, 6.4.1
      *
-     * @param scope The scope string to escape
+     * @param value The scope string to escape
      * @return The escaped scope string
+     * @see #unescape(String)
      */
     private String escape(String value)
     {
@@ -227,10 +237,11 @@ public class Scopes
     /**
      * Unescapes the scope string following RFC 2608, 6.4.1
      *
-     * @param scope The scope string to unescape
+     * @param value The scope string to unescape
      * @return The unescaped scope string
+     * @see #escape(String)
      */
-    private String decode(String value)
+    private String unescape(String value)
     {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < value.length(); ++i)

@@ -19,6 +19,7 @@ import java.io.Serializable;
 
 /**
  * A ServiceURL represents the location of a service.
+ * <br />
  * A client given a ServiceURL should be able to contact the remote service that the ServiceURL
  * represents with the information carried by the ServiceURL itself.
  * A ServiceURL is a URI that defines at least scheme and address portion, and that may have the
@@ -26,8 +27,9 @@ import java.io.Serializable;
  * <br />
  * ServiceURLs have a lifetime, used to denote the period of time over which the service is
  * available.
- * @see ServiceType
+ *
  * @version $Rev$ $Date$
+ * @see ServiceType
  */
 public class ServiceURL implements Serializable
 {
@@ -71,6 +73,7 @@ public class ServiceURL implements Serializable
 
     /**
      * Creates a <code>ServiceURL</code> parsing the given string, with a {@link #LIFETIME_DEFAULT default lifetime}.
+     *
      * @param url The string to be parsed
      */
     public ServiceURL(String url)
@@ -80,7 +83,8 @@ public class ServiceURL implements Serializable
 
     /**
      * Creates a <code>ServiceURL</code> parsing the given string, with the specified lifetime, in seconds.
-     * @param url The string to be parsed
+     *
+     * @param url      The string to be parsed
      * @param lifetime The lifetime, in seconds, for this service URL
      */
     public ServiceURL(String url, int lifetime)
@@ -93,7 +97,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the {@link ServiceType} of this service URL.
+     * @return the service type of this service URL.
      */
     public ServiceType getServiceType()
     {
@@ -101,7 +105,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the network layer transport identifier, which is the empty string for the IP transport.
+     * @return the network layer transport identifier, which is the empty string for the IP transport.
      */
     public String getTransport()
     {
@@ -109,7 +113,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the host portion of this service URL.
+     * @return the host portion of this service URL.
      */
     public String getHost()
     {
@@ -117,7 +121,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the port number of this service URL.
+     * @return the port number of this service URL.
      * @see #NO_PORT
      */
     public int getPort()
@@ -126,7 +130,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the path of this service URL.
+     * @return the path of this service URL.
      */
     public String getURLPath()
     {
@@ -134,7 +138,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the lifetime, in seconds, of this service URL.
+     * @return the lifetime, in seconds, of this service URL.
      */
     public int getLifetime()
     {
@@ -142,7 +146,7 @@ public class ServiceURL implements Serializable
     }
 
     /**
-     * Returns the string form of this service URL, that can be passed to {@link #ServiceURL(String)} to be parsed.
+     * @return the string form of this service URL, that can be passed to {@link #ServiceURL(String)} to be parsed.
      */
     public String getURL()
     {
@@ -162,9 +166,7 @@ public class ServiceURL implements Serializable
         return getURL().hashCode();
     }
 
-    /**
-     * @see #getURL()
-     */
+    @Override
     public String toString()
     {
         return getURL();
