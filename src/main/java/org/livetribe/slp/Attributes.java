@@ -84,7 +84,7 @@ public class Attributes
         reservedTagChars['*'] = '*';
     }
 
-    public static final Attributes NONE = Attributes.from(null);
+    public static final Attributes NONE = new Attributes("");
 
     /**
      * Creates an <code>Attributes</code> object parsing the given escaped attributes string.
