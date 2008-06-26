@@ -17,6 +17,7 @@ package org.livetribe.slp.srv.da;
 
 import java.util.Collection;
 
+import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.msg.DAAdvert;
 import org.livetribe.slp.srv.net.UDPConnector;
@@ -39,7 +40,7 @@ public class MulticastDAAdvertPerformer
         {
             DAAdvert daAdvert = newDAAdvert(directoryAgent, shutdown);
             byte[] bytes = daAdvert.serialize();
-            udpConnector.manycastSend(directoryAgent.getHost(), bytes);
+            udpConnector.manycastSend(directoryAgent.getHostAddress(), bytes);
         }
     }
 

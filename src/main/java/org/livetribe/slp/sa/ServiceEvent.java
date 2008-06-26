@@ -20,13 +20,26 @@ import java.util.EventObject;
 import org.livetribe.slp.ServiceInfo;
 
 /**
+ * The event that indicates that a service has been registered or updated or deregistered.
+ * <br />
+ * Service agents and directory agents manage service registration, update and deregistration and forward these
+ * events to interested listeners.
+ *
  * @version $Revision$ $Date$
+ * @see ServiceListener
  */
 public class ServiceEvent extends EventObject
 {
     private final ServiceInfo previousService;
     private final ServiceInfo currentService;
 
+    /**
+     * Creates a new ServiceEvent.
+     *
+     * @param source          the source of the event
+     * @param previousService the service prior the registration, prior the update or prior the deregistration.
+     * @param currentService  the service after the registration, after the update or after the deregistration.
+     */
     public ServiceEvent(Object source, ServiceInfo previousService, ServiceInfo currentService)
     {
         super(source);
@@ -34,11 +47,26 @@ public class ServiceEvent extends EventObject
         this.currentService = currentService;
     }
 
+    /**
+     * In case or registration event, returns the service overwritten by the registration, or null if no previous
+     * service existed.
+     * In case of update event, returns the service prior the update.
+     * In case of deregistration event, returns the service that has been deregistered.
+     *
+     * @return the service prior the event
+     */
     public ServiceInfo getPreviousService()
     {
         return previousService;
     }
 
+    /**
+     * In case of registration event, returns the service that has been registered.
+     * In case of update event, return the service after the update.
+     * In case of deregistration event returns null.
+     *
+     * @return the service after the event
+     */
     public ServiceInfo getCurrentService()
     {
         return currentService;

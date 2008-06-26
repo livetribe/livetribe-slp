@@ -18,16 +18,18 @@ package org.livetribe.slp.ua;
 import java.util.List;
 import java.util.logging.Level;
 
-import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.da.DirectoryAgentInfo;
+import org.livetribe.slp.da.DirectoryAgentListener;
+import org.livetribe.slp.sa.ServiceNotificationEvent;
+import org.livetribe.slp.sa.ServiceNotificationListener;
+import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
+import org.livetribe.slp.settings.Keys;
 import static org.livetribe.slp.settings.Keys.*;
+import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.AbstractServer;
-import org.livetribe.slp.srv.Factories;
-import org.livetribe.slp.srv.ua.AbstractUserAgent;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 import org.livetribe.slp.srv.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.srv.filter.Filter;
 import org.livetribe.slp.srv.msg.DAAdvert;
@@ -39,6 +41,7 @@ import org.livetribe.slp.srv.net.MessageListener;
 import org.livetribe.slp.srv.net.TCPConnector;
 import org.livetribe.slp.srv.net.UDPConnector;
 import org.livetribe.slp.srv.net.UDPConnectorServer;
+import org.livetribe.slp.srv.ua.AbstractUserAgent;
 import org.livetribe.util.Listeners;
 
 /**
@@ -50,10 +53,13 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
 {
     public static StandardUserAgent newInstance(Settings settings)
     {
-        UDPConnector udpConnector = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY).newUDPConnector(settings);
-        TCPConnector tcpConnector = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY).newTCPConnector(settings);
-        UDPConnectorServer udpConnectorServer = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(settings);
-        UDPConnectorServer notificationConnectorServer = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newNotificationUDPConnectorServer(settings);
+        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        UDPConnector udpConnector = udpFactory.newUDPConnector(settings);
+        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        TCPConnector tcpConnector = tcpFactory.newTCPConnector(settings);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(settings);
+        UDPConnectorServer notificationConnectorServer = udpServerFactory.newNotificationUDPConnectorServer(settings);
         return new StandardUserAgent(udpConnector, tcpConnector, udpConnectorServer, notificationConnectorServer, settings);
     }
 
@@ -75,7 +81,8 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(Keys.DA_ADDRESSES_KEY)) setDirectoryAgentAddresses(settings.get(Keys.DA_ADDRESSES_KEY));
+        if (settings.containsKey(Keys.DA_ADDRESSES_KEY))
+            setDirectoryAgentAddresses(settings.get(Keys.DA_ADDRESSES_KEY));
     }
 
     public void setDirectoryAgentAddresses(String[] directoryAgentAddresses)
@@ -135,6 +142,16 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
         serviceRegistrationListeners.remove(listener);
     }
 
+    public void addDirectoryAgentListener(DirectoryAgentListener listener)
+    {
+        directoryAgents.addDirectoryAgentListener(listener);
+    }
+
+    public void removeDirectoryAgentListener(DirectoryAgentListener listener)
+    {
+        directoryAgents.removeDirectoryAgentListener(listener);
+    }
+
     protected void notifyServiceRegistered(ServiceNotificationEvent event)
     {
         for (ServiceNotificationListener listener : serviceRegistrationListeners) listener.serviceRegistered(event);
@@ -147,7 +164,7 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
 
     protected List<DirectoryAgentInfo> findDirectoryAgents(Scopes scopes, Filter filter)
     {
-        // This user agent listens for DAAdverts so its cache is always up-to-date
+        // This user agent listens DirectoryAgent advertisements so its cache is always up-to-date
         return directoryAgents.match(scopes, filter);
     }
 

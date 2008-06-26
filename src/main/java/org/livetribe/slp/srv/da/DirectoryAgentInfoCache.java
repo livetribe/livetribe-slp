@@ -23,12 +23,15 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.livetribe.slp.Scopes;
+import org.livetribe.slp.da.DirectoryAgentEvent;
+import org.livetribe.slp.da.DirectoryAgentInfo;
+import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.srv.filter.Filter;
 import org.livetribe.util.Listeners;
 
 /**
- * A thread-safe class that handles caching of {@link DirectoryAgentInfo}, and
- * allows querying the content depending on parameters.
+ * A thread-safe class that caches {@link DirectoryAgentInfo}.
+ * <br />
  *
  * @version $Rev: 157 $ $Date: 2006-06-05 23:29:25 +0200 (Mon, 05 Jun 2006) $
  */
@@ -43,9 +46,7 @@ public class DirectoryAgentInfoCache
         lock.lock();
         try
         {
-            boolean added = cache.put(directoryAgent.getKey(), directoryAgent) == null;
-            if (added) notifyDirectoryAgentBorn(directoryAgent);
-            return added;
+            return cache.put(directoryAgent.getKey(), directoryAgent) == null;
         }
         finally
         {
@@ -71,10 +72,7 @@ public class DirectoryAgentInfoCache
         lock.lock();
         try
         {
-            DirectoryAgentInfo directoryAgent = cache.remove(key);
-            boolean removed = directoryAgent != null;
-            if (removed) notifyDirectoryAgentDied(directoryAgent);
-            return removed;
+            return cache.remove(key) != null;
         }
         finally
         {
@@ -131,13 +129,16 @@ public class DirectoryAgentInfoCache
 
     public void handle(DirectoryAgentInfo directoryAgent)
     {
-        // TODO: handle here notifications to DAL and not inside methods.
-        // TODO: this way, I bet we can use the listeners also in SA and UA
-
         if (directoryAgent.isShuttingDown())
-            remove(directoryAgent.getKey());
+        {
+            boolean removed = remove(directoryAgent.getKey());
+            if (removed) notifyDirectoryAgentDied(directoryAgent);
+        }
         else
-            add(directoryAgent);
+        {
+            boolean added = add(directoryAgent);
+            if (added) notifyDirectoryAgentBorn(directoryAgent);
+        }
     }
 
     private void notifyDirectoryAgentBorn(DirectoryAgentInfo directoryAgent)

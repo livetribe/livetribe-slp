@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledFuture;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
+import org.livetribe.slp.da.DirectoryAgentInfo;
 
 /**
  * A specialized ServiceInfo that holds the renewals that must be periodically issued.

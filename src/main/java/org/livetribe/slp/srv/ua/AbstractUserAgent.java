@@ -26,13 +26,13 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.MulticastDASrvRqstPerformer;
 import org.livetribe.slp.srv.MulticastSrvRqstPerformer;
 import org.livetribe.slp.srv.TCPSrvRqstPerformer;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 import org.livetribe.slp.srv.filter.Filter;
 import org.livetribe.slp.srv.filter.FilterParser;
 import org.livetribe.slp.srv.msg.AttributeListExtension;
@@ -47,6 +47,7 @@ import org.livetribe.slp.srv.net.UDPConnector;
 
 /**
  * TODO: how to handle scopes ?
+ *
  * @version $Revision$ $Date$
  */
 public abstract class AbstractUserAgent implements IUserAgent
@@ -85,7 +86,7 @@ public abstract class AbstractUserAgent implements IUserAgent
         {
             for (DirectoryAgentInfo directoryAgent : directoryAgents)
             {
-                InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHost()), directoryAgent.getPort(port));
+                InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getPort(port));
                 SrvRply srvRply = tcpSrvRqst.perform(address, serviceType, language, scopes, filter);
                 result.addAll(srvRplyToServiceInfos(srvRply, scopes));
             }

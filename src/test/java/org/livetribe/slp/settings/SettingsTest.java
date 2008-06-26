@@ -17,7 +17,6 @@ package org.livetribe.slp.settings;
 
 import java.util.Arrays;
 import java.util.Properties;
-import java.util.concurrent.locks.Lock;
 
 import org.testng.annotations.Test;
 
@@ -30,7 +29,7 @@ public class SettingsTest
     public void testGetBoolean()
     {
         String property = "test";
-        Key<Boolean> key = Key.forType(property, Boolean.class);
+        Key<Boolean> key = Key.from(property, Boolean.class);
         String value = "true";
 
         Properties properties = new Properties();
@@ -41,24 +40,10 @@ public class SettingsTest
     }
 
     @Test
-    public void testGetClass()
-    {
-        String property = "test";
-        Key<Class<Lock>> key = Key.forClass(property, Lock.class);
-        String value = Lock.class.getName();
-
-        Properties properties = new Properties();
-        properties.setProperty(property, value);
-        Settings settings = new PropertiesSettings(properties);
-
-        assert settings.get(key) == Lock.class;
-    }
-
-    @Test
     public void testGetInteger()
     {
         String property = "test";
-        Key<Integer> key = Key.forType(property, Integer.class);
+        Key<Integer> key = Key.from(property, Integer.class);
         String value = "13";
 
         Properties properties = new Properties();
@@ -72,7 +57,7 @@ public class SettingsTest
     public void testGetIntArray()
     {
         String property = "test";
-        Key<int[]> key = Key.forType(property, int[].class);
+        Key<int[]> key = Key.from(property, int[].class);
         String value = "1,\f1,\r\n2,\r3,\n5, 8,\t13";
 
         Properties properties = new Properties();
@@ -86,7 +71,7 @@ public class SettingsTest
     public void testGetStringArray()
     {
         String property = "test";
-        Key<String[]> key = Key.forType(property, String[].class);
+        Key<String[]> key = Key.from(property, String[].class);
         String value = "A, B ,C";
 
         Properties properties = new Properties();
@@ -100,7 +85,7 @@ public class SettingsTest
     public void testGetWithDefault()
     {
         String property = "test";
-        Key<String> key = Key.forType(property, String.class);
+        Key<String> key = Key.from(property, String.class);
         String originalValue = "value1";
         String overriddenValue = "value2";
 

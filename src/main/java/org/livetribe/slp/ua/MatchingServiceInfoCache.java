@@ -22,6 +22,8 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.sa.ServiceListener;
+import org.livetribe.slp.sa.ServiceNotificationEvent;
+import org.livetribe.slp.sa.ServiceNotificationListener;
 import org.livetribe.slp.srv.ServiceInfoCache;
 import org.livetribe.slp.srv.filter.Filter;
 import org.livetribe.slp.srv.filter.FilterParser;

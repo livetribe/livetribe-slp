@@ -27,14 +27,12 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
-import org.livetribe.slp.ua.ServiceNotificationEvent;
-import org.livetribe.slp.ua.ServiceNotificationListener;
 import org.livetribe.slp.ua.UserAgent;
 import org.livetribe.slp.ua.UserAgentClient;
 import org.testng.annotations.Test;
@@ -518,11 +516,7 @@ public class StandardServiceAgentTest
                 // Wait for the SA to get the DAAdvert from DAS
                 Thread.sleep(500);
 
-                List<DirectoryAgentInfo> directoryAgentInfos = da.getDirectoryAgentInfos();
-                assert directoryAgentInfos.size() == 1;
-
                 assert sa.getDirectoryAgents().size() == 1;
-                assert sa.getDirectoryAgents().get(0).getKey().equals(directoryAgentInfos.get(0).getKey());
             }
             finally
             {

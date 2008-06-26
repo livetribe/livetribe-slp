@@ -26,17 +26,11 @@ public class Key<T>
         Editors.register(Integer.class, IntegerEditor.class);
         Editors.register(String[].class, StringArrayEditor.class);
         Editors.register(int[].class, IntArrayEditor.class);
-        Editors.register(Class.class, ClassEditor.class);
     }
 
-    public static <S> Key<S> forType(String key, Class<? extends S> type)
+    public static <S> Key<S> from(String key, Class<? extends S> type)
     {
         return new Key<S>(key, type);
-    }
-
-    public static <S> Key<Class<S>> forClass(String key, Class<? extends S> type)
-    {
-        return new Key<Class<S>>(key, type.getClass());
     }
 
     private final String key;

@@ -28,16 +28,15 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.sa.ServiceAgentClient;
-import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.sa.ServiceEvent;
+import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Factories;
 import org.livetribe.slp.srv.MulticastDASrvRqstPerformer;
 import org.livetribe.slp.srv.MulticastSrvRqstPerformer;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 import org.livetribe.slp.srv.msg.DAAdvert;
 import org.livetribe.slp.srv.msg.Message;
 import org.livetribe.slp.srv.msg.SrvRply;
@@ -92,8 +91,8 @@ public class StandardDirectoryAgentServerTest
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert !directoryAgent.isShuttingDown();
                     assert directoryAgent.getURL().startsWith(DirectoryAgentInfo.SERVICE_TYPE.asString());
-                    assert directoryAgent.getHost() != null;
-                    assert directoryAgent.getHost().trim().length() > 0;
+                    assert directoryAgent.getHostAddress() != null;
+                    assert directoryAgent.getHostAddress().trim().length() > 0;
                 }
                 catch (Throwable x)
                 {
@@ -103,7 +102,8 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer udpConnectorServer = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(udpSettings);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         udpConnectorServer.start();
         udpConnectorServer.addMessageListener(listener);
         try
@@ -151,8 +151,8 @@ public class StandardDirectoryAgentServerTest
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert directoryAgent.isShuttingDown();
                     assert directoryAgent.getURL().startsWith(DirectoryAgentInfo.SERVICE_TYPE.asString());
-                    assert directoryAgent.getHost() != null;
-                    assert directoryAgent.getHost().trim().length() > 0;
+                    assert directoryAgent.getHostAddress() != null;
+                    assert directoryAgent.getHostAddress().trim().length() > 0;
                 }
                 catch (Throwable x)
                 {
@@ -162,7 +162,8 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer udpConnectorServer = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(udpSettings);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         // Start with no MessageListeners
         udpConnectorServer.start();
         try
@@ -227,8 +228,8 @@ public class StandardDirectoryAgentServerTest
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert !directoryAgent.isShuttingDown();
                     assert directoryAgent.getURL().startsWith(DirectoryAgentInfo.SERVICE_TYPE.asString());
-                    assert directoryAgent.getHost() != null;
-                    assert directoryAgent.getHost().trim().length() > 0;
+                    assert directoryAgent.getHostAddress() != null;
+                    assert directoryAgent.getHostAddress().trim().length() > 0;
                 }
                 catch (Throwable x)
                 {
@@ -238,7 +239,8 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer udpConnectorServer = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(udpSettings);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         udpConnectorServer.addMessageListener(listener);
         udpConnectorServer.start();
         try
@@ -296,7 +298,8 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer udpConnectorServer = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(udpSettings);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         udpConnectorServer.addMessageListener(listener);
         udpConnectorServer.start();
         try
@@ -347,7 +350,8 @@ public class StandardDirectoryAgentServerTest
             registrar.register(service);
 
             // Multicast SrvRqst is ignored by DA
-            UDPConnector udpConnector = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY).newUDPConnector(settings);
+            UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+            UDPConnector udpConnector = udpFactory.newUDPConnector(settings);
             MulticastSrvRqstPerformer srvRqstPerformer = new MulticastSrvRqstPerformer(udpConnector, settings);
             List<SrvRply> srvRplys = srvRqstPerformer.perform(serviceURL.getServiceType(), null, null, null);
             assert srvRplys.isEmpty();

@@ -17,14 +17,14 @@ package org.livetribe.slp.sa;
 
 import java.util.UUID;
 
-import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
-import org.livetribe.slp.srv.Factories;
+import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.ServiceInfoCache;
 import org.livetribe.slp.srv.net.TCPConnector;
 import org.livetribe.slp.srv.net.UDPConnector;
@@ -78,9 +78,10 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
 
     public void removeAttributes(ServiceURL serviceURL, String language, Attributes attributes) throws ServiceLocationException
     {
-        if (attributes.isEmpty()) throw new ServiceLocationException("No attribute tags to remove", ServiceLocationException.INVALID_UPDATE);
+        if (attributes.isEmpty())
+            throw new ServiceLocationException("No attribute tags to remove", ServiceLocationException.INVALID_UPDATE);
         ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.NONE, attributes);
-        deregister(service,  true);
+        deregister(service, true);
     }
 
     public void deregister(ServiceURL serviceURL, String language) throws ServiceLocationException

@@ -17,15 +17,15 @@ package org.livetribe.slp.ua;
 
 import java.util.List;
 
+import org.livetribe.slp.Scopes;
+import org.livetribe.slp.da.DirectoryAgentInfo;
+import org.livetribe.slp.settings.Factories;
+import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Factories;
 import org.livetribe.slp.srv.filter.Filter;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
-import org.livetribe.slp.srv.ua.AbstractUserAgent;
 import org.livetribe.slp.srv.net.TCPConnector;
 import org.livetribe.slp.srv.net.UDPConnector;
-import static org.livetribe.slp.settings.Keys.*;
-import org.livetribe.slp.Scopes;
+import org.livetribe.slp.srv.ua.AbstractUserAgent;
 
 /**
  * @version $Revision$ $Date$

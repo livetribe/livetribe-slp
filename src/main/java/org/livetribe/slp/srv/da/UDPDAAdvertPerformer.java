@@ -17,6 +17,7 @@ package org.livetribe.slp.srv.da;
 
 import java.net.InetSocketAddress;
 
+import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.msg.DAAdvert;
 import org.livetribe.slp.srv.msg.Message;
@@ -38,7 +39,7 @@ public class UDPDAAdvertPerformer
     {
         DAAdvert daAdvert = newDAAdvert(directoryAgent, message);
         byte[] bytes = daAdvert.serialize();
-        udpConnector.unicastSend(directoryAgent.getHost(), remoteAddress, bytes);
+        udpConnector.unicastSend(directoryAgent.getHostAddress(), remoteAddress, bytes);
     }
 
     private DAAdvert newDAAdvert(DirectoryAgentInfo directoryAgent, Message message)

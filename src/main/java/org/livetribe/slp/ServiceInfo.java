@@ -21,11 +21,11 @@ import org.livetribe.slp.srv.msg.SrvDeReg;
 import org.livetribe.slp.srv.msg.SrvReg;
 
 /**
- * This class represents a service, exposed by ServiceAgents and cached by DirectoryAgents.
+ * Representation of a service, exposed by ServiceAgents and cached by DirectoryAgents.
  * <br />
  * In SLP, services are distinguished by their {@link ServiceURL} and by their language; these two elements
  * form the {@link Key key} of the service. Two service registration with the same key overwrite each other.
- * The {@link Key} class must used to put services into hash structures.
+ * The {@link Key} object returned by {@link #getKey()} must be used as key in hash structures.
  * <br />
  * {@link Attributes} are not involved in service equality since they can contain
  * locale-specific information (for example: <code>(color=Yellow)</code> with language English,

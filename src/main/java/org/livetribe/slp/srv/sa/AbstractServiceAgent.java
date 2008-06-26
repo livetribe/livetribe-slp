@@ -30,6 +30,9 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.da.DirectoryAgentEvent;
+import org.livetribe.slp.da.DirectoryAgentInfo;
+import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
@@ -39,7 +42,6 @@ import org.livetribe.slp.srv.MulticastDASrvRqstPerformer;
 import org.livetribe.slp.srv.ServiceInfoCache;
 import org.livetribe.slp.srv.TCPSrvDeRegPerformer;
 import org.livetribe.slp.srv.TCPSrvRegPerformer;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 import org.livetribe.slp.srv.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.srv.filter.Filter;
 import org.livetribe.slp.srv.filter.FilterParser;
@@ -57,7 +59,7 @@ import org.livetribe.slp.srv.net.UDPConnectorServer;
 /**
  * @version $Revision$ $Date$
  */
-public abstract class AbstractServiceAgent extends AbstractServer
+public abstract class AbstractServiceAgent extends AbstractServer implements DirectoryAgentListener
 {
     private final ServiceInfoCache<SAServiceInfo> services = new ServiceInfoCache<SAServiceInfo>();
     private final DirectoryAgentInfoCache directoryAgents = new DirectoryAgentInfoCache();
@@ -172,6 +174,16 @@ public abstract class AbstractServiceAgent extends AbstractServer
         return new ArrayList<ServiceInfo>(matchServices(null, null, null, null));
     }
 
+    public void addDirectoryAgentListener(DirectoryAgentListener listener)
+    {
+        directoryAgents.addDirectoryAgentListener(listener);
+    }
+
+    public void removeDirectoryAgentListener(DirectoryAgentListener listener)
+    {
+        directoryAgents.removeDirectoryAgentListener(listener);
+    }
+
     public List<DirectoryAgentInfo> getDirectoryAgents()
     {
         return directoryAgents.match(null, null);
@@ -184,17 +196,14 @@ public abstract class AbstractServiceAgent extends AbstractServer
         for (String address : addresses)
             serviceAgents.put(address, newServiceAgentInfo(address, scopes, attributes, language));
 
+        if (directoryAgentAddresses.length > 0)
+            for (String daAddress : directoryAgentAddresses) directoryAgents.add(DirectoryAgentInfo.from(daAddress));
+        else
+            directoryAgents.addAll(discoverDirectoryAgents(scopes, null));
+        addDirectoryAgentListener(this);
+
         udpConnectorServer.addMessageListener(listener);
         udpConnectorServer.start();
-
-        if (directoryAgentAddresses.length > 0)
-        {
-            for (String daAddress : directoryAgentAddresses) directoryAgents.add(DirectoryAgentInfo.from(daAddress));
-        }
-        else
-        {
-            directoryAgents.addAll(discoverDirectoryAgents(scopes, null));
-        }
     }
 
     protected abstract ServiceAgentInfo newServiceAgentInfo(String address, Scopes scopes, Attributes attributes, String language);
@@ -206,10 +215,11 @@ public abstract class AbstractServiceAgent extends AbstractServer
 
         scheduledExecutorService.shutdownNow();
 
-        directoryAgents.removeAll();
-
         udpConnectorServer.removeMessageListener(listener);
         udpConnectorServer.stop();
+
+        removeDirectoryAgentListener(this);
+        directoryAgents.removeAll();
     }
 
     protected List<DirectoryAgentInfo> discoverDirectoryAgents(Scopes scopes, Filter filter)
@@ -244,7 +254,7 @@ public abstract class AbstractServiceAgent extends AbstractServer
 
     protected void registerServiceWithDirectoryAgent(SAServiceInfo service, DirectoryAgentInfo directoryAgent, boolean update)
     {
-        InetSocketAddress daAddress = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHost()), directoryAgent.getPort(port));
+        InetSocketAddress daAddress = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getPort(port));
         SrvAck srvAck = tcpSrvReg.perform(daAddress, service, update);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != SrvAck.SUCCESS)
@@ -318,7 +328,7 @@ public abstract class AbstractServiceAgent extends AbstractServer
 
     private void deregisterServiceWithDirectoryAgent(SAServiceInfo service, DirectoryAgentInfo directoryAgent, boolean update)
     {
-        InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHost()), directoryAgent.getPort(port));
+        InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getPort(port));
         SrvAck srvAck = tcpSrvDeReg.perform(address, service, update);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != SrvAck.SUCCESS)
@@ -422,21 +432,24 @@ public abstract class AbstractServiceAgent extends AbstractServer
     protected void handleMulticastDAAdvert(DAAdvert daAdvert)
     {
         DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
-        if (directoryAgent.isShuttingDown())
-        {
-            if (logger.isLoggable(Level.FINEST))
-                logger.finest("ServiceAgent " + this + " noticed DirectoryAgent death: " + directoryAgent);
-            directoryAgents.remove(directoryAgent.getKey());
-            cancelRenewals(directoryAgent);
-        }
-        else
-        {
-            if (logger.isLoggable(Level.FINEST))
-                logger.finest("ServiceAgent " + this + " noticed DirectoryAgent birth: " + directoryAgent);
-            directoryAgents.add(directoryAgent);
-            // TODO: RFC 2608, 12.2.2 requires to wait some time before registering
-            registerServices(directoryAgent);
-        }
+        directoryAgents.handle(directoryAgent);
+    }
+
+    public void directoryAgentBorn(DirectoryAgentEvent event)
+    {
+        DirectoryAgentInfo directoryAgent = event.getDirectoryAgent();
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("ServiceAgent " + this + " noticed DirectoryAgent birth: " + directoryAgent);
+        // TODO: RFC 2608, 12.2.2 requires to wait some time before registering
+        registerServices(directoryAgent);
+    }
+
+    public void directoryAgentDied(DirectoryAgentEvent event)
+    {
+        DirectoryAgentInfo directoryAgent = event.getDirectoryAgent();
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("ServiceAgent " + this + " noticed DirectoryAgent death: " + directoryAgent);
+        cancelRenewals(directoryAgent);
     }
 
     private void cancelRenewals(DirectoryAgentInfo directoryAgent)

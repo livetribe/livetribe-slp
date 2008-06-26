@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2006-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,31 +18,24 @@ package org.livetribe.slp.sa;
 import java.util.EventListener;
 
 /**
- * The listener that receives ServiceEvents.
+ * The listener that receives ServiceNotificationEvents.
  *
- * @version $Revision$ $Date$
- * @see ServiceEvent
+ * @version $Rev$ $Date$
+ * @see ServiceNotificationEvent
  */
-public interface ServiceListener extends EventListener
+public interface ServiceNotificationListener extends EventListener
 {
     /**
-     * Invoked when a service is registered
+     * Invoked when a service is registered or when attributes are added to an existing service.
      *
-     * @param event the service registration event
+     * @param event the service notification event
      */
-    public void serviceAdded(ServiceEvent event);
+    public void serviceRegistered(ServiceNotificationEvent event);
 
     /**
-     * Invoked when a service is updated
+     * Invoked when a service is deregistered or when attributes are removed from an existing service.
      *
-     * @param event the service update event
+     * @param event the service notification event
      */
-    public void serviceUpdated(ServiceEvent event);
-
-    /**
-     * Invoked when a service is deregistered
-     *
-     * @param event the service deregistration event
-     */
-    public void serviceRemoved(ServiceEvent event);
+    public void serviceDeregistered(ServiceNotificationEvent event);
 }

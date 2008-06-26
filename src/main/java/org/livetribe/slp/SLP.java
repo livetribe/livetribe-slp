@@ -17,9 +17,9 @@ package org.livetribe.slp;
 
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
+import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Factories;
 import org.livetribe.slp.ua.UserAgent;
 import org.livetribe.slp.ua.UserAgentClient;
 

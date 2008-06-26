@@ -15,6 +15,8 @@
  */
 package org.livetribe.slp.ua;
 
+import org.livetribe.slp.da.DirectoryAgentListener;
+import org.livetribe.slp.sa.ServiceNotificationListener;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.Server;
 import org.livetribe.slp.srv.ua.IUserAgent;
@@ -27,6 +29,10 @@ public interface UserAgent extends IUserAgent, Server
     public void addServiceNotificationListener(ServiceNotificationListener listener);
 
     public void removeServiceNotificationListener(ServiceNotificationListener listener);
+
+    public void addDirectoryAgentListener(DirectoryAgentListener listener);
+
+    public void removeDirectoryAgentListener(DirectoryAgentListener listener);
 
     public interface Factory
     {

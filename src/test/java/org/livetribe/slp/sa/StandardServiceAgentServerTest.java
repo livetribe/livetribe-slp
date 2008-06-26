@@ -25,11 +25,10 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Factories;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 import org.livetribe.slp.srv.net.SocketTCPConnectorServer;
 import org.livetribe.slp.srv.net.TCPConnector;
 import org.livetribe.slp.srv.net.UDPConnector;
@@ -222,11 +221,7 @@ public class StandardServiceAgentServerTest
             // Wait for the SAS to get the DAAdvert from DAS
             Thread.sleep(500);
 
-            List<DirectoryAgentInfo> directoryAgentInfos = directoryAgent.getDirectoryAgentInfos();
-            assert directoryAgentInfos.size() == 1;
-
             assert serviceAgentServer.getDirectoryAgents().size() == 1;
-            assert serviceAgentServer.getDirectoryAgents().get(0).getKey().equals(directoryAgentInfos.get(0).getKey());
         }
         finally
         {

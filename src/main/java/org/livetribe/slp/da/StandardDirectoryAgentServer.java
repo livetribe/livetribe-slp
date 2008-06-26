@@ -33,11 +33,11 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.AbstractServer;
-import org.livetribe.slp.srv.Factories;
 import org.livetribe.slp.srv.Server;
 import org.livetribe.slp.srv.ServiceInfoCache;
 import org.livetribe.slp.srv.TCPSrvAckPerformer;
@@ -60,7 +60,7 @@ import org.livetribe.slp.srv.net.UDPConnectorServer;
 
 
 /**
- * Implementation of an SLP DirectoryAgent standalone server that can be started as a service in a host.
+ * Implementation of an SLP directory agent standalone server that can be started as a service in a host.
  * <br />
  * Only one instance of this server can be started per each host, as it listens on the SLP TCP port.
  * In SLP, DirectoryAgents work as cache of services and allow to reduce the network utilization since
