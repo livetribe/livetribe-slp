@@ -13,23 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.srv.da;
+package org.livetribe.slp.da;
 
 import java.util.EventObject;
 
 /**
+ * The event that indicates that a DirectoryAgent has either born or died.
+ * <br />
+ * ServiceAgents and UserAgents listen for DirectoryAgent advertisements and may forward these events
+ * to interested listeners.
+ *
  * @version $Revision$ $Date$
+ * @see DirectoryAgentListener
  */
 public class DirectoryAgentEvent extends EventObject
 {
     private final DirectoryAgentInfo directoryAgent;
 
+    /**
+     * Creates a new DirectoryAgentEvent.
+     *
+     * @param source         the source of the event
+     * @param directoryAgent the DirectoryAgent born or died
+     */
     public DirectoryAgentEvent(Object source, DirectoryAgentInfo directoryAgent)
     {
         super(source);
         this.directoryAgent = directoryAgent;
     }
 
+    /**
+     * @return the DirectoryAgent born or died
+     */
     public DirectoryAgentInfo getDirectoryAgent()
     {
         return directoryAgent;

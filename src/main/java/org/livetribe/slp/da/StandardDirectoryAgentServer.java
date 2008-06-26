@@ -16,9 +16,9 @@
 package org.livetribe.slp.da;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,6 @@ import org.livetribe.slp.srv.Factories;
 import org.livetribe.slp.srv.Server;
 import org.livetribe.slp.srv.ServiceInfoCache;
 import org.livetribe.slp.srv.TCPSrvAckPerformer;
-import org.livetribe.slp.srv.da.DirectoryAgentInfo;
 import org.livetribe.slp.srv.da.MulticastDAAdvertPerformer;
 import org.livetribe.slp.srv.da.TCPSrvRplyPerformer;
 import org.livetribe.slp.srv.da.UDPDAAdvertPerformer;
@@ -61,13 +60,27 @@ import org.livetribe.slp.srv.net.UDPConnectorServer;
 
 
 /**
- * Implementation of an SLP DirectoryAgent.
+ * Implementation of an SLP DirectoryAgent standalone server that can be started as a service in a host.
+ * <br />
+ * Only one instance of this server can be started per each host, as it listens on the SLP TCP port.
+ * In SLP, DirectoryAgents work as cache of services and allow to reduce the network utilization since
+ * both UserAgent and ServiceAgent will prefer a direct tcp connection with the DirectoryAgent over the
+ * use of multicast.
  *
  * @version $Rev$ $Date$
  */
 public class StandardDirectoryAgentServer extends AbstractServer
 {
-    public static void main(String[] args) throws Exception
+    /**
+     * Main method to start this DirectoryAgent.
+     * <br />
+     * It accepts a single program argument, the file path of the configuration file that overrides the
+     * defaults for this DirectoryAgent
+     *
+     * @param args the program arguments
+     * @throws IOException in case the configuration file cannot be read
+     */
+    public static void main(String[] args) throws IOException
     {
         Settings settings = null;
         if (args.length > 0) settings = PropertiesSettings.from(new File(args[0]));
@@ -75,6 +88,10 @@ public class StandardDirectoryAgentServer extends AbstractServer
         server.start();
     }
 
+    /**
+     * @param settings the configuration settings that override the defaults
+     * @return a new instance of this DirectoryAgent
+     */
     public static StandardDirectoryAgentServer newInstance(Settings settings)
     {
         UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
@@ -102,6 +119,15 @@ public class StandardDirectoryAgentServer extends AbstractServer
     private int advertisementPeriod = Defaults.get(DA_ADVERTISEMENT_PERIOD_KEY);
     private int expiredServicesPurgePeriod = Defaults.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY);
 
+    /**
+     * Creates a new DirectoryAgent
+     *
+     * @param udpConnector       the connector that handles udp traffic
+     * @param tcpConnector       the connector that handles tcp traffic
+     * @param udpConnectorServer the connector that listens for udp traffic
+     * @param tcpConnectorServer the connector that listens for tcp traffic
+     * @param settings           the configuration settings that override the defaults
+     */
     public StandardDirectoryAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, Settings settings)
     {
         this.udpConnectorServer = udpConnectorServer;
@@ -115,66 +141,125 @@ public class StandardDirectoryAgentServer extends AbstractServer
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(SCHEDULED_EXECUTOR_SERVICE_KEY)) setScheduledExecutorService(settings.get(SCHEDULED_EXECUTOR_SERVICE_KEY));
+        if (settings.containsKey(SCHEDULED_EXECUTOR_SERVICE_KEY))
+            setScheduledExecutorService(settings.get(SCHEDULED_EXECUTOR_SERVICE_KEY));
         if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
         if (settings.containsKey(SCOPES_KEY)) setScopes(Scopes.from(settings.get(SCOPES_KEY)));
         if (settings.containsKey(DA_ATTRIBUTES_KEY)) setAttributes(Attributes.from(settings.get(DA_ATTRIBUTES_KEY)));
         if (settings.containsKey(LANGUAGE_KEY)) setLanguage(settings.get(LANGUAGE_KEY));
-        if (settings.containsKey(DA_ADVERTISEMENT_PERIOD_KEY)) setAdvertisementPeriod(settings.get(DA_ADVERTISEMENT_PERIOD_KEY));
-        if (settings.containsKey(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY)) setExpiredServicesPurgePeriod(settings.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY));
+        if (settings.containsKey(DA_ADVERTISEMENT_PERIOD_KEY))
+            setAdvertisementPeriod(settings.get(DA_ADVERTISEMENT_PERIOD_KEY));
+        if (settings.containsKey(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY))
+            setExpiredServicesPurgePeriod(settings.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY));
     }
 
+    /**
+     * Sets the scheduled executor used to schedule periodic tasks.
+     *
+     * @param scheduledExecutorService the new scheduled executor
+     */
     public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)
     {
         this.scheduledExecutorService = scheduledExecutorService;
     }
 
+    /**
+     * Sets the interface IP addresses in case of multihomed hosts
+     *
+     * @param addresses the new interface IP addresses
+     */
     public void setAddresses(String[] addresses)
     {
         this.addresses = addresses;
     }
 
+    /**
+     * Sets the SLP port
+     *
+     * @param port the new SLP port
+     */
     public void setPort(int port)
     {
         this.port = port;
     }
 
+    /**
+     * Sets the Scopes of this DirectoryAgent
+     *
+     * @param scopes the new Scopes
+     */
     public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }
 
+    /**
+     * Sets the Attributes of this DirectoryAgent
+     *
+     * @param attributes the new Attributes
+     */
     public void setAttributes(Attributes attributes)
     {
         this.attributes = attributes;
     }
 
+    /**
+     * Set the language of this DirectoryAgent
+     *
+     * @param language the new language
+     */
     public void setLanguage(String language)
     {
         this.language = language;
     }
 
+    /**
+     * Sets the advertisement period, in seconds, between unsolicited DAAdverts
+     *
+     * @param advertisementPeriod the new advertisement period
+     */
     public void setAdvertisementPeriod(int advertisementPeriod)
     {
         this.advertisementPeriod = advertisementPeriod;
     }
 
+    /**
+     * Sets the purge period, in seconds, between purge of expired services
+     *
+     * @param expiredServicesPurgePeriod the new purge period
+     * @see #purgeExpiredServices()
+     */
     public void setExpiredServicesPurgePeriod(int expiredServicesPurgePeriod)
     {
         this.expiredServicesPurgePeriod = expiredServicesPurgePeriod;
     }
 
+    /**
+     * Adds a service listener that will be notified in case of service addition, update or removal.
+     *
+     * @param listener the listener to add
+     * @see #removeServiceListener(ServiceListener)
+     */
     public void addServiceListener(ServiceListener listener)
     {
         services.addServiceListener(listener);
     }
 
+    /**
+     * Removes the given service listener.
+     *
+     * @param listener the listener to remove
+     * @see #addServiceListener(ServiceListener)
+     */
     public void removeServiceListener(ServiceListener listener)
     {
         services.removeServiceListener(listener);
     }
 
+    /**
+     * @return a list of all services present in this DirectoryAgent
+     */
     public List<ServiceInfo> getServices()
     {
         return matchServices(null, null, null, null);
@@ -185,7 +270,8 @@ public class StandardDirectoryAgentServer extends AbstractServer
         // Convert bootTime in seconds, as required by the DAAdvert message
         int bootTime = ((Long)TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())).intValue();
         setAttributes(attributes.merge(Attributes.from("(" + DirectoryAgentInfo.TCP_PORT_TAG + "=" + port + ")")));
-        for (int i = 0; i < addresses.length; ++i) addresses[i] = NetUtils.convertWildcardAddress(NetUtils.getByName(addresses[i])).getHostAddress();
+        for (int i = 0; i < addresses.length; ++i)
+            addresses[i] = NetUtils.convertWildcardAddress(NetUtils.getByName(addresses[i])).getHostAddress();
         for (String address : addresses)
             directoryAgents.put(address, DirectoryAgentInfo.from(address, scopes, attributes, language, bootTime));
 
@@ -222,11 +308,20 @@ public class StandardDirectoryAgentServer extends AbstractServer
         udpConnectorServer.stop();
     }
 
-    public List<DirectoryAgentInfo> getDirectoryAgentInfos()
-    {
-        return new ArrayList<DirectoryAgentInfo>(directoryAgents.values());
-    }
-
+    /**
+     * Handles a multicast SrvRqst message arrived to this DirectoryAgent.
+     * <br />
+     * DirectoryAgents are interested in multicast SrvRqst messages only if they have the
+     * {@link DirectoryAgentInfo#SERVICE_TYPE directory agent service type} and the responder list does not contain
+     * this DirectoryAgent; all other multicast SrvRqst will be dropped.
+     * <br />
+     * The reply is a DAAdvert message.
+     *
+     * @param srvRqst       the SrvRqst message to handle
+     * @param localAddress  the address on this server on which the message arrived
+     * @param remoteAddress the address on the remote client from which the message was sent
+     * @see #handleTCPSrvRqst(SrvRqst, Socket)
+     */
     protected void handleMulticastSrvRqst(SrvRqst srvRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
     {
         String address = NetUtils.convertWildcardAddress(localAddress.getAddress()).getHostAddress();
@@ -270,6 +365,15 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
     }
 
+    /**
+     * Handles a unicast TCP SrvRqst message arrived to this DirectoryAgent.
+     * <br />
+     * This DirectoryAgent will reply with a list of matching services.
+     *
+     * @param srvRqst the SrvRqst message to handle
+     * @param socket  the socket connected to th client where to write the reply
+     * @see #matchServices(ServiceType, Scopes, String, String)
+     */
     protected void handleTCPSrvRqst(SrvRqst srvRqst, Socket socket)
     {
         String localAddress = socket.getLocalAddress().getHostAddress();
@@ -286,6 +390,15 @@ public class StandardDirectoryAgentServer extends AbstractServer
             logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
     }
 
+    /**
+     * Matches the services of this DirectoryAgent against the given arguments.
+     *
+     * @param serviceType the service type to match or null to match any service type
+     * @param scopes      the Scopes to match or null to match any Scopes
+     * @param filter      the LDAPv3 filter to match the service Attributes against or null to match any Attributes
+     * @param language    the language to match or null to match any language
+     * @return a list of matching services
+     */
     protected List<ServiceInfo> matchServices(ServiceType serviceType, Scopes scopes, String filter, String language)
     {
         if (logger.isLoggable(Level.FINEST))
@@ -293,6 +406,14 @@ public class StandardDirectoryAgentServer extends AbstractServer
         return services.match(serviceType, language, scopes, new FilterParser().parse(filter));
     }
 
+    /**
+     * Handles a unicast TCP SrvReg message arrived to this DirectoryAgent.
+     * <br />
+     * This DirectoryAgent will reply with an acknowledge containing the result of the registration.
+     *
+     * @param srvReg the SrvReg message to handle
+     * @param socket the socket connected to th client where to write the reply
+     */
     protected void handleTCPSrvReg(SrvReg srvReg, Socket socket)
     {
         try
@@ -308,6 +429,14 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
     }
 
+    /**
+     * Handles a unicast TCP SrvDeReg message arrived to this DirectoryAgent.
+     * <br />
+     * This DirectoryAgent will reply with an acknowledge containing the result of the deregistration.
+     *
+     * @param srvDeReg the SrvDeReg message to handle
+     * @param socket   the socket connected to th client where to write the reply
+     */
     protected void handleTCPSrvDeReg(SrvDeReg srvDeReg, Socket socket)
     {
         try
@@ -323,6 +452,13 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
     }
 
+    /**
+     * Replaces or updates a previously cached service (if any) with the given service.
+     *
+     * @param service the new service
+     * @param update  whether the given service replaces or updates a previously cached service
+     * @return a structure containing the previous service (if any) and the current service
+     */
     protected ServiceInfoCache.Result<ServiceInfo> cacheService(ServiceInfo service, boolean update)
     {
         // RFC 2608, 7.0
@@ -336,6 +472,13 @@ public class StandardDirectoryAgentServer extends AbstractServer
         return update ? services.addAttributes(service.getKey(), service.getAttributes()) : services.put(service);
     }
 
+    /**
+     * Removes or updates a previously cached service (if any) with the given service.
+     *
+     * @param service the new service
+     * @param update  whether the given service removes or updates a previously cached service
+     * @return a structure containing the previous service and the current service (if any)
+     */
     protected ServiceInfoCache.Result<ServiceInfo> uncacheService(ServiceInfo service, boolean update)
     {
         // RFC 2608, 7.0
@@ -349,6 +492,12 @@ public class StandardDirectoryAgentServer extends AbstractServer
         return update ? services.removeAttributes(service.getKey(), service.getAttributes()) : services.remove(service.getKey());
     }
 
+    /**
+     * Purge the expired services from the service cache
+     *
+     * @return the list of purged services
+     * @see ServiceInfoCache#purge()
+     */
     protected List<ServiceInfo> purgeExpiredServices()
     {
         return services.purge();

@@ -13,16 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.srv.da;
+package org.livetribe.slp.da;
 
 import java.util.EventListener;
 
 /**
+ * The listener that receives DirectoryAgent events.
+ *
  * @version $Revision$ $Date$
+ * @see DirectoryAgentEvent
  */
 public interface DirectoryAgentListener extends EventListener
 {
+    /**
+     * Invoked when a DirectoryAgent is born.
+     *
+     * @param event the DirectoryAgent birth event
+     */
     public void directoryAgentBorn(DirectoryAgentEvent event);
 
+    /**
+     * Invoked when a DirectoryAgent dies.
+     *
+     * @param event the DirectoryAgent death event
+     */
     public void directoryAgentDied(DirectoryAgentEvent event);
 }
