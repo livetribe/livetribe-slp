@@ -18,6 +18,8 @@ package org.livetribe.slp.settings;
 import java.beans.PropertyEditorSupport;
 
 /**
+ * PropertyEditor for java.lang.Boolean
+ *
  * @version $Revision$ $Date$
  */
 public class BooleanEditor extends PropertyEditorSupport

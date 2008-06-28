@@ -19,7 +19,6 @@ import java.util.List;
 
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.da.DirectoryAgentInfo;
-import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.filter.Filter;
@@ -34,8 +33,8 @@ public class StandardUserAgentClient extends AbstractUserAgent implements UserAg
 {
     public static UserAgentClient newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        UDPConnector.Factory udpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         return new StandardUserAgentClient(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), settings);
     }
 

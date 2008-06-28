@@ -18,6 +18,8 @@ package org.livetribe.slp.settings;
 import java.beans.PropertyEditorSupport;
 
 /**
+ * PropertyEditor for java.lang.String[].
+ *
  * @version $Revision$ $Date$
  */
 public class StringArrayEditor extends PropertyEditorSupport

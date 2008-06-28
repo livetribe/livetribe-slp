@@ -16,11 +16,14 @@
 package org.livetribe.slp.settings;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.livetribe.slp.ServiceLocationException;
 
 /**
+ * Gives read-only access to the default configuration values and default configuration objects.
+ *
  * @version $Revision$ $Date$
  */
 public class Defaults
@@ -32,18 +35,33 @@ public class Defaults
         reload();
     }
 
+    /**
+     * @param key the configuration key
+     * @return the default value for the given configuration key
+     */
     public static <T> T get(Key<T> key)
     {
         return defaults.get(key);
     }
 
-    public static synchronized void reload()
+    /**
+     * Reloads the default configuration, reinitializing all configuration values and configuration objects.
+     * <br />
+     * Reloading the configuration is needed because the default configuration contains {@link ExecutorService} objects
+     * that may be {@link ExecutorService#shutdown()}. It is not possible to restart such executors after they have
+     * been shut down.
+     * <br />
+     * Reloading the configuration ensures that all configuration objects are properly reinitialized.
+     */
+    public static void reload()
     {
         try
         {
-            defaults = PropertiesSettings.from("livetribe-slp.properties");
-            defaults.put(Keys.EXECUTOR_SERVICE_KEY, Executors.newCachedThreadPool());
-            defaults.put(Keys.SCHEDULED_EXECUTOR_SERVICE_KEY, Executors.newSingleThreadScheduledExecutor());
+            Settings settings = PropertiesSettings.from("livetribe-slp.properties");
+            settings.put(Keys.EXECUTOR_SERVICE_KEY, Executors.newCachedThreadPool());
+            settings.put(Keys.SCHEDULED_EXECUTOR_SERVICE_KEY, Executors.newSingleThreadScheduledExecutor());
+            // Safe publication via volatile reference
+            defaults = settings;
         }
         catch (IOException x)
         {

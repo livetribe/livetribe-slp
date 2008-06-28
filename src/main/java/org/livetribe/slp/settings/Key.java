@@ -16,6 +16,9 @@
 package org.livetribe.slp.settings;
 
 /**
+ * Holds a pair represented by a string key, as one can find in properties files, and the class of the value
+ * associated with this Key.
+ *
  * @version $Revision$ $Date$
  */
 public class Key<T>
@@ -28,45 +31,78 @@ public class Key<T>
         Editors.register(int[].class, IntArrayEditor.class);
     }
 
-    public static <S> Key<S> from(String key, Class<? extends S> type)
+    /**
+     * Creates a new Key with the given key string and value class.
+     *
+     * @param key        the key string representing this Key
+     * @param valueClass the class of the value associated with this Key
+     * @return a new Key with the given key string and value class
+     */
+    public static <S> Key<S> from(String key, Class<? extends S> valueClass)
     {
-        return new Key<S>(key, type);
+        return new Key<S>(key, valueClass);
     }
 
     private final String key;
-    private final Class<?> type;
+    private final Class<?> valueClass;
 
-    protected Key(String key, Class<?> type)
+    /**
+     * Creates a new Key.
+     *
+     * @param key        the key string
+     * @param valueClass the value type
+     */
+    protected Key(String key, Class<?> valueClass)
     {
         this.key = key;
-        this.type = type;
+        this.valueClass = valueClass;
     }
 
+    /**
+     * @return the key string associated to this Key
+     */
     public String getKey()
     {
         return key;
     }
 
-    public Class<T> getType()
+    /**
+     * @return the class of the value associated to this Key
+     */
+    public Class<T> getValueClass()
     {
-        return (Class<T>)type;
+        return (Class<T>)valueClass;
     }
 
+    /**
+     * Converts the given value object into an object of the value class specified by this Key.
+     *
+     * @param value the value to convert
+     * @return an object of the value class specified by this Key
+     * @see #convertFromString(String)
+     */
     public T convert(Object value)
     {
         T result = null;
         if (value != null)
         {
-            if (getType().isInstance(value))
-                result = getType().cast(value);
+            if (getValueClass().isInstance(value))
+                result = getValueClass().cast(value);
             else
                 result = convertFromString(value.toString());
         }
         return result;
     }
 
-    protected T convertFromString(String value)
+    /**
+     * Converts the given string value into an object of the value class specified by this Key using PropertyEditors.
+     *
+     * @param stringValue the string value to convert
+     * @return an object of the value class specified by this Key
+     * @see Editors#convertFromString(String, Class)
+     */
+    protected T convertFromString(String stringValue)
     {
-        return Editors.convertFromString(getType(), value);
+        return Editors.convertFromString(stringValue, getValueClass());
     }
 }

@@ -31,7 +31,7 @@ import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.ServiceEvent;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Factories;
+import org.livetribe.slp.settings.Factory;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
@@ -102,7 +102,7 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         udpConnectorServer.start();
         udpConnectorServer.addMessageListener(listener);
@@ -162,7 +162,7 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         // Start with no MessageListeners
         udpConnectorServer.start();
@@ -239,7 +239,7 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         udpConnectorServer.addMessageListener(listener);
         udpConnectorServer.start();
@@ -298,7 +298,7 @@ public class StandardDirectoryAgentServerTest
         };
 
         Settings udpSettings = newSettings();
-        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(udpSettings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(udpSettings);
         udpConnectorServer.addMessageListener(listener);
         udpConnectorServer.start();
@@ -350,7 +350,7 @@ public class StandardDirectoryAgentServerTest
             registrar.register(service);
 
             // Multicast SrvRqst is ignored by DA
-            UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+            UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
             UDPConnector udpConnector = udpFactory.newUDPConnector(settings);
             MulticastSrvRqstPerformer srvRqstPerformer = new MulticastSrvRqstPerformer(udpConnector, settings);
             List<SrvRply> srvRplys = srvRqstPerformer.perform(serviceURL.getServiceType(), null, null, null);

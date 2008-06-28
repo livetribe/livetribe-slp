@@ -17,7 +17,7 @@ package org.livetribe.slp;
 
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
-import org.livetribe.slp.settings.Factories;
+import org.livetribe.slp.settings.Factory;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.ua.UserAgent;
@@ -36,7 +36,7 @@ public class SLP
      */
     public static UserAgentClient newUserAgentClient(Settings settings)
     {
-        UserAgentClient.Factory factory = Factories.newInstance(settings, Keys.UA_CLIENT_FACTORY_KEY);
+        UserAgentClient.Factory factory = Factory.newInstance(settings, Keys.UA_CLIENT_FACTORY_KEY);
         return factory.newUserAgentClient(settings);
     }
 
@@ -48,7 +48,7 @@ public class SLP
      */
     public static UserAgent newUserAgent(Settings settings)
     {
-        UserAgent.Factory factory = Factories.newInstance(settings, Keys.UA_FACTORY_KEY);
+        UserAgent.Factory factory = Factory.newInstance(settings, Keys.UA_FACTORY_KEY);
         return factory.newUserAgent(settings);
     }
 
@@ -58,7 +58,7 @@ public class SLP
      */
     public static ServiceAgentClient newServiceAgentClient(Settings settings)
     {
-        ServiceAgentClient.Factory factory = Factories.newInstance(settings, Keys.SA_CLIENT_FACTORY_KEY);
+        ServiceAgentClient.Factory factory = Factory.newInstance(settings, Keys.SA_CLIENT_FACTORY_KEY);
         return factory.newServiceAgentClient(settings);
     }
 
@@ -70,7 +70,7 @@ public class SLP
      */
     public static ServiceAgent newServiceAgent(Settings settings)
     {
-        ServiceAgent.Factory factory = Factories.newInstance(settings, Keys.SA_FACTORY_KEY);
+        ServiceAgent.Factory factory = Factory.newInstance(settings, Keys.SA_FACTORY_KEY);
         return factory.newServiceAgent(settings);
     }
 }

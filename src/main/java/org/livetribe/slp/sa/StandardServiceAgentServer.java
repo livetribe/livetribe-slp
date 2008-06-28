@@ -16,6 +16,7 @@
 package org.livetribe.slp.sa;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.logging.Level;
 
@@ -23,7 +24,7 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.settings.Factories;
+import org.livetribe.slp.settings.Factory;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
@@ -45,11 +46,27 @@ import org.livetribe.slp.srv.sa.SAServiceInfo;
 import org.livetribe.slp.srv.sa.ServiceAgentInfo;
 
 /**
+ * Implementation of an SLP service agent standalone server that can be started as a service in a host.
+ * <br />
+ * Only one instance of this server can be started per each host, as it listens on the SLP TCP port.
+ * In SLP, a service agent standalone server exposes the services of all applications in the host it resides,
+ * so that each application does not need to start a {@link ServiceAgent}, but only uses a {@link ServiceAgentClient}
+ * to contact the service agent standalone server.
+ *
  * @version $Rev$ $Date$
  */
 public class StandardServiceAgentServer extends AbstractServiceAgent
 {
-    public static void main(String[] args) throws Exception
+    /**
+     * Main method to start this service agent.
+     * <br />
+     * It accepts a single program argument, the file path of the configuration file that overrides the
+     * defaults for this service agent
+     *
+     * @param args the program arguments
+     * @throws IOException in case the configuration file cannot be read
+     */
+    public static void main(String[] args) throws IOException
     {
         Settings settings = null;
         if (args.length > 0) settings = PropertiesSettings.from(new File(args[0]));
@@ -57,12 +74,16 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         server.start();
     }
 
+    /**
+     * @param settings the configuration settings that override the defaults
+     * @return a new instance of this service agent
+     */
     public static StandardServiceAgentServer newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
-        TCPConnectorServer.Factory tcpServerFactory = Factories.newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        TCPConnectorServer.Factory tcpServerFactory = Factory.newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY);
         return new StandardServiceAgentServer(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), tcpServerFactory.newTCPConnectorServer(settings), settings);
     }
 
@@ -70,6 +91,15 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     private final TCPConnectorServer tcpConnectorServer;
     private final TCPSrvAckPerformer tcpSrvAck;
 
+    /**
+     * Creates a new StandardServiceAgentServer
+     *
+     * @param udpConnector       the connector that handles udp traffic
+     * @param tcpConnector       the connector that handles tcp traffic
+     * @param udpConnectorServer the connector that listens for udp traffic
+     * @param tcpConnectorServer the connector that listens for tcp traffic
+     * @param settings           the configuration settings that override the defaults
+     */
     public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, Settings settings)
     {
         super(udpConnector, tcpConnector, udpConnectorServer, settings);
@@ -106,6 +136,14 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         tcpConnectorServer.stop();
     }
 
+    /**
+     * Handles a unicast TCP SrvReg message arrived to this service agent.
+     * <br />
+     * This service agent will reply with an acknowledge containing the result of the registration.
+     *
+     * @param srvReg the SrvReg message to handle
+     * @param socket the socket connected to th client where to write the reply
+     */
     protected void handleTCPSrvReg(SrvReg srvReg, Socket socket)
     {
         try
@@ -122,6 +160,14 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         }
     }
 
+    /**
+     * Handles a unicast TCP SrvDeReg message arrived to this service agent.
+     * <br />
+     * This service agent will reply with an acknowledge containing the result of the deregistration.
+     *
+     * @param srvDeReg the SrvDeReg message to handle
+     * @param socket   the socket connected to the client where to write the reply
+     */
     protected void handleTCPSrvDeReg(SrvDeReg srvDeReg, Socket socket)
     {
         try

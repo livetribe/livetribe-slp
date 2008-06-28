@@ -33,7 +33,7 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Factories;
+import org.livetribe.slp.settings.Factory;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
@@ -63,8 +63,8 @@ import org.livetribe.slp.srv.net.UDPConnectorServer;
  * Implementation of an SLP directory agent standalone server that can be started as a service in a host.
  * <br />
  * Only one instance of this server can be started per each host, as it listens on the SLP TCP port.
- * In SLP, DirectoryAgents work as cache of services and allow to reduce the network utilization since
- * both UserAgent and ServiceAgent will prefer a direct tcp connection with the DirectoryAgent over the
+ * In SLP, directory agents work as cache of services and allow to reduce the network utilization since
+ * both user agents and service agents will prefer a direct tcp connection with the directory agent over the
  * use of multicast.
  *
  * @version $Rev$ $Date$
@@ -72,10 +72,10 @@ import org.livetribe.slp.srv.net.UDPConnectorServer;
 public class StandardDirectoryAgentServer extends AbstractServer
 {
     /**
-     * Main method to start this DirectoryAgent.
+     * Main method to start this directory agent.
      * <br />
      * It accepts a single program argument, the file path of the configuration file that overrides the
-     * defaults for this DirectoryAgent
+     * defaults for this directory agent
      *
      * @param args the program arguments
      * @throws IOException in case the configuration file cannot be read
@@ -90,14 +90,14 @@ public class StandardDirectoryAgentServer extends AbstractServer
 
     /**
      * @param settings the configuration settings that override the defaults
-     * @return a new instance of this DirectoryAgent
+     * @return a new instance of this directory agent
      */
     public static StandardDirectoryAgentServer newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
-        TCPConnectorServer.Factory tcpServerFactory = Factories.newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        TCPConnectorServer.Factory tcpServerFactory = Factory.newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY);
         return new StandardDirectoryAgentServer(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), tcpServerFactory.newTCPConnectorServer(settings), settings);
     }
 
@@ -120,7 +120,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     private int expiredServicesPurgePeriod = Defaults.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY);
 
     /**
-     * Creates a new DirectoryAgent
+     * Creates a new StandardDirectoryAgentServer
      *
      * @param udpConnector       the connector that handles udp traffic
      * @param tcpConnector       the connector that handles tcp traffic
@@ -185,7 +185,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Sets the Scopes of this DirectoryAgent
+     * Sets the Scopes of this directory agent
      *
      * @param scopes the new Scopes
      */
@@ -195,7 +195,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Sets the Attributes of this DirectoryAgent
+     * Sets the Attributes of this directory agent
      *
      * @param attributes the new Attributes
      */
@@ -205,7 +205,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Set the language of this DirectoryAgent
+     * Set the language of this directory agent
      *
      * @param language the new language
      */
@@ -258,7 +258,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * @return a list of all services present in this DirectoryAgent
+     * @return a list of all services present in this directory agent
      */
     public List<ServiceInfo> getServices()
     {
@@ -284,10 +284,10 @@ public class StandardDirectoryAgentServer extends AbstractServer
         if (expiredServicesPurgePeriod > 0)
             scheduledExecutorService.scheduleWithFixedDelay(new ServicesPurger(), expiredServicesPurgePeriod, expiredServicesPurgePeriod, TimeUnit.SECONDS);
 
-        // DirectoryAgents send a DAAdvert on boot (RFC 2608, 12.1)
+        // Directory agent send a DAAdvert on boot (RFC 2608, 12.1)
         multicastDAAdvert.perform(directoryAgents.values(), false);
 
-        // DirectoryAgents send unsolicited DAAdverts every advertisementPeriod seconds (RFC 2608, 12.2)
+        // Directory agents send unsolicited DAAdverts every advertisementPeriod seconds (RFC 2608, 12.2)
         if (advertisementPeriod > 0)
             scheduledExecutorService.scheduleWithFixedDelay(new UnsolicitedDAAdvert(), advertisementPeriod, advertisementPeriod, TimeUnit.SECONDS);
 
@@ -298,7 +298,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     {
         scheduledExecutorService.shutdownNow();
 
-        // DirectoryAgents send a DAAdvert on shutdown (RFC 2608, 12.1)
+        // Directory agents send a DAAdvert on shutdown (RFC 2608, 12.1)
         multicastDAAdvert.perform(directoryAgents.values(), true);
 
         tcpConnectorServer.removeMessageListener(listener);
@@ -309,11 +309,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Handles a multicast SrvRqst message arrived to this DirectoryAgent.
+     * Handles a multicast SrvRqst message arrived to this directory agent.
      * <br />
-     * DirectoryAgents are interested in multicast SrvRqst messages only if they have the
+     * Directory agents are interested in multicast SrvRqst messages only if they have the
      * {@link DirectoryAgentInfo#SERVICE_TYPE directory agent service type} and the responder list does not contain
-     * this DirectoryAgent; all other multicast SrvRqst will be dropped.
+     * this directory agent; all other multicast SrvRqst will be dropped.
      * <br />
      * The reply is a DAAdvert message.
      *
@@ -366,9 +366,9 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Handles a unicast TCP SrvRqst message arrived to this DirectoryAgent.
+     * Handles a unicast TCP SrvRqst message arrived to this directory agent.
      * <br />
-     * This DirectoryAgent will reply with a list of matching services.
+     * This directory agent will reply with a list of matching services.
      *
      * @param srvRqst the SrvRqst message to handle
      * @param socket  the socket connected to th client where to write the reply
@@ -391,7 +391,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Matches the services of this DirectoryAgent against the given arguments.
+     * Matches the services of this directory agent against the given arguments.
      *
      * @param serviceType the service type to match or null to match any service type
      * @param scopes      the Scopes to match or null to match any Scopes
@@ -407,9 +407,9 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Handles a unicast TCP SrvReg message arrived to this DirectoryAgent.
+     * Handles a unicast TCP SrvReg message arrived to this directory agent.
      * <br />
-     * This DirectoryAgent will reply with an acknowledge containing the result of the registration.
+     * This directory agent will reply with an acknowledge containing the result of the registration.
      *
      * @param srvReg the SrvReg message to handle
      * @param socket the socket connected to th client where to write the reply
@@ -430,12 +430,12 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Handles a unicast TCP SrvDeReg message arrived to this DirectoryAgent.
+     * Handles a unicast TCP SrvDeReg message arrived to this directory agent.
      * <br />
-     * This DirectoryAgent will reply with an acknowledge containing the result of the deregistration.
+     * This directory agent will reply with an acknowledge containing the result of the deregistration.
      *
      * @param srvDeReg the SrvDeReg message to handle
-     * @param socket   the socket connected to th client where to write the reply
+     * @param socket   the socket connected to the client where to write the reply
      */
     protected void handleTCPSrvDeReg(SrvDeReg srvDeReg, Socket socket)
     {
@@ -526,7 +526,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * DirectoryAgents listen for multicast messages and for tcp messages that may arrive.
+     * Directory agents listen for multicast messages and for tcp messages that may arrive.
      * They are interested in:
      * <ul>
      * <li>Multicast SrvRqst, from UAs and SAs that wants to discover DAs; the reply is a DAAdvert</li>

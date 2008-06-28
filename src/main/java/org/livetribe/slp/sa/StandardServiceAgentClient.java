@@ -25,7 +25,6 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.TCPSrvDeRegPerformer;
@@ -41,7 +40,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 {
     public static ServiceAgentClient newInstance(Settings settings)
     {
-        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         return new StandardServiceAgentClient(tcpFactory.newTCPConnector(settings), settings);
     }
 
@@ -62,6 +61,11 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
     }
 
+    /**
+     * Sets the SLP port
+     *
+     * @param port the new SLP port
+     */
     public void setPort(int port)
     {
         this.port = port;

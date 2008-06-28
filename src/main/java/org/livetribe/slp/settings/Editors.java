@@ -17,58 +17,70 @@ package org.livetribe.slp.settings;
 
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
+ * This class is equivalent to {@link PropertyEditorManager} and it is used to avoid polluting PropertyEditorManager
+ * with property editors used only by the LiveTribe SLP implementation.
+ *
  * @version $Revision$ $Date$
  */
 public class Editors
 {
-    private static final Map<Class<?>, List<Class<? extends PropertyEditor>>> editors = new HashMap<Class<?>, List<Class<? extends PropertyEditor>>>();
+    private static final Map<Class<?>, Class<? extends PropertyEditor>> editors = new HashMap<Class<?>, Class<? extends PropertyEditor>>();
 
     private Editors()
     {
     }
 
+    /**
+     * Registers the given editor class to be used to edit values of the given type class.
+     *
+     * @param typeClass   the class of objects to be edited
+     * @param editorClass the editor class
+     */
     public static void register(Class<?> typeClass, Class<? extends PropertyEditor> editorClass)
     {
-        List<Class<? extends PropertyEditor>> editorClasses = editors.get(typeClass);
-        if (editorClasses == null)
+        synchronized (editors)
         {
-            editorClasses = new ArrayList<Class<? extends PropertyEditor>>();
-            editors.put(typeClass, editorClasses);
+            editors.put(typeClass, editorClass);
         }
-        editorClasses.add(0, editorClass);
     }
 
-    public static <T> T convertFromString(Class<T> typeClass, String text)
+    /**
+     * Converts the given text string to an object of the given type class.
+     * <br />
+     * If no editor is registered for the given type class, or if it fails the conversion, the default
+     * property editor from {@link PropertyEditorManager} is tried.
+     *
+     * @param text      the text string to convert into an object
+     * @param typeClass the class of the object to return
+     * @return an object of the given type class converted from the given text string
+     */
+    public static <T> T convertFromString(String text, Class<T> typeClass)
     {
-        T result = null;
-        List<Class<? extends PropertyEditor>> editorClasses = editors.get(typeClass);
-        if (editorClasses != null)
+        Class<? extends PropertyEditor> editorClass = null;
+        synchronized (editors)
         {
-            for (Class<? extends PropertyEditor> editorClass : editorClasses)
+            editorClass = editors.get(typeClass);
+        }
+        if (editorClass != null)
+        {
+            PropertyEditor editor = newPropertyEditor(editorClass);
+            if (editor != null)
             {
-                PropertyEditor editor = newPropertyEditor(editorClass);
-                if (editor != null)
+                try
                 {
-                    try
-                    {
-                        result = (T)convertFromString(editor, text);
-                        return result;
-                    }
-                    catch (IllegalArgumentException x)
-                    {
-                        // Continue with the next editor
-                    }
+                    return (T)convertFromString(editor, text);
+                }
+                catch (IllegalArgumentException x)
+                {
+                    // Fallback to the default editors
                 }
             }
         }
 
-        // Fallback to standard editors
         PropertyEditor editor = PropertyEditorManager.findEditor(typeClass);
         if (editor != null) return (T)convertFromString(editor, text);
 
