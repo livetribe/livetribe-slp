@@ -34,7 +34,7 @@ public class SettingsTest
 
         Properties properties = new Properties();
         properties.setProperty(property, value);
-        Settings settings = new PropertiesSettings(properties);
+        Settings settings = PropertiesSettings.from(properties);
 
         assert settings.get(key);
     }
@@ -48,7 +48,7 @@ public class SettingsTest
 
         Properties properties = new Properties();
         properties.setProperty(property, value);
-        Settings settings = new PropertiesSettings(properties);
+        Settings settings = PropertiesSettings.from(properties);
 
         assert settings.get(key).equals(Integer.valueOf(value));
     }
@@ -62,7 +62,7 @@ public class SettingsTest
 
         Properties properties = new Properties();
         properties.setProperty(property, value);
-        Settings settings = new PropertiesSettings(properties);
+        Settings settings = PropertiesSettings.from(properties);
 
         assert Arrays.equals(settings.get(key), new int[]{1, 1, 2, 3, 5, 8, 13});
     }
@@ -76,7 +76,7 @@ public class SettingsTest
 
         Properties properties = new Properties();
         properties.setProperty(property, value);
-        Settings settings = new PropertiesSettings(properties);
+        Settings settings = PropertiesSettings.from(properties);
 
         assert Arrays.equals(settings.get(key), value.split(","));
     }
@@ -91,7 +91,7 @@ public class SettingsTest
 
         Properties props = new Properties();
         props.setProperty(property, originalValue);
-        Settings original = new PropertiesSettings(props);
+        Settings original = PropertiesSettings.from(props);
 
         Settings override = new MapSettings();
         override.put(key, overriddenValue);

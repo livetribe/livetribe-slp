@@ -44,8 +44,6 @@ import org.livetribe.slp.srv.ua.AbstractUserAgent;
 import org.livetribe.util.Listeners;
 
 /**
- * TODO: Need to listen for unsolicited SAAdverts ? TODO: they are never sent by SA !!!
- *
  * @version $Revision$ $Date$
  */
 public class StandardUserAgent extends AbstractUserAgent implements UserAgent

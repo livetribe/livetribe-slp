@@ -17,25 +17,80 @@ package org.livetribe.slp.ua;
 
 import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceNotificationListener;
+import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.Server;
 import org.livetribe.slp.srv.ua.IUserAgent;
 
 /**
+ * The interface of an SLP user agent non-standalone server that can be started multiple times on a single host.
+ * <br />
+ * A UserAgent is a server in the sense that once started it listens for SLP multicast messages
+ * (such as directory agent advertisements, service registration notifications or service deregistration notifications).
+ * <br />
+ * UserAgents are most useful when embedded in an application that need to be aware of service registrations
+ * or deregistrations in absence of directory agents.
+ * In this scenario, the ServiceAgent is in-VM with the application.
+ * <br />
+ * The preferred way to instantiate a UserAgent is the following:
+ * <pre>
+ * Settings settings = ...
+ * UserAgent ua = SLP.newUserAgent(settings);
+ * ua.start();
+ * </pre>
+ *
  * @version $Revision$ $Date$
  */
 public interface UserAgent extends IUserAgent, Server
 {
+    /**
+     * Adds a listener that will be notified of service registrations and deregistration
+     * when no directory agents are deployed in the network.
+     *
+     * @param listener the ServiceNotificationListener to add
+     * @see #removeServiceNotificationListener(ServiceNotificationListener)
+     */
     public void addServiceNotificationListener(ServiceNotificationListener listener);
 
+    /**
+     * Removes the given ServiceNotificationListener.
+     *
+     * @param listener the ServiceNotificationListener to remove
+     * @see #addServiceNotificationListener(ServiceNotificationListener)
+     */
     public void removeServiceNotificationListener(ServiceNotificationListener listener);
 
+    /**
+     * Adds a listener that will be notified of DirectoryAgents birth and death.
+     *
+     * @param listener the DirectoryAgentListener to add
+     * @see #removeDirectoryAgentListener(DirectoryAgentListener)
+     */
     public void addDirectoryAgentListener(DirectoryAgentListener listener);
 
+    /**
+     * Removes the given DirectoryAgentListener.
+     *
+     * @param listener the DirectoryAgentListener to remove
+     * @see #addDirectoryAgentListener(DirectoryAgentListener)
+     */
     public void removeDirectoryAgentListener(DirectoryAgentListener listener);
 
+    /**
+     * The factory for UserAgents.
+     * <br />
+     * The concrete factory class can be specified in the given settings with the {@link Keys#UA_FACTORY_KEY} key.
+     *
+     * @see org.livetribe.slp.settings.Factory
+     */
     public interface Factory
     {
+        /**
+         * Creates a new UserAgent.
+         *
+         * @param settings The configuration settings
+         * @return a new UserAgent
+         */
         public UserAgent newUserAgent(Settings settings);
     }
 }

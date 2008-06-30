@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * A {@link Map} based implementation of {@link Settings}.
+ *
  * @version $Revision$ $Date$
  */
 public class MapSettings implements Settings

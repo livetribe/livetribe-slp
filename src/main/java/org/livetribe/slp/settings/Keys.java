@@ -208,14 +208,14 @@ public class Keys
     /**
      * The key to specify the ExecutorService object.
      *
-     * @see Defaults
+     * @see Defaults#reload()
      */
     public static final Key<ExecutorService> EXECUTOR_SERVICE_KEY = Key.from("livetribe.slp.executor.service", ExecutorService.class);
 
     /**
      * The key to specify the ScheduledExecutorService object.
      *
-     * @see Defaults
+     * @see Defaults#reload()
      */
     public static final Key<ScheduledExecutorService> SCHEDULED_EXECUTOR_SERVICE_KEY = Key.from("livetribe.slp.scheduled.executor.service", ScheduledExecutorService.class);
 

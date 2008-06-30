@@ -15,18 +15,43 @@
  */
 package org.livetribe.slp.ua;
 
+import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.ua.IUserAgent;
 
 /**
- * Stateless SLP User Agent.
+ * The interface of an SLP user agent client.
+ * <br />
+ * UserAgentClients do not listen for SLP messages but only issue requests and receive replies for the
+ * requests they issued.
+ * UserAgentClients are used by applications that want to find services via SLP, but do not want
+ * to start a {@link UserAgent} in-VM.
+ * <br />
+ * The preferred way to instantiate a UserAgentClient is the following:
+ * <pre>
+ * Settings settings = ...
+ * UserAgentClient uac = SLP.newUserAgentClient(settings);
+ * </pre>
  *
  * @version $Revision$ $Date$
  */
 public interface UserAgentClient extends IUserAgent
 {
+    /**
+     * The factory for UserAgentClients.
+     * <br />
+     * The concrete factory class can be specified in the given settings with the {@link Keys#UA_CLIENT_FACTORY_KEY} key.
+     *
+     * @see org.livetribe.slp.settings.Factory
+     */
     public interface Factory
     {
+        /**
+         * Creates a new UserAgentClient.
+         *
+         * @param settings The configuration settings
+         * @return a new UserAgentClient
+         */
         public UserAgentClient newUserAgentClient(Settings settings);
     }
 }

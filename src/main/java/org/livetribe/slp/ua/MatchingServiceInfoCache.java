@@ -29,6 +29,8 @@ import org.livetribe.slp.srv.filter.Filter;
 import org.livetribe.slp.srv.filter.FilterParser;
 
 /**
+ * TODO: this class is really needed in the API ?
+ *
  * @version $Rev: 252 $ $Date: 2006-08-21 09:56:15 +0200 (Mon, 21 Aug 2006) $
  */
 public class MatchingServiceInfoCache implements ServiceNotificationListener
@@ -75,7 +77,7 @@ public class MatchingServiceInfoCache implements ServiceNotificationListener
         services.removeServiceListener(listener);
     }
 
-    public boolean put(ServiceInfo service)
+    private boolean put(ServiceInfo service)
     {
         if (matches(service))
         {
@@ -141,7 +143,7 @@ public class MatchingServiceInfoCache implements ServiceNotificationListener
         }
     }
 
-    public boolean remove(ServiceInfo.Key key)
+    private boolean remove(ServiceInfo.Key key)
     {
         return services.remove(key).getPrevious() != null;
     }

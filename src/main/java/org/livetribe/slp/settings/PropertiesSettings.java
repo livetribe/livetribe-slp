@@ -15,35 +15,67 @@
  */
 package org.livetribe.slp.settings;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
 /**
+ * A {@link Properties} based implementation of {@link Settings}.
+ *
  * @version $Revision$ $Date$
  */
 public class PropertiesSettings implements Settings
 {
+    /**
+     * Creates a new PropertiesSettings from the given properties file.
+     *
+     * @param file the properties file to read
+     * @return a new PropertiesSettings
+     * @throws IOException if the properties file cannot be read
+     */
     public static PropertiesSettings from(File file) throws IOException
     {
         FileInputStream stream = new FileInputStream(file);
         return from(stream);
     }
 
+    /**
+     * Creates a new PropertiesSettings from the given resource in the classpath of the context ClassLoader.
+     *
+     * @param resource the resource to read
+     * @return a new PropertiesSettings
+     * @throws IOException if the resource cannot be read
+     * @see #from(String, ClassLoader)
+     */
     public static PropertiesSettings from(String resource) throws IOException
     {
         return from(resource, Thread.currentThread().getContextClassLoader());
     }
 
+    /**
+     * Creates a new PropertiesSettings from the given resource in the classpath of the given ClassLoader.
+     *
+     * @param resource    the resource to read
+     * @param classLoader the ClassLoader to use to read the resource
+     * @return a new PropertiesSettings
+     * @throws IOException if the resource canno be read
+     */
     public static PropertiesSettings from(String resource, ClassLoader classLoader) throws IOException
     {
         URL url = classLoader.getResource(resource);
         return from(url);
     }
 
+    /**
+     * Creates a new PropertiesSettings from the given URL.
+     *
+     * @param url the URL to read
+     * @return a new PropertiesSettings
+     * @throws IOException if the URL cannot be read
+     */
     public static PropertiesSettings from(URL url) throws IOException
     {
         InputStream stream = null;
@@ -58,16 +90,34 @@ public class PropertiesSettings implements Settings
         }
     }
 
+    /**
+     * Creates a new PropertiesSettings from the given input stream
+     *
+     * @param stream the stream to read
+     * @return a new PropertiesSettings
+     * @throws IOException if the stream cannot be read
+     */
     public static PropertiesSettings from(InputStream stream) throws IOException
     {
         Properties properties = new Properties();
         properties.load(stream);
+        return from(properties);
+    }
+
+    /**
+     * Creates a new PropertiesSettings from the given {@link Properties} object.
+     *
+     * @param properties the properties object to read
+     * @return a new PropertiesSettings
+     */
+    public static PropertiesSettings from(Properties properties)
+    {
         return new PropertiesSettings(properties);
     }
 
     private final Properties properties;
 
-    public PropertiesSettings(Properties properties)
+    private PropertiesSettings(Properties properties)
     {
         this.properties = properties;
     }
