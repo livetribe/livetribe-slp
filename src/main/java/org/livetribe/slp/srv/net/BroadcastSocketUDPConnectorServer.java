@@ -21,8 +21,6 @@ import java.net.MulticastSocket;
 import java.util.logging.Level;
 
 import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 
 /**
@@ -30,9 +28,6 @@ import org.livetribe.slp.settings.Settings;
  */
 public class BroadcastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {
-    private String[] addresses = Defaults.get(ADDRESSES_KEY);
-    private MulticastSocket[] broadcatSockets;
-
     public BroadcastSocketUDPConnectorServer(Settings settings, int bindPort)
     {
         super(settings, bindPort);
@@ -41,28 +36,9 @@ public class BroadcastSocketUDPConnectorServer extends SocketUDPConnectorServer
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
     }
 
-    public void setAddresses(String[] addresses)
-    {
-        this.addresses = addresses;
-    }
-
-    protected void doStart()
-    {
-        broadcatSockets = new MulticastSocket[addresses.length];
-        Runnable[] receivers = new Runnable[addresses.length];
-        for (int i = 0; i < addresses.length; ++i)
-        {
-            InetSocketAddress bindAddress = new InetSocketAddress(addresses[i], getBindPort());
-            broadcatSockets[i] = newBroadcastSocket(bindAddress);
-            receivers[i] = new Receiver(broadcatSockets[i]);
-            receive(receivers[i]);
-        }
-    }
-
-    private MulticastSocket newBroadcastSocket(InetSocketAddress bindAddress)
+    protected MulticastSocket newMulticastSocket(InetSocketAddress bindAddress)
     {
         try
         {
@@ -77,19 +53,12 @@ public class BroadcastSocketUDPConnectorServer extends SocketUDPConnectorServer
         }
     }
 
-    @Override
-    protected void doStop()
-    {
-        for (MulticastSocket broadcastSocket : broadcatSockets) close(broadcastSocket);
-        super.doStop();
-    }
-
-    private void close(MulticastSocket broadcastSocket)
+    protected void closeMulticastSocket(MulticastSocket broadcastSocket)
     {
         if (broadcastSocket != null)
         {
             broadcastSocket.close();
-            if (logger.isLoggable(Level.FINER)) logger.finer("Closed datagram socket " + broadcastSocket);
+            if (logger.isLoggable(Level.FINER)) logger.finer("Closed broadcast socket " + broadcastSocket);
         }
     }
 }

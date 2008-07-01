@@ -64,7 +64,10 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
 
     public void addAttributes(ServiceURL serviceURL, String language, Attributes attributes) throws ServiceLocationException
     {
-        ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.NONE, attributes);
+        ServiceInfo existingService = lookupService(new SAServiceInfo(new ServiceInfo(serviceURL, language, Scopes.NONE, Attributes.NONE)));
+        if (existingService == null)
+            throw new ServiceLocationException("Could not find service to update", ServiceLocationException.INVALID_UPDATE);
+        ServiceInfo service = new ServiceInfo(serviceURL, language, existingService.getScopes(), attributes);
         register(service, true);
     }
 
@@ -79,13 +82,19 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
     {
         if (attributes.isEmpty())
             throw new ServiceLocationException("No attribute tags to remove", ServiceLocationException.INVALID_UPDATE);
-        ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.NONE, attributes);
+        ServiceInfo existingService = lookupService(new SAServiceInfo(new ServiceInfo(serviceURL, language, Scopes.NONE, Attributes.NONE)));
+        if (existingService == null)
+            throw new ServiceLocationException("Could not find service to update", ServiceLocationException.INVALID_UPDATE);
+        ServiceInfo service = new ServiceInfo(serviceURL, language, existingService.getScopes(), attributes);
         deregister(service, true);
     }
 
     public void deregister(ServiceURL serviceURL, String language) throws ServiceLocationException
     {
-        ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.NONE, Attributes.NONE);
+        SAServiceInfo existingService = lookupService(new SAServiceInfo(new ServiceInfo(serviceURL, language, Scopes.NONE, Attributes.NONE)));
+        if (existingService == null)
+            throw new ServiceLocationException("Could not find service to deregister", ServiceLocationException.INVALID_REGISTRATION);
+        ServiceInfo service = new ServiceInfo(serviceURL, language, existingService.getScopes(), Attributes.NONE);
         deregister(service, false);
     }
 

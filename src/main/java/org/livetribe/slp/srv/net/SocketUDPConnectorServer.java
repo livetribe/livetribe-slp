@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
@@ -36,9 +38,13 @@ import org.livetribe.slp.srv.msg.Message;
 public abstract class SocketUDPConnectorServer extends AbstractConnectorServer implements UDPConnectorServer
 {
     private final int bindPort;
+    private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private ExecutorService threadPool = Defaults.get(EXECUTOR_SERVICE_KEY);
     private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
     private int multicastTimeToLive = Defaults.get(MULTICAST_TIME_TO_LIVE_KEY);
+    private volatile CountDownLatch startBarrier;
+    private volatile CountDownLatch stopBarrier;
+    private MulticastSocket[] multicastSockets;
 
     public SocketUDPConnectorServer(Settings settings, int bindPort)
     {
@@ -48,14 +54,22 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
 
     private void setSettings(Settings settings)
     {
+        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(EXECUTOR_SERVICE_KEY)) setThreadPool(settings.get(EXECUTOR_SERVICE_KEY));
-        if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY)) setMaxTransmissionUnit(settings.get(MAX_TRANSMISSION_UNIT_KEY));
-        if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY)) setMulticastTimeToLive(settings.get(MULTICAST_TIME_TO_LIVE_KEY));
+        if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
+            setMaxTransmissionUnit(settings.get(MAX_TRANSMISSION_UNIT_KEY));
+        if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY))
+            setMulticastTimeToLive(settings.get(MULTICAST_TIME_TO_LIVE_KEY));
     }
 
     protected int getBindPort()
     {
         return bindPort;
+    }
+
+    public void setAddresses(String[] addresses)
+    {
+        this.addresses = addresses;
     }
 
     public void setThreadPool(ExecutorService threadPool)
@@ -78,11 +92,66 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         this.multicastTimeToLive = multicastTimeToLive;
     }
 
+    protected void doStart()
+    {
+        int size = addresses.length;
+        startBarrier = new CountDownLatch(size);
+        stopBarrier = new CountDownLatch(size);
+        multicastSockets = new MulticastSocket[size];
+        Runnable[] receivers = new Runnable[size];
+        for (int i = 0; i < size; ++i)
+        {
+            InetSocketAddress bindAddress = new InetSocketAddress(addresses[i], getBindPort());
+            multicastSockets[i] = newMulticastSocket(bindAddress);
+            receivers[i] = new Receiver(multicastSockets[i]);
+            receive(receivers[i]);
+        }
+        waitForStart();
+    }
+
+    private void waitForStart()
+    {
+        try
+        {
+            startBarrier.await();
+        }
+        catch (InterruptedException x)
+        {
+            Thread.currentThread().interrupt();
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+        }
+    }
+
+    protected abstract MulticastSocket newMulticastSocket(InetSocketAddress bindAddress);
+
+    @Override
+    public boolean isRunning()
+    {
+        return super.isRunning() && stopBarrier.getCount() > 0;
+    }
+
     protected void doStop()
     {
+        for (MulticastSocket multicastSocket : multicastSockets) closeMulticastSocket(multicastSocket);
         threadPool.shutdownNow();
         clearMessageListeners();
+        waitForStop();
     }
+
+    private void waitForStop()
+    {
+        try
+        {
+            stopBarrier.await();
+        }
+        catch (InterruptedException x)
+        {
+            Thread.currentThread().interrupt();
+            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+        }
+    }
+
+    protected abstract void closeMulticastSocket(MulticastSocket multicastSocket);
 
     protected void receive(Runnable receiver)
     {
@@ -98,7 +167,8 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (RejectedExecutionException x)
         {
             // Connector server stopped just after having received a datagram
-            if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "UDPConnectorServer " + this + " stopping, rejecting execution of " + handler);
+            if (logger.isLoggable(Level.FINEST))
+                logger.log(Level.FINEST, "UDPConnectorServer " + this + " stopping, rejecting execution of " + handler);
             throw x;
         }
     }
@@ -117,6 +187,8 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
             if (logger.isLoggable(Level.FINER))
                 logger.finer("DatagramSocket acceptor running for " + datagramSocket + " in thread " + Thread.currentThread().getName());
 
+            startBarrier.countDown();
+
             try
             {
                 InetSocketAddress localAddress = (InetSocketAddress)datagramSocket.getLocalSocketAddress();
@@ -125,13 +197,16 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
                     byte[] buffer = new byte[maxTransmissionUnit];
                     DatagramPacket packet = new DatagramPacket(buffer, 0, buffer.length);
                     datagramSocket.receive(packet);
-                    if (logger.isLoggable(Level.FINER)) logger.finer("Received datagram packet " + packet + " on socket " + datagramSocket + ": " + packet.getLength() + " bytes from " + packet.getSocketAddress());
-                    handle(new Handler(packet, localAddress));
+                    if (logger.isLoggable(Level.FINER))
+                        logger.finer("Received datagram packet " + packet + " on socket " + datagramSocket + ": " + packet.getLength() + " bytes from " + packet.getSocketAddress());
+                    InetSocketAddress remoteAddress = (InetSocketAddress)packet.getSocketAddress();
+                    handle(new Handler(packet, localAddress, remoteAddress));
                 }
             }
             catch (SocketException x)
             {
-                if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "Closed MulticastSocket " + datagramSocket);
+                if (logger.isLoggable(Level.FINEST))
+                    logger.log(Level.FINEST, "Closed MulticastSocket " + datagramSocket);
             }
             catch (RejectedExecutionException x)
             {
@@ -145,6 +220,8 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
             {
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("MulticastSocket acceptor exiting for " + datagramSocket + " in thread " + Thread.currentThread().getName());
+
+                stopBarrier.countDown();
             }
         }
     }
@@ -153,11 +230,13 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
     {
         private final DatagramPacket packet;
         private final InetSocketAddress localAddress;
+        private final InetSocketAddress remoteAddress;
 
-        public Handler(DatagramPacket packet, InetSocketAddress localAddress)
+        public Handler(DatagramPacket packet, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
         {
             this.packet = packet;
             this.localAddress = localAddress;
+            this.remoteAddress = remoteAddress;
         }
 
         public void run()
@@ -170,7 +249,9 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
                 byte[] data = new byte[packet.getLength()];
                 System.arraycopy(packet.getData(), packet.getOffset(), data, 0, data.length);
                 Message message = Message.deserialize(data);
-                MessageEvent event = new MessageEvent(packet, message, localAddress, (InetSocketAddress)packet.getSocketAddress());
+                MessageEvent event = new MessageEvent(packet, message, localAddress, remoteAddress);
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("Notifying message listeners of new message " + message + " from " + remoteAddress);
                 notifyMessageListeners(event);
             }
             catch (ServiceLocationException x)

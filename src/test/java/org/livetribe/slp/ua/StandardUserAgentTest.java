@@ -15,401 +15,296 @@
  */
 package org.livetribe.slp.ua;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLP;
+import org.livetribe.slp.Scopes;
+import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.da.DirectoryAgentInfo;
+import org.livetribe.slp.da.StandardDirectoryAgentServer;
+import org.livetribe.slp.sa.ServiceAgent;
+import org.livetribe.slp.sa.ServiceAgentClient;
+import org.livetribe.slp.sa.ServiceNotificationEvent;
+import org.livetribe.slp.sa.ServiceNotificationListener;
+import org.livetribe.slp.settings.Defaults;
+import static org.livetribe.slp.settings.Keys.*;
+import org.livetribe.slp.settings.MapSettings;
+import org.livetribe.slp.settings.Settings;
+import org.testng.annotations.Test;
+
 /**
  * @version $Rev$ $Date$
  */
 public class StandardUserAgentTest
 {
-//    /**
-//     * @testng.configuration afterTestMethod="true"
-//     */
-//    protected void tearDown() throws Exception
-//    {
-//        sleep(500);
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testStartStop() throws Exception
-//    {
-//        int port = getPort();
-//
-//        StandardUserAgentServer ua = new StandardUserAgentServer();
-//        ua.setPort(port);
-//
-//        assert !ua.isRunning();
-//        ua.start();
-//        assert ua.isRunning();
-//        ua.stop();
-//        assert !ua.isRunning();
-//        ua.start();
-//        assert ua.isRunning();
-//        ua.stop();
-//        assert !ua.isRunning();
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testFindServices() throws Exception
-//    {
-//        int port = getPort();
-//        Scopes scopes = new Scopes(new String[]{"DEFAULT", "scope1", "scope2"});
-//
-//        StandardDirectoryAgentServer da = new StandardDirectoryAgentServer();
-//        da.setPort(port);
-//        da.setScopes(scopes);
-//
-//        try
-//        {
-//            da.start();
-//
-//            InetAddress localhost = InetAddress.getLocalHost();
-//
-//            StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-//            saManager.setPort(port);
-//
-//            try
-//            {
-//                saManager.start();
-//
-//                ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///suat1", 13);
-//                Attributes attributes = new Attributes("(attr=suat1)");
-//                ServiceInfo service = new ServiceInfo(serviceURL, scopes, attributes, null);
-//                ServiceAgentInfo info = new ServiceAgentInfo(null, "service:service-agent://127.0.0.1", null, null, Locale.getDefault().getLanguage());
-//                SrvAck ack = saManager.tcpSrvReg(localhost, service, info, true);
-//
-//                assert ack != null;
-//                assert ack.getErrorCode() == 0;
-//
-//                StandardUserAgentServer ua = new StandardUserAgentServer();
-//                ua.setPort(port);
-//
-//                try
-//                {
-//                    ua.start();
-//
-//                    List serviceInfos = ua.findServices(serviceURL.getServiceType(), scopes, null, null);
-//
-//                    assert serviceInfos != null;
-//                    assert serviceInfos.size() == 1;
-//                    ServiceInfo serviceInfo = (ServiceInfo)serviceInfos.get(0);
-//                    assert serviceInfo != null;
-//                    ServiceURL foundService = serviceInfo.getServiceURL();
-//                    assert foundService != null;
-//                    assert serviceURL.equals(foundService);
-//                    assert serviceURL.getLifetime() == foundService.getLifetime();
-//
-//                    assert serviceInfo.getAttributes() != null;
-//                    assert serviceInfo.getAttributes().equals(attributes);
-//                }
-//                finally
-//                {
-//                    ua.stop();
-//                }
-//            }
-//            finally
-//            {
-//                saManager.stop();
-//            }
-//        }
-//        finally
-//        {
-//            da.stop();
-//        }
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testListenForDAAdverts() throws Exception
-//    {
-//        int port = getPort();
-//
-//        StandardUserAgentServer ua = new StandardUserAgentServer();
-//        ua.setPort(port);
-//
-//        try
-//        {
-//            ua.start();
-//
-//            List das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
-//            assert das != null;
-//            assert das.isEmpty();
-//
-//            StandardDirectoryAgentServer da = new StandardDirectoryAgentServer();
-//            da.setPort(port);
-//
-//            try
-//            {
-//                da.start();
-//
-//                // Allow unsolicited DAAdvert to arrive and UA to cache it
-//                sleep(500);
-//
-//                das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
-//                assert das != null;
-//                assert das.size() == 1;
-//            }
-//            finally
-//            {
-//                da.stop();
-//            }
-//        }
-//        finally
-//        {
-//            ua.stop();
-//        }
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testDADiscoveryOnStartup() throws Exception
-//    {
-//        int port = getPort();
-//
-//        StandardDirectoryAgentServer da = new StandardDirectoryAgentServer();
-//        da.setPort(port);
-//
-//        try
-//        {
-//            da.start();
-//            sleep(500);
-//
-//            StandardUserAgentServer ua = new StandardUserAgentServer();
-//            StandardUserAgentManager uaManager = new StandardUserAgentManager();
-//            ua.setUserAgentManager(uaManager);
-//            ua.setPort(port);
-//            // Discover the DAs immediately
-//            ua.setDiscoveryInitialWaitBound(0);
-//
-//            try
-//            {
-//                ua.start();
-//
-//                // The multicast convergence should stop after 2 timeouts, but use 3 to be sure
-//                long[] timeouts = uaManager.getMulticastTimeouts();
-//                long sleep = timeouts[0] + timeouts[1] + timeouts[2];
-//                sleep(sleep);
-//
-//                List das = ua.getCachedDirectoryAgents(ua.getScopes(), null);
-//                assert das != null;
-//                assert das.size() == 1;
-//            }
-//            finally
-//            {
-//                ua.stop();
-//            }
-//        }
-//        finally
-//        {
-//            da.stop();
-//        }
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testSADiscoveryAndFindServicesViaTCP() throws Exception
-//    {
-//        int port = getPort();
-//
-//        StandardServiceAgentServer sa = new StandardServiceAgentServer();
-//        StandardServiceAgentManager saManager = new StandardServiceAgentManager();
-//        saManager.setTCPListening(true);
-//        sa.setServiceAgentManager(saManager);
-//        sa.setPort(port);
-//        ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/suat2", ServiceURL.LIFETIME_DEFAULT);
-//        String language = Locale.ITALY.getLanguage();
-//        ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, language);
-//        sa.register(service);
-//
-//        try
-//        {
-//            sa.start();
-//            sleep(500);
-//
-//            StandardUserAgentServer ua = new StandardUserAgentServer();
-//            ua.setPort(port);
-//
-//            try
-//            {
-//                ua.start();
-//                sleep(500);
-//
-//                List serviceInfos = ua.findServices(serviceURL.getServiceType(), null, null, language);
-//                assert serviceInfos != null;
-//                assert serviceInfos.size() == 1;
-//                assert serviceURL.equals(((ServiceInfo)serviceInfos.get(0)).getServiceURL());
-//            }
-//            finally
-//            {
-//                ua.stop();
-//            }
-//        }
-//        finally
-//        {
-//            sa.stop();
-//        }
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testDiscoveryOfTwoSA() throws Exception
-//    {
-//        int port = getPort();
-//
-//        StandardServiceAgentServer sa1 = new StandardServiceAgentServer();
-//        sa1.setPort(port);
-//        ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host/suat3", ServiceURL.LIFETIME_DEFAULT);
-//        String language = Locale.ITALY.getLanguage();
-//        ServiceInfo service1 = new ServiceInfo(serviceURL1, Scopes.DEFAULT, null, language);
-//        sa1.register(service1);
-//
-//        try
-//        {
-//            sa1.start();
-//
-//            StandardServiceAgentServer sa2 = new StandardServiceAgentServer();
-//            sa2.setPort(port);
-//            ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://host/suat4", ServiceURL.LIFETIME_DEFAULT);
-//            ServiceInfo service2 = new ServiceInfo(serviceURL2, Scopes.DEFAULT, null, language);
-//            sa2.register(service2);
-//
-//            try
-//            {
-//                sa2.start();
-//                sleep(500);
-//
-//                StandardUserAgentServer ua = new StandardUserAgentServer();
-//                ua.setPort(port);
-//
-//                try
-//                {
-//                    ua.start();
-//                    sleep(500);
-//
-//                    List sas = ua.findServiceAgents(null, null);
-//                    assert sas.size() == 2;
-//                    ServiceAgentInfo sai1 = (ServiceAgentInfo)sas.get(0);
-//                    boolean oneToOne = sa1.getIdentifier().equals(sai1.getIdentifier());
-//                    ServiceAgentInfo sai2 = (ServiceAgentInfo)sas.get(1);
-//                    if (oneToOne)
-//                    {
-//                        assert sa1.getIdentifier().equals(sai1.getIdentifier());
-//                        assert sa2.getIdentifier().equals(sai2.getIdentifier());
-//                    }
-//                    else
-//                    {
-//                        assert sa1.getIdentifier().equals(sai2.getIdentifier());
-//                        assert sa2.getIdentifier().equals(sai1.getIdentifier());
-//                    }
-//                }
-//                finally
-//                {
-//                    ua.stop();
-//                }
-//            }
-//            finally
-//            {
-//                sa2.stop();
-//            }
-//        }
-//        finally
-//        {
-//            sa1.stop();
-//        }
-//    }
-//
-//    /**
-//     * @testng.test
-//     */
-//    public void testListenForSrvRegSrvDeRegNotifications() throws Exception
-//    {
-//        int port = getPort();
-//
-//        StandardServiceAgentServer sa = new StandardServiceAgentServer();
-//        sa.setPort(port);
-//
-//        try
-//        {
-//            sa.start();
-//
-//            StandardUserAgentServer ua = new StandardUserAgentServer();
-//            ua.setPort(port);
-//
-//            final AtomicReference registered = new AtomicReference();
-//            final AtomicReference deregistered = new AtomicReference();
-//            ua.addMessageRegistrationListener(new ServiceRegistrationListener()
-//            {
-//                public void serviceRegistered(SrvReg srvReg)
-//                {
-//                    registered.set(srvReg);
-//                }
-//
-//                public void serviceDeregistered(SrvDeReg srvDeReg)
-//                {
-//                    deregistered.set(srvDeReg);
-//                }
-//            });
-//
-//            try
-//            {
-//                ua.start();
-//
-//                ServiceURL serviceURL = new ServiceURL("service:foo:bar://baz");
-//                ServiceInfo service = new ServiceInfo(serviceURL, Scopes.DEFAULT, null, Locale.getDefault().getLanguage());
-//                sa.register(service);
-//
-//                // Let the event arrive
-//                sleep(500);
-//
-//                assert registered.get() != null;
-//                assert deregistered.get() == null;
-//                SrvReg srvReg = (SrvReg)registered.get();
-//                assert srvReg.getURLEntry().toServiceURL().equals(service.getServiceURL());
-//                assert srvReg.getLanguage().equals(service.getLanguage());
-//
-//                registered.set(null);
-//
-//                Attributes attributes = new Attributes("(attr=value)");
-//                service = new ServiceInfo(service.getServiceURL(), service.getScopes(), attributes, service.getLanguage());
-//                sa.register(service);
-//
-//                // Let the event arrive
-//                sleep(500);
-//
-//                assert registered.get() != null;
-//                assert deregistered.get() == null;
-//                srvReg = (SrvReg)registered.get();
-//                assert srvReg.getURLEntry().toServiceURL().equals(service.getServiceURL());
-//                assert srvReg.getLanguage().equals(service.getLanguage());
-//                assert !srvReg.getAttributes().isEmpty();
-//
-//                registered.set(null);
-//
-//                sa.deregister(service);
-//
-//                // Let the event arrive
-//                sleep(500);
-//
-//                assert registered.get() == null;
-//                assert deregistered.get() != null;
-//                SrvDeReg srvDeReg = (SrvDeReg)deregistered.get();
-//                assert srvDeReg.getURLEntry().toServiceURL().equals(service.getServiceURL());
-//                assert srvDeReg.getLanguage().equals(service.getLanguage());
-//            }
-//            finally
-//            {
-//                ua.stop();
-//            }
-//        }
-//        finally
-//        {
-//            sa.stop();
-//        }
-//    }
+    private Settings newSettings()
+    {
+        Defaults.reload();
+        Settings settings = new MapSettings();
+        settings.put(PORT_KEY, 4427);
+        return settings;
+    }
+
+    @Test
+    public void testStartStop() throws Exception
+    {
+        StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+        assert !ua.isRunning();
+        ua.start();
+        assert ua.isRunning();
+        ua.stop();
+        assert !ua.isRunning();
+    }
+
+    @Test
+    public void testFindServicesFromDirectoryAgent() throws Exception
+    {
+        Settings daSettings = newSettings();
+        StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(daSettings);
+        da.start();
+
+        try
+        {
+            ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///suat1");
+            Attributes attributes = Attributes.from("(attr=suat1)");
+            ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes);
+            ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
+            sa.register(service);
+
+            StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+            ua.start();
+            try
+            {
+                List<ServiceInfo> services = ua.findServices(serviceURL.getServiceType(), null, null, null);
+                assert services != null;
+                assert services.size() == 1;
+                ServiceInfo serviceInfo = services.get(0);
+                assert serviceInfo != null;
+                ServiceURL foundService = serviceInfo.getServiceURL();
+                assert foundService != null;
+                assert serviceURL.equals(foundService);
+                assert serviceURL.getLifetime() == foundService.getLifetime();
+                assert serviceInfo.getAttributes() != null;
+                assert serviceInfo.getAttributes().equals(attributes);
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    @Test
+    public void testListenForDirectoryAgents() throws Exception
+    {
+        StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+        ua.start();
+        assert ua.getDirectoryAgents().size() == 0;
+
+        try
+        {
+            StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
+            da.start();
+            try
+            {
+                // Wait for the UA to get the DAAdvert from DAS
+                Thread.sleep(500);
+
+                assert ua.getDirectoryAgents().size() == 1;
+            }
+            finally
+            {
+                da.stop();
+            }
+        }
+        finally
+        {
+            ua.stop();
+        }
+    }
+
+
+    @Test
+    public void testDirectoryAgentDiscoveryOnStartup() throws Exception
+    {
+        StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
+        da.start();
+        try
+        {
+            StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+            ua.start();
+            try
+            {
+                List<DirectoryAgentInfo> das = ua.getDirectoryAgents();
+                assert das != null;
+                assert das.size() == 1;
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    @Test
+    public void testFindServicesFromTwoServiceAgents()
+    {
+        ServiceAgent sa1 = SLP.newServiceAgent(newSettings());
+        ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi://host/suat3");
+        String language = Locale.ITALY.getLanguage();
+        ServiceInfo service1 = new ServiceInfo(serviceURL1, language, Scopes.DEFAULT, null);
+        sa1.register(service1);
+        sa1.start();
+        try
+        {
+            ServiceAgent sa2 = SLP.newServiceAgent(newSettings());
+            ServiceURL serviceURL2 = new ServiceURL("service:jmx:http://host/suat4");
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, language, Scopes.DEFAULT, null);
+            sa2.register(service2);
+            sa2.start();
+            try
+            {
+                StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+                ua.start();
+                try
+                {
+                    ServiceType serviceType = new ServiceType("service:jmx");
+                    List<ServiceInfo> services = ua.findServices(serviceType, null, null, null);
+                    assert services.size() == 2;
+                }
+                finally
+                {
+                    ua.stop();
+                }
+            }
+            finally
+            {
+                sa2.stop();
+            }
+        }
+        finally
+        {
+            sa1.stop();
+        }
+    }
+
+    @Test
+    public void testListenForRegistrationNotifications() throws Exception
+    {
+        ServiceAgent sa = SLP.newServiceAgent(newSettings());
+        sa.start();
+        try
+        {
+            final AtomicReference<ServiceNotificationEvent> registered = new AtomicReference<ServiceNotificationEvent>();
+            final AtomicReference<ServiceNotificationEvent> deregistered = new AtomicReference<ServiceNotificationEvent>();
+            ServiceNotificationListener listener = new ServiceNotificationListener()
+            {
+                public void serviceRegistered(ServiceNotificationEvent event)
+                {
+                    registered.set(event);
+                }
+
+                public void serviceDeregistered(ServiceNotificationEvent event)
+                {
+                    deregistered.set(event);
+                }
+            };
+            StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+            ua.addServiceNotificationListener(listener);
+            ua.start();
+            try
+            {
+                ServiceURL serviceURL = new ServiceURL("service:foo:bar://baz");
+                ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, null);
+                sa.register(service);
+
+                // Let the event arrive
+                Thread.sleep(500);
+
+                ServiceNotificationEvent event = registered.get();
+                assert event != null;
+                assert !event.isUpdate();
+                assert deregistered.get() == null;
+                ServiceInfo registeredService = event.getService();
+                assert registeredService.getServiceURL().equals(service.getServiceURL());
+                assert registeredService.getLanguage().equals(service.getLanguage());
+                assert registeredService.getScopes().equals(service.getScopes());
+                assert registeredService.getAttributes().isEmpty();
+
+                registered.set(null);
+
+                Attributes attributes = Attributes.from("(attr=value)");
+                sa.addAttributes(service.getServiceURL(), service.getLanguage(), attributes);
+
+                // Let the event arrive
+                Thread.sleep(500);
+
+                event = registered.get();
+                assert event != null;
+                assert event.isUpdate();
+                assert deregistered.get() == null;
+                registeredService = event.getService();
+                assert registeredService.getServiceURL().equals(service.getServiceURL());
+                assert registeredService.getLanguage().equals(service.getLanguage());
+                assert registeredService.getScopes().equals(service.getScopes());
+                assert registeredService.getAttributes().equals(attributes);
+
+                registered.set(null);
+
+                attributes = Attributes.from("attr");
+                sa.removeAttributes(service.getServiceURL(), service.getLanguage(), attributes);
+
+                // Let the event arrive
+                Thread.sleep(500);
+
+                event = deregistered.get();
+                assert event != null;
+                assert event.isUpdate();
+                assert registered.get() == null;
+                ServiceInfo deregisteredService = event.getService();
+                assert deregisteredService.getServiceURL().equals(service.getServiceURL());
+                assert deregisteredService.getLanguage().equals(service.getLanguage());
+                assert deregisteredService.getScopes().equals(service.getScopes());
+                assert deregisteredService.getAttributes().equals(attributes);
+
+                deregistered.set(null);
+
+                sa.deregister(service.getServiceURL(), service.getLanguage());
+
+                // Let the event arrive
+                Thread.sleep(500);
+
+                event = deregistered.get();
+                assert event != null;
+                assert !event.isUpdate();
+                assert registered.get() == null;
+                deregisteredService = event.getService();
+                assert deregisteredService.getServiceURL().equals(service.getServiceURL());
+                assert deregisteredService.getLanguage().equals(service.getLanguage());
+                assert deregisteredService.getScopes().equals(service.getScopes());
+                assert deregisteredService.getAttributes().isEmpty();
+            }
+            finally
+            {
+                ua.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
 }

@@ -473,6 +473,11 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         return update ? services.addAttributes(service.getKey(), service.getAttributes()) : services.put(service);
     }
 
+    protected SAServiceInfo lookupService(SAServiceInfo service)
+    {
+        return services.get(service.getKey());
+    }
+
     protected ServiceInfoCache.Result<SAServiceInfo> uncacheService(SAServiceInfo service, boolean update)
     {
         // RFC 2608, 7.0

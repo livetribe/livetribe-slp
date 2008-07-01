@@ -38,7 +38,7 @@ import org.livetribe.slp.srv.net.TCPConnector;
  */
 public class StandardServiceAgentClient implements ServiceAgentClient
 {
-    public static ServiceAgentClient newInstance(Settings settings)
+    public static StandardServiceAgentClient newInstance(Settings settings)
     {
         TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         return new StandardServiceAgentClient(tcpFactory.newTCPConnector(settings), settings);

@@ -149,6 +149,11 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
         directoryAgents.removeDirectoryAgentListener(listener);
     }
 
+    public List<DirectoryAgentInfo> getDirectoryAgents()
+    {
+        return directoryAgents.match(null, null);
+    }
+
     protected void notifyServiceRegistered(ServiceNotificationEvent event)
     {
         for (ServiceNotificationListener listener : serviceRegistrationListeners) listener.serviceRegistered(event);

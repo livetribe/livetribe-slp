@@ -15,24 +15,22 @@
  */
 package org.livetribe.slp.srv.net;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.util.logging.Level;
-import java.io.IOException;
 
+import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.ServiceLocationException;
 
 /**
  * @version $Revision$ $Date$
  */
 public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {
-    private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private String multicastAddress = Defaults.get(MULTICAST_ADDRESS_KEY);
-    private MulticastSocket[] multicastSockets;
 
     public MulticastSocketUDPConnectorServer(Settings settings, int bindPort)
     {
@@ -42,13 +40,7 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(MULTICAST_ADDRESS_KEY)) setMulticastAddress(settings.get(MULTICAST_ADDRESS_KEY));
-    }
-
-    public void setAddresses(String[] addresses)
-    {
-        this.addresses = addresses;
     }
 
     public void setMulticastAddress(String multicastAddress)
@@ -56,20 +48,7 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
         this.multicastAddress = multicastAddress;
     }
 
-    protected void doStart()
-    {
-        multicastSockets = new MulticastSocket[addresses.length];
-        Runnable[] receivers = new Runnable[addresses.length];
-        for (int i = 0; i < addresses.length; ++i)
-        {
-            InetSocketAddress bindAddress = new InetSocketAddress(addresses[i], getBindPort());
-            multicastSockets[i] = newMulticastSocket(bindAddress);
-            receivers[i] = new Receiver(multicastSockets[i]);
-            receive(receivers[i]);
-        }
-    }
-
-    private MulticastSocket newMulticastSocket(InetSocketAddress bindAddress)
+    protected MulticastSocket newMulticastSocket(InetSocketAddress bindAddress)
     {
         try
         {
@@ -78,7 +57,8 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
             multicastSocket.setLoopbackMode(true);
             multicastSocket.setTimeToLive(getMulticastTimeToLive());
             multicastSocket.joinGroup(NetUtils.getByName(multicastAddress));
-            if (logger.isLoggable(Level.FINER)) logger.finer("Multicast socket " + multicastSocket + " joined multicast group " + multicastAddress);
+            if (logger.isLoggable(Level.FINER))
+                logger.finer("Multicast socket " + multicastSocket + " joined multicast group " + multicastAddress);
             return multicastSocket;
         }
         catch (IOException x)
@@ -87,21 +67,15 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
         }
     }
 
-    @Override
-    protected void doStop()
-    {
-        for (MulticastSocket multicastSocket : multicastSockets) close(multicastSocket);
-        super.doStop();
-    }
-
-    private void close(MulticastSocket multicastSocket)
+    protected void closeMulticastSocket(MulticastSocket multicastSocket)
     {
         try
         {
             if (multicastSocket != null)
             {
                 multicastSocket.leaveGroup(NetUtils.getByName(multicastAddress));
-                if (logger.isLoggable(Level.FINER)) logger.finer("Multicast socket " + multicastSocket + " left multicast group " + multicastAddress);
+                if (logger.isLoggable(Level.FINER))
+                    logger.finer("Multicast socket " + multicastSocket + " left multicast group " + multicastAddress);
                 multicastSocket.close();
                 if (logger.isLoggable(Level.FINER)) logger.finer("Closed multicast socket " + multicastSocket);
             }

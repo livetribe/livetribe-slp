@@ -33,6 +33,7 @@ import org.livetribe.slp.ServiceURL;
  * |# of URL auths |            Auth. blocks (if any)              \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
+ *
  * @version $Rev$ $Date$
  */
 public class URLEntry extends BytesBlock
@@ -41,7 +42,6 @@ public class URLEntry extends BytesBlock
     private static final int LIFETIME_BYTES_LENGTH = 2;
     private static final int URL_LENGTH_BYTES_LENGTH = 2;
     private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
-    private static final int MAX_LIFETIME = 65535;
 
     private int lifetime;
     private String url;
@@ -54,9 +54,9 @@ public class URLEntry extends BytesBlock
         if (authenticationBlocks != null)
         {
             result = 29 * result + authenticationBlocks.length;
-            for (int i = 0; i < authenticationBlocks.length; ++i)
+            for (AuthenticationBlock authenticationBlock : authenticationBlocks)
             {
-                result = 29 * result + authenticationBlocks[i].hashCode();
+                result = 29 * result + authenticationBlock.hashCode();
             }
         }
         return result;

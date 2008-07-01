@@ -177,7 +177,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
         lock();
         try
         {
-            previous = keysToServiceInfos.get(key);
+            previous = get(key);
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
             if (previous == null)
                 throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.INVALID_UPDATE);
@@ -210,7 +210,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
         lock();
         try
         {
-            previous = keysToServiceInfos.get(key);
+            previous = get(key);
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
             if (previous == null)
                 throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.INVALID_UPDATE);

@@ -22,13 +22,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
 import org.livetribe.slp.ServiceLocationException;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Defaults;
+import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.srv.msg.Message;
 
@@ -43,6 +44,8 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
     private ServerSocket[] serverSockets;
+    private volatile CountDownLatch startBarrier;
+    private volatile CountDownLatch stopBarrier;
 
     public SocketTCPConnectorServer(Settings settings)
     {
@@ -78,17 +81,34 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         this.port = port;
     }
 
-    protected void doStart()
+    protected synchronized void doStart()
     {
-        serverSockets = new ServerSocket[addresses.length];
-        Runnable[] acceptors = new Runnable[addresses.length];
-        for (int i = 0; i < addresses.length; ++i)
+        int size = addresses.length;
+        startBarrier = new CountDownLatch(size);
+        stopBarrier = new CountDownLatch(size);
+        serverSockets = new ServerSocket[size];
+        Runnable[] acceptors = new Runnable[size];
+        for (int i = 0; i < size; ++i)
         {
             InetSocketAddress bindAddress = new InetSocketAddress(addresses[i], port);
             serverSockets[i] = createServerSocket(bindAddress);
             if (logger.isLoggable(Level.FINE)) logger.fine("Bound server socket to " + bindAddress);
             acceptors[i] = new Acceptor(serverSockets[i]);
             accept(acceptors[i]);
+        }
+        waitForStart();
+    }
+
+    private void waitForStart()
+    {
+        try
+        {
+            startBarrier.await();
+        }
+        catch (InterruptedException x)
+        {
+            Thread.currentThread().interrupt();
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
         }
     }
 
@@ -107,11 +127,31 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         }
     }
 
-    protected void doStop()
+    @Override
+    public boolean isRunning()
+    {
+        return super.isRunning() && stopBarrier.getCount() > 0;
+    }
+
+    protected synchronized void doStop()
     {
         for (ServerSocket serverSocket : serverSockets) closeServerSocket(serverSocket);
         threadPool.shutdownNow();
         clearMessageListeners();
+        waitForStop();
+    }
+
+    private void waitForStop()
+    {
+        try
+        {
+            stopBarrier.await();
+        }
+        catch (InterruptedException x)
+        {
+            Thread.currentThread().interrupt();
+            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+        }
     }
 
     private void closeServerSocket(ServerSocket serverSocket)
@@ -140,7 +180,8 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         catch (RejectedExecutionException x)
         {
             // Connector server stopped just after having accepted a connection
-            if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST, "TCPConnectorServer " + this + " stopping, rejecting execution of " + handler);
+            if (logger.isLoggable(Level.FINEST))
+                logger.log(Level.FINEST, "TCPConnectorServer " + this + " stopping, rejecting execution of " + handler);
             throw x;
         }
     }
@@ -159,13 +200,16 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
             if (logger.isLoggable(Level.FINER))
                 logger.finer("ServerSocket acceptor running for " + serverSocket + " in thread " + Thread.currentThread().getName());
 
+            // Signal that this thread has started
+            startBarrier.countDown();
+
             try
             {
                 while (true)
                 {
                     Socket client = serverSocket.accept();
                     if (logger.isLoggable(Level.FINE)) logger.fine("Client connected from " + client);
-                    handle(new Handler(client));
+                    handle(new Handler(client, (InetSocketAddress)client.getLocalSocketAddress(), (InetSocketAddress)client.getRemoteSocketAddress()));
                 }
             }
             catch (SocketException x)
@@ -184,6 +228,9 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
             {
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("ServerSocket acceptor exiting for " + serverSocket + " in thread " + Thread.currentThread().getName());
+
+                // Signal that the thread has stopped
+                stopBarrier.countDown();
             }
         }
     }
@@ -191,10 +238,14 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
     private class Handler implements Runnable
     {
         private final Socket socket;
+        private final InetSocketAddress localAddress;
+        private final InetSocketAddress remoteAddress;
 
-        public Handler(Socket socket)
+        public Handler(Socket socket, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
         {
             this.socket = socket;
+            this.localAddress = localAddress;
+            this.remoteAddress = remoteAddress;
         }
 
         public void run()
@@ -220,7 +271,9 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
                     {
                         byte[] messageBytes = connector.read(socket);
                         Message message = Message.deserialize(messageBytes);
-                        MessageEvent event = new MessageEvent(socket, message, (InetSocketAddress)socket.getLocalSocketAddress(), (InetSocketAddress)socket.getRemoteSocketAddress());
+                        MessageEvent event = new MessageEvent(socket, message, localAddress, remoteAddress);
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest("Notifying message listeners of new message " + message + " from " + remoteAddress);
                         notifyMessageListeners(event);
                     }
                 }
