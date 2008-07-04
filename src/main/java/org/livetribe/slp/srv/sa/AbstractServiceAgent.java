@@ -97,16 +97,14 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(SCHEDULED_EXECUTOR_SERVICE_KEY))
-            setScheduledExecutorService(settings.get(SCHEDULED_EXECUTOR_SERVICE_KEY));
+        if (settings.containsKey(SCHEDULED_EXECUTOR_SERVICE_KEY)) setScheduledExecutorService(settings.get(SCHEDULED_EXECUTOR_SERVICE_KEY));
         if (settings.containsKey(DA_ADDRESSES_KEY)) setDirectoryAgentAddresses(settings.get(DA_ADDRESSES_KEY));
         if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
         if (settings.containsKey(SCOPES_KEY)) setScopes(Scopes.from(settings.get(SCOPES_KEY)));
         if (settings.containsKey(SA_ATTRIBUTES_KEY)) setAttributes(Attributes.from(settings.get(SA_ATTRIBUTES_KEY)));
         if (settings.containsKey(LANGUAGE_KEY)) setLanguage(settings.get(LANGUAGE_KEY));
-        if (settings.containsKey(SA_SERVICE_RENEWAL_ENABLED_KEY))
-            setPeriodicServiceRenewalEnabled(settings.get(SA_SERVICE_RENEWAL_ENABLED_KEY));
+        if (settings.containsKey(SA_SERVICE_RENEWAL_ENABLED_KEY)) setPeriodicServiceRenewalEnabled(settings.get(SA_SERVICE_RENEWAL_ENABLED_KEY));
     }
 
     public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)

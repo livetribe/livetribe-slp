@@ -27,6 +27,7 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.builder.StandardServiceAgentBuilder;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.settings.Defaults;
@@ -53,7 +54,10 @@ public class StandardServiceAgentTest
     @Test
     public void testStartStop() throws Exception
     {
-        StandardServiceAgent sa = StandardServiceAgent.newInstance(newSettings());
+        StandardServiceAgentBuilder builder = new StandardServiceAgentBuilder();
+        builder.setPort(4427);
+
+        StandardServiceAgent sa = builder.build();
         assert !sa.isRunning();
         sa.start();
         assert sa.isRunning();
