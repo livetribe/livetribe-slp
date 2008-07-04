@@ -73,4 +73,8 @@ public class SLP
         ServiceAgent.Factory factory = Factory.newInstance(settings, Keys.SA_FACTORY_KEY);
         return factory.newServiceAgent(settings);
     }
+
+    private SLP()
+    {
+    }
 }
