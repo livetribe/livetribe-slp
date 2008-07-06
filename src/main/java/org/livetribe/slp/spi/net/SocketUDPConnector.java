@@ -39,6 +39,11 @@ public abstract class SocketUDPConnector implements UDPConnector
     private int notificationPort = Defaults.get(NOTIFICATION_PORT_KEY);
     private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
 
+    public SocketUDPConnector()
+    {
+        this(null);
+    }
+
     public SocketUDPConnector(Settings settings)
     {
         if (settings != null) setSettings(settings);

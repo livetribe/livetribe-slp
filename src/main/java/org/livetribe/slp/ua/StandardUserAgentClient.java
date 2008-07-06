@@ -38,6 +38,11 @@ public class StandardUserAgentClient extends AbstractUserAgent implements UserAg
         return new StandardUserAgentClient(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), settings);
     }
 
+    public StandardUserAgentClient(UDPConnector tcpConnector, TCPConnector udpConnector)
+    {
+        this(tcpConnector, udpConnector, null);
+    }
+
     public StandardUserAgentClient(UDPConnector tcpConnector, TCPConnector udpConnector, Settings settings)
     {
         super(tcpConnector, udpConnector, settings);

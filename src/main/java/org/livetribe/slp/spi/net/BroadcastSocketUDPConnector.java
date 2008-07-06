@@ -30,6 +30,11 @@ public class BroadcastSocketUDPConnector extends SocketUDPConnector
 {
     private String broadcastAddress = Defaults.get(BROADCAST_ADDRESS_KEY);
 
+    public BroadcastSocketUDPConnector()
+    {
+        this(null);
+    }
+
     public BroadcastSocketUDPConnector(Settings settings)
     {
         super(settings);

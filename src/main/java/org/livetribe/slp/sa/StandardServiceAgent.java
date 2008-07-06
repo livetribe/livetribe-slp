@@ -47,6 +47,11 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
 
     private final String identifier = UUID.randomUUID().toString();
 
+    public StandardServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer)
+    {
+        this(udpConnector, tcpConnector, udpConnectorServer, null);
+    }
+
     public StandardServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, Settings settings)
     {
         super(udpConnector, tcpConnector, udpConnectorServer, settings);

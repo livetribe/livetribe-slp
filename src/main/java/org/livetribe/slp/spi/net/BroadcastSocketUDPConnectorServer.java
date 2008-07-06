@@ -28,6 +28,11 @@ import org.livetribe.slp.settings.Settings;
  */
 public class BroadcastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {
+    public BroadcastSocketUDPConnectorServer(int bindPort)
+    {
+        this(null, bindPort);
+    }
+
     public BroadcastSocketUDPConnectorServer(Settings settings, int bindPort)
     {
         super(settings, bindPort);

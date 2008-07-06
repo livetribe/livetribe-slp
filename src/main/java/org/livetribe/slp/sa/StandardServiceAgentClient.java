@@ -49,6 +49,11 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     private final TCPSrvDeRegPerformer tcpSrvDeReg;
     private int port = Defaults.get(PORT_KEY);
 
+    public StandardServiceAgentClient(TCPConnector tcpConnector)
+    {
+        this(tcpConnector, null);
+    }
+
     public StandardServiceAgentClient(TCPConnector tcpConnector, Settings settings)
     {
         this.tcpSrvReg = new TCPSrvRegPerformer(tcpConnector, settings);

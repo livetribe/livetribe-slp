@@ -32,6 +32,7 @@ import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 
+
 /**
  * @version $Revision$ $Date$
  */
@@ -45,6 +46,11 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
     private volatile CountDownLatch startBarrier;
     private volatile CountDownLatch stopBarrier;
     private MulticastSocket[] multicastSockets;
+
+    public SocketUDPConnectorServer(int bindPort)
+    {
+        this(null, bindPort);
+    }
 
     public SocketUDPConnectorServer(Settings settings, int bindPort)
     {

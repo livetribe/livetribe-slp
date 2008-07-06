@@ -39,6 +39,11 @@ public class SocketTCPConnector implements TCPConnector
     private final Logger logger = Logger.getLogger(getClass().getName());
     private int tcpMessageMaxLength = Defaults.get(TCP_MESSAGE_MAX_LENGTH_KEY);
 
+    public SocketTCPConnector()
+    {
+        this(null);
+    }
+
     public SocketTCPConnector(Settings settings)
     {
         if (settings != null) setSettings(settings);

@@ -26,6 +26,11 @@ public class MulticastSocketUDPConnector extends SocketUDPConnector
 {
     private String multicastAddress = Defaults.get(MULTICAST_ADDRESS_KEY);
 
+    public MulticastSocketUDPConnector()
+    {
+        this(null);
+    }
+
     public MulticastSocketUDPConnector(Settings settings)
     {
         super(settings);

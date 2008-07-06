@@ -47,6 +47,11 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
     private volatile CountDownLatch startBarrier;
     private volatile CountDownLatch stopBarrier;
 
+    public SocketTCPConnectorServer()
+    {
+        this(null);
+    }
+
     public SocketTCPConnectorServer(Settings settings)
     {
         this.connector = new SocketTCPConnector(settings);

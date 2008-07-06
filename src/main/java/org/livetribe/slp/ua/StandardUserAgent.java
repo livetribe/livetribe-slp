@@ -68,6 +68,11 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
     private final MessageListener listener = new UserAgentMessageListener();
     private String[] directoryAgentAddresses = Defaults.get(Keys.DA_ADDRESSES_KEY);
 
+    public StandardUserAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, UDPConnectorServer notificationConnectorServer)
+    {
+        this(udpConnector, tcpConnector, udpConnectorServer, notificationConnectorServer, null);
+    }
+
     public StandardUserAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, UDPConnectorServer notificationConnectorServer, Settings settings)
     {
         super(udpConnector, tcpConnector, settings);

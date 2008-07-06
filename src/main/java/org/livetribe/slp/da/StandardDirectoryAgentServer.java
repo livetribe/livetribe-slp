@@ -120,6 +120,20 @@ public class StandardDirectoryAgentServer extends AbstractServer
     private int expiredServicesPurgePeriod = Defaults.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY);
 
     /**
+     * Creates a new StandardDirectoryAgentServer using the default settings
+     *
+     * @param udpConnector       the connector that handles udp traffic
+     * @param tcpConnector       the connector that handles tcp traffic
+     * @param udpConnectorServer the connector that listens for udp traffic
+     * @param tcpConnectorServer the connector that listens for tcp traffic
+     * @see org.livetribe.slp.settings.Defaults
+     */
+    public StandardDirectoryAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer)
+    {
+        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, null);
+    }
+
+    /**
      * Creates a new StandardDirectoryAgentServer
      *
      * @param udpConnector       the connector that handles udp traffic
