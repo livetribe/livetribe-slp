@@ -19,8 +19,8 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.srv.filter.Filter;
-import org.livetribe.slp.srv.msg.DAAdvert;
+import org.livetribe.slp.spi.filter.Filter;
+import org.livetribe.slp.spi.msg.DAAdvert;
 
 /**
  * Representation of the information regarding a DirectoryAgent.

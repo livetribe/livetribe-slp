@@ -27,11 +27,11 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.TCPSrvDeRegPerformer;
-import org.livetribe.slp.srv.TCPSrvRegPerformer;
-import org.livetribe.slp.srv.msg.SrvAck;
-import org.livetribe.slp.srv.net.NetUtils;
-import org.livetribe.slp.srv.net.TCPConnector;
+import org.livetribe.slp.spi.TCPSrvDeRegPerformer;
+import org.livetribe.slp.spi.TCPSrvRegPerformer;
+import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.net.NetUtils;
+import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$

@@ -28,22 +28,22 @@ import org.livetribe.slp.settings.Factory;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Server;
-import org.livetribe.slp.srv.ServiceInfoCache;
-import org.livetribe.slp.srv.TCPSrvAckPerformer;
-import org.livetribe.slp.srv.msg.Message;
-import org.livetribe.slp.srv.msg.SrvAck;
-import org.livetribe.slp.srv.msg.SrvDeReg;
-import org.livetribe.slp.srv.msg.SrvReg;
-import org.livetribe.slp.srv.net.MessageEvent;
-import org.livetribe.slp.srv.net.MessageListener;
-import org.livetribe.slp.srv.net.TCPConnector;
-import org.livetribe.slp.srv.net.TCPConnectorServer;
-import org.livetribe.slp.srv.net.UDPConnector;
-import org.livetribe.slp.srv.net.UDPConnectorServer;
-import org.livetribe.slp.srv.sa.AbstractServiceAgent;
-import org.livetribe.slp.srv.sa.SAServiceInfo;
-import org.livetribe.slp.srv.sa.ServiceAgentInfo;
+import org.livetribe.slp.spi.Server;
+import org.livetribe.slp.spi.ServiceInfoCache;
+import org.livetribe.slp.spi.TCPSrvAckPerformer;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
+import org.livetribe.slp.spi.net.MessageEvent;
+import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.TCPConnectorServer;
+import org.livetribe.slp.spi.net.UDPConnector;
+import org.livetribe.slp.spi.net.UDPConnectorServer;
+import org.livetribe.slp.spi.sa.AbstractServiceAgent;
+import org.livetribe.slp.spi.sa.SAServiceInfo;
+import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 
 /**
  * Implementation of an SLP service agent standalone server that can be started as a service in a host.

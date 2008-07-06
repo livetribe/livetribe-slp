@@ -17,8 +17,8 @@ package org.livetribe.slp;
 
 import java.util.concurrent.TimeUnit;
 
-import org.livetribe.slp.srv.msg.SrvDeReg;
-import org.livetribe.slp.srv.msg.SrvReg;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 
 /**
  * Representation of a service, exposed by ServiceAgents and cached by DirectoryAgents.

@@ -24,13 +24,13 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.ServiceInfoCache;
-import org.livetribe.slp.srv.net.TCPConnector;
-import org.livetribe.slp.srv.net.UDPConnector;
-import org.livetribe.slp.srv.net.UDPConnectorServer;
-import org.livetribe.slp.srv.sa.AbstractServiceAgent;
-import org.livetribe.slp.srv.sa.SAServiceInfo;
-import org.livetribe.slp.srv.sa.ServiceAgentInfo;
+import org.livetribe.slp.spi.ServiceInfoCache;
+import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
+import org.livetribe.slp.spi.net.UDPConnectorServer;
+import org.livetribe.slp.spi.sa.AbstractServiceAgent;
+import org.livetribe.slp.spi.sa.SAServiceInfo;
+import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 
 /**
  * @version $Revision$ $Date$

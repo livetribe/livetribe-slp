@@ -24,9 +24,9 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
-import org.livetribe.slp.srv.ServiceInfoCache;
-import org.livetribe.slp.srv.filter.Filter;
-import org.livetribe.slp.srv.filter.FilterParser;
+import org.livetribe.slp.spi.ServiceInfoCache;
+import org.livetribe.slp.spi.filter.Filter;
+import org.livetribe.slp.spi.filter.FilterParser;
 
 /**
  * TODO: this class is really needed in the API ?

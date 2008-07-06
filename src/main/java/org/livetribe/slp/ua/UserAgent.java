@@ -19,8 +19,8 @@ import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceNotificationListener;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Server;
-import org.livetribe.slp.srv.ua.IUserAgent;
+import org.livetribe.slp.spi.Server;
+import org.livetribe.slp.spi.ua.IUserAgent;
 
 /**
  * The interface of an SLP user agent non-standalone server that can be started multiple times on a single host.

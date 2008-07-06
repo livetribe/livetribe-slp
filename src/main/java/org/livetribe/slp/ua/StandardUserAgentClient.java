@@ -21,10 +21,10 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.filter.Filter;
-import org.livetribe.slp.srv.net.TCPConnector;
-import org.livetribe.slp.srv.net.UDPConnector;
-import org.livetribe.slp.srv.ua.AbstractUserAgent;
+import org.livetribe.slp.spi.filter.Filter;
+import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
+import org.livetribe.slp.spi.ua.AbstractUserAgent;
 
 /**
  * @version $Revision$ $Date$

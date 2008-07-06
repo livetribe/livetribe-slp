@@ -19,7 +19,7 @@ import org.livetribe.slp.SLP;
 import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.srv.Server;
+import org.livetribe.slp.spi.Server;
 
 /**
  * The interface of an SLP service agent non-standalone server that can be started multiple times on a single host.
