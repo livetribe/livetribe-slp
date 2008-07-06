@@ -108,7 +108,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     public void deregister(ServiceURL serviceURL, String language) throws ServiceLocationException
     {
         ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.NONE, Attributes.NONE);
-        deregister(service, true);
+        deregister(service, false);
     }
 
     protected void deregister(ServiceInfo service, boolean update) throws ServiceLocationException

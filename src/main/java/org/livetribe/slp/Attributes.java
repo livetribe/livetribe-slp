@@ -338,7 +338,7 @@ public class Attributes
         checkEscaped(escapedValue, reservedChars);
 
         // Unescape the value
-        return unescape(escapedValue, reservedTagChars);
+        return unescape(escapedValue, reservedChars);
     }
 
     private void parse(String escapedAttributeList) throws ServiceLocationException
