@@ -75,8 +75,7 @@ public class IdentifierExtension extends Extension
         if (obj == null || getClass() != obj.getClass()) return false;
         final IdentifierExtension that = (IdentifierExtension)obj;
         if (!getHost().equals(that.getHost())) return false;
-        if (!getIdentifier().equals(that.getIdentifier())) return false;
-        return true;
+        return getIdentifier().equals(that.getIdentifier());
     }
 
     public int hashCode()
