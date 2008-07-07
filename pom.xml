@@ -13,7 +13,7 @@
     <artifactId>livetribe-slp</artifactId>
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
     <version>2.0.0-SNAPSHOT</version>
 
     <build>
@@ -38,23 +38,30 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>1.0.0</version>
+                <extensions>true</extensions>
                 <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Bundle-ManifestVersion>2</Bundle-ManifestVersion>
-                            <Bundle-Name>LiveTribe-SLP</Bundle-Name>
-                            <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                            <Bundle-Version>${project.version}</Bundle-Version>
-                            <Bundle-RequiredExecutionEnvironment>J2SE-1.5</Bundle-RequiredExecutionEnvironment>
-                            <Bundle-Classpath>.</Bundle-Classpath>
-                            <!-- TODO -->
-                            <Export-Package>
-                                org.livetribe.slp
-                            </Export-Package>
-                        </manifestEntries>
-                    </archive>
+                    <instructions>
+                        <Export-Package>
+                            org.livetribe.slp,
+                            org.livetribe.slp.da,
+                            org.livetribe.slp.sa,
+                            org.livetribe.slp.settings,
+                            org.livetribe.slp.spi,
+                            org.livetribe.slp.spi.da,
+                            org.livetribe.slp.spi.filter,
+                            org.livetribe.slp.spi.msg,
+                            org.livetribe.slp.spi.net,
+                            org.livetribe.slp.spi.sa,
+                            org.livetribe.slp.spi.ua,
+                            org.livetribe.slp.ua,
+                            org.livetribe.slp.util,
+                            org.livetribe.slp.util.logging,
+                        </Export-Package>
+                        <Bundle-RequiredExecutionEnvironment>J2SE-1.5, JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
+                    </instructions>
                 </configuration>
             </plugin>
         </plugins>
