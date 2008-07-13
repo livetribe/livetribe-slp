@@ -29,7 +29,6 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
-import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
@@ -44,7 +43,6 @@ public class StandardServiceAgentTest
 {
     private Settings newSettings()
     {
-        Defaults.reload();
         Settings settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
         return settings;

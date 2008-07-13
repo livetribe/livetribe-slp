@@ -24,6 +24,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
@@ -38,8 +39,8 @@ import org.livetribe.slp.spi.msg.Message;
  */
 public class SocketTCPConnectorServer extends AbstractConnectorServer implements TCPConnectorServer
 {
+    private final ExecutorService threadPool;
     private final SocketTCPConnector connector;
-    private ExecutorService threadPool = Defaults.get(EXECUTOR_SERVICE_KEY);
     private int tcpReadTimeout = Defaults.get(TCP_READ_TIMEOUT_KEY);
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
@@ -47,28 +48,23 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
     private volatile CountDownLatch startBarrier;
     private volatile CountDownLatch stopBarrier;
 
-    public SocketTCPConnectorServer()
+    public SocketTCPConnectorServer(ExecutorService threadPool)
     {
-        this(null);
+        this(threadPool, null);
     }
 
-    public SocketTCPConnectorServer(Settings settings)
+    public SocketTCPConnectorServer(ExecutorService threadPool, Settings settings)
     {
+        this.threadPool = threadPool;
         this.connector = new SocketTCPConnector(settings);
         if (settings != null) setSettings(settings);
     }
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(EXECUTOR_SERVICE_KEY)) setThreadPool(settings.get(EXECUTOR_SERVICE_KEY));
         if (settings.containsKey(TCP_READ_TIMEOUT_KEY)) setTcpReadTimeout(settings.get(TCP_READ_TIMEOUT_KEY));
         if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
-    }
-
-    public void setThreadPool(ExecutorService threadPool)
-    {
-        this.threadPool = threadPool;
     }
 
     public void setTcpReadTimeout(int tcpReadTimeout)
@@ -307,7 +303,8 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
     {
         public TCPConnectorServer newTCPConnectorServer(Settings settings)
         {
-            return new SocketTCPConnectorServer(settings);
+            ExecutorService threadPool = Executors.newCachedThreadPool();
+            return new SocketTCPConnectorServer(threadPool, settings);
         }
     }
 }

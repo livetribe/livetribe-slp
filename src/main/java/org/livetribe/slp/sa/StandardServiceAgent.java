@@ -16,6 +16,8 @@
 package org.livetribe.slp.sa;
 
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
@@ -42,19 +44,20 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
         UDPConnector.Factory udpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
         TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         UDPConnectorServer.Factory udpServerFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
-        return new StandardServiceAgent(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), settings);
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        return new StandardServiceAgent(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), scheduledExecutorService, settings);
     }
 
     private final String identifier = UUID.randomUUID().toString();
 
-    public StandardServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer)
+    public StandardServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, ScheduledExecutorService scheduledExecutorService)
     {
-        this(udpConnector, tcpConnector, udpConnectorServer, null);
+        this(udpConnector, tcpConnector, udpConnectorServer, scheduledExecutorService, null);
     }
 
-    public StandardServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, Settings settings)
+    public StandardServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, ScheduledExecutorService scheduledExecutorService, Settings settings)
     {
-        super(udpConnector, tcpConnector, udpConnectorServer, settings);
+        super(udpConnector, tcpConnector, udpConnectorServer, scheduledExecutorService, settings);
         if (settings != null) setSettings(settings);
     }
 

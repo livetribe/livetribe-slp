@@ -16,8 +16,6 @@
 package org.livetribe.slp.settings;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.livetribe.slp.ServiceLocationException;
 
@@ -32,7 +30,14 @@ public class Defaults
 
     static
     {
-        reload();
+        try
+        {
+            defaults = PropertiesSettings.from("livetribe-slp.properties");
+        }
+        catch (IOException x)
+        {
+            throw new ServiceLocationException("Could not read default slp configuration", x, ServiceLocationException.INTERNAL_SYSTEM_ERROR);
+        }
     }
 
     /**
@@ -42,31 +47,6 @@ public class Defaults
     public static <T> T get(Key<T> key)
     {
         return defaults.get(key);
-    }
-
-    /**
-     * Reloads the default configuration, reinitializing all configuration values and configuration objects.
-     * <br />
-     * Reloading the configuration is needed because the default configuration contains {@link ExecutorService} objects
-     * that may be {@link ExecutorService#shutdown()}. It is not possible to restart such executors after they have
-     * been shut down.
-     * <br />
-     * Reloading the configuration ensures that all configuration objects are properly reinitialized.
-     */
-    public static void reload()
-    {
-        try
-        {
-            Settings settings = PropertiesSettings.from("livetribe-slp.properties");
-            settings.put(Keys.EXECUTOR_SERVICE_KEY, Executors.newCachedThreadPool());
-            settings.put(Keys.SCHEDULED_EXECUTOR_SERVICE_KEY, Executors.newSingleThreadScheduledExecutor());
-            // Safe publication via volatile reference
-            defaults = settings;
-        }
-        catch (IOException x)
-        {
-            throw new ServiceLocationException("Could not read default slp configuration", x, ServiceLocationException.INTERNAL_SYSTEM_ERROR);
-        }
     }
 
     private Defaults()

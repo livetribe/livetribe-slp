@@ -66,6 +66,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     private final MessageListener listener = new ServiceAgentMessageListener();
     private final Map<String, ServiceAgentInfo> serviceAgents = new HashMap<String, ServiceAgentInfo>();
     private final UDPConnectorServer udpConnectorServer;
+    private final ScheduledExecutorService scheduledExecutorService;
     private final MulticastDASrvRqstPerformer multicastDASrvRqst;
     private final TCPSrvRegPerformer tcpSrvReg;
     private final TCPSrvDeRegPerformer tcpSrvDeReg;
@@ -73,7 +74,6 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     private final NotifySrvDeRegPerformer notifySrvDeReg;
     private final UDPSAAdvertPerformer udpSAAdvert;
     private final UDPSrvRplyPerformer udpSrvRply;
-    private ScheduledExecutorService scheduledExecutorService = Defaults.get(SCHEDULED_EXECUTOR_SERVICE_KEY);
     private String[] directoryAgentAddresses = Defaults.get(DA_ADDRESSES_KEY);
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
@@ -82,9 +82,10 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     private String language = Defaults.get(LANGUAGE_KEY);
     private boolean periodicServiceRenewalEnabled = Defaults.get(SA_SERVICE_RENEWAL_ENABLED_KEY);
 
-    protected AbstractServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, Settings settings)
+    protected AbstractServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, ScheduledExecutorService scheduledExecutorService, Settings settings)
     {
         this.udpConnectorServer = udpConnectorServer;
+        this.scheduledExecutorService = scheduledExecutorService;
         this.multicastDASrvRqst = new MulticastDASrvRqstPerformer(udpConnector, settings);
         this.tcpSrvReg = new TCPSrvRegPerformer(tcpConnector, settings);
         this.tcpSrvDeReg = new TCPSrvDeRegPerformer(tcpConnector, settings);
@@ -97,8 +98,6 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(SCHEDULED_EXECUTOR_SERVICE_KEY))
-            setScheduledExecutorService(settings.get(SCHEDULED_EXECUTOR_SERVICE_KEY));
         if (settings.containsKey(DA_ADDRESSES_KEY)) setDirectoryAgentAddresses(settings.get(DA_ADDRESSES_KEY));
         if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
@@ -107,11 +106,6 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         if (settings.containsKey(LANGUAGE_KEY)) setLanguage(settings.get(LANGUAGE_KEY));
         if (settings.containsKey(SA_SERVICE_RENEWAL_ENABLED_KEY))
             setPeriodicServiceRenewalEnabled(settings.get(SA_SERVICE_RENEWAL_ENABLED_KEY));
-    }
-
-    public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)
-    {
-        this.scheduledExecutorService = scheduledExecutorService;
     }
 
     public void setDirectoryAgentAddresses(String[] directoryAgentAddresses)

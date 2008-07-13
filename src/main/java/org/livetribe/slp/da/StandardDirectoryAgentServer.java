@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -94,11 +95,12 @@ public class StandardDirectoryAgentServer extends AbstractServer
      */
     public static StandardDirectoryAgentServer newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
-        TCPConnectorServer.Factory tcpServerFactory = Factory.newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY);
-        return new StandardDirectoryAgentServer(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), tcpServerFactory.newTCPConnectorServer(settings), settings);
+        UDPConnector udpConnector = Factory.<UDPConnector.Factory>newInstance(settings, UDP_CONNECTOR_FACTORY_KEY).newUDPConnector(settings);
+        TCPConnector tcpConnector = Factory.<TCPConnector.Factory>newInstance(settings, TCP_CONNECTOR_FACTORY_KEY).newTCPConnector(settings);
+        UDPConnectorServer udpConnectorServer = Factory.<UDPConnectorServer.Factory>newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(settings);
+        TCPConnectorServer tcpConnectorServer = Factory.<TCPConnectorServer.Factory>newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY).newTCPConnectorServer(settings);
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        return new StandardDirectoryAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, settings);
     }
 
     private final ServiceInfoCache<ServiceInfo> services = new ServiceInfoCache<ServiceInfo>();
@@ -106,11 +108,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
     private final Map<String, DirectoryAgentInfo> directoryAgents = new HashMap<String, DirectoryAgentInfo>();
     private final UDPConnectorServer udpConnectorServer;
     private final TCPConnectorServer tcpConnectorServer;
+    private final ScheduledExecutorService scheduledExecutorService;
     private final MulticastDAAdvertPerformer multicastDAAdvert;
     private final UDPDAAdvertPerformer udpDAAdvert;
     private final TCPSrvRplyPerformer tcpSrvRply;
     private final TCPSrvAckPerformer tcpSrvAck;
-    private ScheduledExecutorService scheduledExecutorService = Defaults.get(SCHEDULED_EXECUTOR_SERVICE_KEY);
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
     private Scopes scopes = Scopes.from(Defaults.get(SCOPES_KEY));
@@ -122,30 +124,33 @@ public class StandardDirectoryAgentServer extends AbstractServer
     /**
      * Creates a new StandardDirectoryAgentServer using the default settings
      *
-     * @param udpConnector       the connector that handles udp traffic
-     * @param tcpConnector       the connector that handles tcp traffic
-     * @param udpConnectorServer the connector that listens for udp traffic
-     * @param tcpConnectorServer the connector that listens for tcp traffic
+     * @param udpConnector             the connector that handles udp traffic
+     * @param tcpConnector             the connector that handles tcp traffic
+     * @param udpConnectorServer       the connector that listens for udp traffic
+     * @param tcpConnectorServer       the connector that listens for tcp traffic
+     * @param scheduledExecutorService the periodic task scheduler for this directory agent
      * @see org.livetribe.slp.settings.Defaults
      */
-    public StandardDirectoryAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer)
+    public StandardDirectoryAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, ScheduledExecutorService scheduledExecutorService)
     {
-        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, null);
+        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, null);
     }
 
     /**
      * Creates a new StandardDirectoryAgentServer
      *
-     * @param udpConnector       the connector that handles udp traffic
-     * @param tcpConnector       the connector that handles tcp traffic
-     * @param udpConnectorServer the connector that listens for udp traffic
-     * @param tcpConnectorServer the connector that listens for tcp traffic
-     * @param settings           the configuration settings that override the defaults
+     * @param udpConnector             the connector that handles udp traffic
+     * @param tcpConnector             the connector that handles tcp traffic
+     * @param udpConnectorServer       the connector that listens for udp traffic
+     * @param tcpConnectorServer       the connector that listens for tcp traffic
+     * @param scheduledExecutorService the periodic task scheduler for this directory agent
+     * @param settings                 the configuration settings that override the defaults
      */
-    public StandardDirectoryAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, Settings settings)
+    public StandardDirectoryAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, ScheduledExecutorService scheduledExecutorService, Settings settings)
     {
         this.udpConnectorServer = udpConnectorServer;
         this.tcpConnectorServer = tcpConnectorServer;
+        this.scheduledExecutorService = scheduledExecutorService;
         this.multicastDAAdvert = new MulticastDAAdvertPerformer(udpConnector, settings);
         this.udpDAAdvert = new UDPDAAdvertPerformer(udpConnector, settings);
         this.tcpSrvRply = new TCPSrvRplyPerformer(tcpConnector, settings);
@@ -155,8 +160,6 @@ public class StandardDirectoryAgentServer extends AbstractServer
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(SCHEDULED_EXECUTOR_SERVICE_KEY))
-            setScheduledExecutorService(settings.get(SCHEDULED_EXECUTOR_SERVICE_KEY));
         if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
         if (settings.containsKey(SCOPES_KEY)) setScopes(Scopes.from(settings.get(SCOPES_KEY)));
@@ -166,16 +169,6 @@ public class StandardDirectoryAgentServer extends AbstractServer
             setAdvertisementPeriod(settings.get(DA_ADVERTISEMENT_PERIOD_KEY));
         if (settings.containsKey(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY))
             setExpiredServicesPurgePeriod(settings.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY));
-    }
-
-    /**
-     * Sets the scheduled executor used to schedule periodic tasks.
-     *
-     * @param scheduledExecutorService the new scheduled executor
-     */
-    public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService)
-    {
-        this.scheduledExecutorService = scheduledExecutorService;
     }
 
     /**

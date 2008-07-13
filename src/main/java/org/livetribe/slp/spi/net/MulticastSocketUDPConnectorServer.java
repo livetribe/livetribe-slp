@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.net;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
 import org.livetribe.slp.ServiceLocationException;
@@ -32,14 +33,14 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {
     private String multicastAddress = Defaults.get(MULTICAST_ADDRESS_KEY);
 
-    public MulticastSocketUDPConnectorServer(int bindPort)
+    public MulticastSocketUDPConnectorServer(ExecutorService threadPool, int bindPort)
     {
         super(null, bindPort);
     }
 
-    public MulticastSocketUDPConnectorServer(Settings settings, int bindPort)
+    public MulticastSocketUDPConnectorServer(ExecutorService threadPool, int bindPort, Settings settings)
     {
-        super(settings, bindPort);
+        super(threadPool, bindPort, settings);
         if (settings != null) setSettings(settings);
     }
 

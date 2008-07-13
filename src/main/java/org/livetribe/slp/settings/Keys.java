@@ -15,9 +15,6 @@
  */
 package org.livetribe.slp.settings;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-
 /**
  * The configuration {@link Key}s used in LiveTribe SLP.
  * <br />
@@ -204,20 +201,6 @@ public class Keys
      * The key to specify the full qualified name of the UDPConnectorServer factory class.
      */
     public static final Key<String> UDP_CONNECTOR_SERVER_FACTORY_KEY = Key.from("livetribe.slp.udp.connector.server.factory", String.class);
-
-    /**
-     * The key to specify the ExecutorService object.
-     *
-     * @see Defaults#reload()
-     */
-    public static final Key<ExecutorService> EXECUTOR_SERVICE_KEY = Key.from("livetribe.slp.executor.service", ExecutorService.class);
-
-    /**
-     * The key to specify the ScheduledExecutorService object.
-     *
-     * @see Defaults#reload()
-     */
-    public static final Key<ScheduledExecutorService> SCHEDULED_EXECUTOR_SERVICE_KEY = Key.from("livetribe.slp.scheduled.executor.service", ScheduledExecutorService.class);
 
     private Keys()
     {

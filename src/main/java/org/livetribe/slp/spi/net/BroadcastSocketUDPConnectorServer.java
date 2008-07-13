@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.net;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
 import org.livetribe.slp.ServiceLocationException;
@@ -28,14 +29,14 @@ import org.livetribe.slp.settings.Settings;
  */
 public class BroadcastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {
-    public BroadcastSocketUDPConnectorServer(int bindPort)
+    public BroadcastSocketUDPConnectorServer(ExecutorService threadPool, int bindPort)
     {
-        this(null, bindPort);
+        this(threadPool, bindPort, null);
     }
 
-    public BroadcastSocketUDPConnectorServer(Settings settings, int bindPort)
+    public BroadcastSocketUDPConnectorServer(ExecutorService threadPool, int bindPort, Settings settings)
     {
-        super(settings, bindPort);
+        super(threadPool, bindPort, settings);
         if (settings != null) setSettings(settings);
     }
 

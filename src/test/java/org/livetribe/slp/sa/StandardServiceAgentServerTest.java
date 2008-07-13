@@ -16,6 +16,9 @@
 package org.livetribe.slp.sa;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
@@ -49,7 +52,6 @@ public class StandardServiceAgentServerTest
     @BeforeMethod
     public void initServer()
     {
-        Defaults.reload();
         settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
         serviceAgentServer = StandardServiceAgentServer.newInstance(settings);
@@ -179,9 +181,11 @@ public class StandardServiceAgentServerTest
         UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
         TCPConnector.Factory tcpFactory = Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
-        SocketTCPConnectorServer tcpConnectorServer = new SocketTCPConnectorServer(settings);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        SocketTCPConnectorServer tcpConnectorServer = new SocketTCPConnectorServer(threadPool, settings);
         tcpConnectorServer.setPort(daPort);
-        StandardDirectoryAgentServer directoryAgent = new StandardDirectoryAgentServer(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), tcpConnectorServer, settings);
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        StandardDirectoryAgentServer directoryAgent = new StandardDirectoryAgentServer(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), tcpConnectorServer, scheduledExecutorService, settings);
         directoryAgent.setPort(daPort);
         return directoryAgent;
     }

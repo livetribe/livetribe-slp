@@ -17,6 +17,8 @@ package org.livetribe.slp.spi.net;
 
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.livetribe.slp.settings.Defaults;
@@ -35,7 +37,6 @@ public class SocketTCPConnectorServerTest
 {
     private Settings newSettings()
     {
-        Defaults.reload();
         Settings settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
         return settings;
@@ -44,7 +45,8 @@ public class SocketTCPConnectorServerTest
     @Test
     public void testStartStop() throws Exception
     {
-        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(newSettings());
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(threadPool, newSettings());
         connector.start();
         assert connector.isRunning();
         connector.stop();
@@ -64,7 +66,8 @@ public class SocketTCPConnectorServerTest
         };
         Settings settings = newSettings();
         Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
-        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(settings);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(threadPool, settings);
         connector.addMessageListener(listener);
         connector.start();
         try
@@ -101,7 +104,8 @@ public class SocketTCPConnectorServerTest
         };
         Settings settings = newSettings();
         Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
-        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(settings);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(threadPool, settings);
         connector.addMessageListener(listener);
         connector.start();
         try
@@ -142,7 +146,8 @@ public class SocketTCPConnectorServerTest
         };
         Settings settings = newSettings();
         Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
-        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(settings);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(threadPool, settings);
         connector.addMessageListener(listener);
         connector.start();
         try
@@ -191,7 +196,8 @@ public class SocketTCPConnectorServerTest
         };
         Settings settings = newSettings();
         Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
-        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(settings);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        SocketTCPConnectorServer connector = new SocketTCPConnectorServer(threadPool, settings);
         connector.addMessageListener(listener);
         connector.start();
         try

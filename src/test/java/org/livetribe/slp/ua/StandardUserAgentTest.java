@@ -31,7 +31,6 @@ import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
-import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
@@ -44,7 +43,6 @@ public class StandardUserAgentTest
 {
     private Settings newSettings()
     {
-        Defaults.reload();
         Settings settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
         return settings;

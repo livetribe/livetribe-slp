@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceEvent;
 import org.livetribe.slp.sa.ServiceListener;
-import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
@@ -49,7 +48,6 @@ public class ServiceAgentClusterTest
 {
     private Settings newSettings()
     {
-        Defaults.reload();
         Settings settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
         return settings;

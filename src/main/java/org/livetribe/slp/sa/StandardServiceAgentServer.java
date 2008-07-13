@@ -18,6 +18,8 @@ package org.livetribe.slp.sa;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
@@ -80,11 +82,12 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
      */
     public static StandardServiceAgentServer newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
-        TCPConnectorServer.Factory tcpServerFactory = Factory.newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY);
-        return new StandardServiceAgentServer(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), tcpServerFactory.newTCPConnectorServer(settings), settings);
+        UDPConnector udpConnector = Factory.<UDPConnector.Factory>newInstance(settings, UDP_CONNECTOR_FACTORY_KEY).newUDPConnector(settings);
+        TCPConnector tcpConnector = Factory.<TCPConnector.Factory>newInstance(settings, TCP_CONNECTOR_FACTORY_KEY).newTCPConnector(settings);
+        UDPConnectorServer udpConnectorServer = Factory.<UDPConnectorServer.Factory>newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(settings);
+        TCPConnectorServer tcpConnectorServer = Factory.<TCPConnectorServer.Factory>newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY).newTCPConnectorServer(settings);
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, settings);
     }
 
     private final MessageListener listener = new ServiceAgentMessageListener();
@@ -94,29 +97,31 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     /**
      * Creates a new StandardServiceAgentServer using the default settings
      *
-     * @param udpConnector       the connector that handles udp traffic
-     * @param tcpConnector       the connector that handles tcp traffic
-     * @param udpConnectorServer the connector that listens for udp traffic
-     * @param tcpConnectorServer the connector that listens for tcp traffic
+     * @param udpConnector             the connector that handles udp traffic
+     * @param tcpConnector             the connector that handles tcp traffic
+     * @param udpConnectorServer       the connector that listens for udp traffic
+     * @param tcpConnectorServer       the connector that listens for tcp traffic
+     * @param scheduledExecutorService the periodic task scheduler for this service agent server
      * @see org.livetribe.slp.settings.Defaults
      */
-    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer)
+    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, ScheduledExecutorService scheduledExecutorService)
     {
-        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, null);
+        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, null);
     }
 
     /**
      * Creates a new StandardServiceAgentServer
      *
-     * @param udpConnector       the connector that handles udp traffic
-     * @param tcpConnector       the connector that handles tcp traffic
-     * @param udpConnectorServer the connector that listens for udp traffic
-     * @param tcpConnectorServer the connector that listens for tcp traffic
-     * @param settings           the configuration settings that override the defaults
+     * @param udpConnector             the connector that handles udp traffic
+     * @param tcpConnector             the connector that handles tcp traffic
+     * @param udpConnectorServer       the connector that listens for udp traffic
+     * @param tcpConnectorServer       the connector that listens for tcp traffic
+     * @param scheduledExecutorService the periodic task scheduler for this service agent server
+     * @param settings                 the configuration settings that override the defaults
      */
-    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, Settings settings)
+    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, ScheduledExecutorService scheduledExecutorService, Settings settings)
     {
-        super(udpConnector, tcpConnector, udpConnectorServer, settings);
+        super(udpConnector, tcpConnector, udpConnectorServer, scheduledExecutorService, settings);
         this.tcpConnectorServer = tcpConnectorServer;
         this.tcpSrvAck = new TCPSrvAckPerformer(tcpConnector, settings);
         if (settings != null) setSettings(settings);

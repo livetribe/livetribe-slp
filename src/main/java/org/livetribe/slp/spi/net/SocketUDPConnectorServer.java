@@ -23,6 +23,7 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
@@ -38,22 +39,23 @@ import org.livetribe.slp.spi.msg.Message;
  */
 public abstract class SocketUDPConnectorServer extends AbstractConnectorServer implements UDPConnectorServer
 {
+    private final ExecutorService threadPool;
     private final int bindPort;
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
-    private ExecutorService threadPool = Defaults.get(EXECUTOR_SERVICE_KEY);
     private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
     private int multicastTimeToLive = Defaults.get(MULTICAST_TIME_TO_LIVE_KEY);
     private volatile CountDownLatch startBarrier;
     private volatile CountDownLatch stopBarrier;
     private MulticastSocket[] multicastSockets;
 
-    public SocketUDPConnectorServer(int bindPort)
+    public SocketUDPConnectorServer(ExecutorService threadPool, int bindPort)
     {
-        this(null, bindPort);
+        this(threadPool, bindPort, null);
     }
 
-    public SocketUDPConnectorServer(Settings settings, int bindPort)
+    public SocketUDPConnectorServer(ExecutorService threadPool, int bindPort, Settings settings)
     {
+        this.threadPool = threadPool;
         this.bindPort = bindPort;
         if (settings != null) setSettings(settings);
     }
@@ -61,7 +63,6 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
-        if (settings.containsKey(EXECUTOR_SERVICE_KEY)) setThreadPool(settings.get(EXECUTOR_SERVICE_KEY));
         if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
             setMaxTransmissionUnit(settings.get(MAX_TRANSMISSION_UNIT_KEY));
         if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY))
@@ -76,11 +77,6 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
     public void setAddresses(String[] addresses)
     {
         this.addresses = addresses;
-    }
-
-    public void setThreadPool(ExecutorService threadPool)
-    {
-        this.threadPool = threadPool;
     }
 
     public void setMaxTransmissionUnit(int maxTransmissionUnit)
@@ -288,11 +284,12 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
 
         private UDPConnectorServer newNotificationUDPConnectorServer(Settings settings, int bindPort)
         {
+            ExecutorService threadPool = Executors.newCachedThreadPool();
             Boolean broadcastEnabled = settings == null ? Boolean.FALSE : settings.get(BROADCAST_ENABLED_KEY);
             if (broadcastEnabled == null || !broadcastEnabled)
-                return new MulticastSocketUDPConnectorServer(settings, bindPort);
+                return new MulticastSocketUDPConnectorServer(threadPool, bindPort, settings);
             else
-                return new BroadcastSocketUDPConnectorServer(settings, bindPort);
+                return new BroadcastSocketUDPConnectorServer(threadPool, bindPort, settings);
         }
     }
 }

@@ -18,6 +18,8 @@ package org.livetribe.slp.spi.net;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.livetribe.slp.settings.Defaults;
@@ -33,7 +35,6 @@ public class MulticastSocketUDPConnectorServerTest
 {
     private Settings newSettings()
     {
-        Defaults.reload();
         Settings settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
         return settings;
@@ -44,7 +45,8 @@ public class MulticastSocketUDPConnectorServerTest
     {
         Settings settings = newSettings();
         Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
-        MulticastSocketUDPConnectorServer connector = new MulticastSocketUDPConnectorServer(settings, port);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        MulticastSocketUDPConnectorServer connector = new MulticastSocketUDPConnectorServer(threadPool, port, settings);
         connector.start();
         assert connector.isRunning();
         connector.stop();
@@ -65,7 +67,8 @@ public class MulticastSocketUDPConnectorServerTest
         Settings settings = newSettings();
         Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
         InetAddress multicastAddress = InetAddress.getByName(settings.get(MULTICAST_ADDRESS_KEY, Defaults.get(MULTICAST_ADDRESS_KEY)));
-        MulticastSocketUDPConnectorServer connector = new MulticastSocketUDPConnectorServer(settings, port);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        MulticastSocketUDPConnectorServer connector = new MulticastSocketUDPConnectorServer(threadPool, port, settings);
         connector.start();
         try
         {
