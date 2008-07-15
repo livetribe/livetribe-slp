@@ -17,6 +17,7 @@ package org.livetribe.slp.ua;
 
 import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceNotificationListener;
+import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.Server;
@@ -81,7 +82,7 @@ public interface UserAgent extends IUserAgent, Server
      * <br />
      * The concrete factory class can be specified in the given settings with the {@link Keys#UA_FACTORY_KEY} key.
      *
-     * @see org.livetribe.slp.settings.Factory
+     * @see Factories
      */
     public interface Factory
     {

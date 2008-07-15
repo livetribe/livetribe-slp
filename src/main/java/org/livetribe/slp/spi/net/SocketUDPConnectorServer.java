@@ -273,19 +273,19 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         public UDPConnectorServer newUDPConnectorServer(Settings settings)
         {
             int udpBindPort = settings == null ? Defaults.get(PORT_KEY) : settings.get(PORT_KEY, Defaults.get(PORT_KEY));
-            return newNotificationUDPConnectorServer(settings, udpBindPort);
+            return newUDPConnectorServer(settings, udpBindPort);
         }
 
         public UDPConnectorServer newNotificationUDPConnectorServer(Settings settings)
         {
             int udpBindPort = settings == null ? Defaults.get(NOTIFICATION_PORT_KEY) : settings.get(NOTIFICATION_PORT_KEY, Defaults.get(NOTIFICATION_PORT_KEY));
-            return newNotificationUDPConnectorServer(settings, udpBindPort);
+            return newUDPConnectorServer(settings, udpBindPort);
         }
 
-        private UDPConnectorServer newNotificationUDPConnectorServer(Settings settings, int bindPort)
+        private UDPConnectorServer newUDPConnectorServer(Settings settings, int bindPort)
         {
             ExecutorService threadPool = Executors.newCachedThreadPool();
-            Boolean broadcastEnabled = settings == null ? Boolean.FALSE : settings.get(BROADCAST_ENABLED_KEY);
+            Boolean broadcastEnabled = settings == null ? Boolean.FALSE : settings.get(BROADCAST_ENABLED_KEY, Defaults.get(BROADCAST_ENABLED_KEY));
             if (broadcastEnabled == null || !broadcastEnabled)
                 return new MulticastSocketUDPConnectorServer(threadPool, bindPort, settings);
             else

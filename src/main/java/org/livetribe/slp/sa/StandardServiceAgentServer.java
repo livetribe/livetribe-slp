@@ -26,7 +26,7 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.settings.Factory;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
@@ -82,10 +82,10 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
      */
     public static StandardServiceAgentServer newInstance(Settings settings)
     {
-        UDPConnector udpConnector = Factory.<UDPConnector.Factory>newInstance(settings, UDP_CONNECTOR_FACTORY_KEY).newUDPConnector(settings);
-        TCPConnector tcpConnector = Factory.<TCPConnector.Factory>newInstance(settings, TCP_CONNECTOR_FACTORY_KEY).newTCPConnector(settings);
-        UDPConnectorServer udpConnectorServer = Factory.<UDPConnectorServer.Factory>newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(settings);
-        TCPConnectorServer tcpConnectorServer = Factory.<TCPConnectorServer.Factory>newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY).newTCPConnectorServer(settings);
+        UDPConnector udpConnector = Factories.<UDPConnector.Factory>newInstance(settings, UDP_CONNECTOR_FACTORY_KEY).newUDPConnector(settings);
+        TCPConnector tcpConnector = Factories.<TCPConnector.Factory>newInstance(settings, TCP_CONNECTOR_FACTORY_KEY).newTCPConnector(settings);
+        UDPConnectorServer udpConnectorServer = Factories.<UDPConnectorServer.Factory>newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(settings);
+        TCPConnectorServer tcpConnectorServer = Factories.<TCPConnectorServer.Factory>newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY).newTCPConnectorServer(settings);
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, settings);
     }

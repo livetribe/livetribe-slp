@@ -189,7 +189,7 @@ public abstract class SocketUDPConnector implements UDPConnector
     {
         public UDPConnector newUDPConnector(Settings settings)
         {
-            Boolean broadcastEnabled = settings == null ? Boolean.FALSE : settings.get(BROADCAST_ENABLED_KEY);
+            Boolean broadcastEnabled = settings == null ? Boolean.FALSE : settings.get(BROADCAST_ENABLED_KEY, Defaults.get(BROADCAST_ENABLED_KEY));
             if (broadcastEnabled == null || !broadcastEnabled)
                 return new MulticastSocketUDPConnector(settings);
             else

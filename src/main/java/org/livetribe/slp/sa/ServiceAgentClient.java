@@ -16,6 +16,7 @@
 package org.livetribe.slp.sa;
 
 import org.livetribe.slp.SLP;
+import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 
@@ -47,7 +48,7 @@ public interface ServiceAgentClient extends IServiceAgent
      * <br />
      * The concrete factory class can be specified in the given settings with the {@link Keys#SA_CLIENT_FACTORY_KEY} key.
      *
-     * @see org.livetribe.slp.settings.Factory
+     * @see Factories
      */
     public interface Factory
     {

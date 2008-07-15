@@ -25,6 +25,7 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.TCPSrvDeRegPerformer;
@@ -40,7 +41,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 {
     public static StandardServiceAgentClient newInstance(Settings settings)
     {
-        TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         return new StandardServiceAgentClient(tcpFactory.newTCPConnector(settings), settings);
     }
 

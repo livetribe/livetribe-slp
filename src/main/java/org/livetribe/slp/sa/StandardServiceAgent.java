@@ -24,6 +24,7 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.ServiceInfoCache;
@@ -41,9 +42,9 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
 {
     public static StandardServiceAgent newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        UDPConnectorServer.Factory udpServerFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         return new StandardServiceAgent(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), udpServerFactory.newUDPConnectorServer(settings), scheduledExecutorService, settings);
     }

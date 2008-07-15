@@ -28,7 +28,7 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Factory;
+import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
@@ -178,9 +178,9 @@ public class StandardServiceAgentServerTest
         // Setup a DAS on a different TCP port, so that SAS and DAS can coexist
         // It's a hack, but it's only used in tests where SAS and DAS are needed
         int daPort = settings.get(PORT_KEY) + 1;
-        UDPConnector.Factory udpFactory = Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
-        TCPConnector.Factory tcpFactory = Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        UDPConnectorServer.Factory udpServerFactory = Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         ExecutorService threadPool = Executors.newCachedThreadPool();
         SocketTCPConnectorServer tcpConnectorServer = new SocketTCPConnectorServer(threadPool, settings);
         tcpConnectorServer.setPort(daPort);

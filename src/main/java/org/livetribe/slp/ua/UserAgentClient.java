@@ -15,6 +15,7 @@
  */
 package org.livetribe.slp.ua;
 
+import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.ua.IUserAgent;
@@ -42,7 +43,7 @@ public interface UserAgentClient extends IUserAgent
      * <br />
      * The concrete factory class can be specified in the given settings with the {@link Keys#UA_CLIENT_FACTORY_KEY} key.
      *
-     * @see org.livetribe.slp.settings.Factory
+     * @see Factories
      */
     public interface Factory
     {

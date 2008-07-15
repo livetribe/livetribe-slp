@@ -25,6 +25,7 @@ import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
 import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
@@ -50,11 +51,11 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
 {
     public static StandardUserAgent newInstance(Settings settings)
     {
-        UDPConnector.Factory udpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
+        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
         UDPConnector udpConnector = udpFactory.newUDPConnector(settings);
-        TCPConnector.Factory tcpFactory = org.livetribe.slp.settings.Factory.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
+        TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         TCPConnector tcpConnector = tcpFactory.newTCPConnector(settings);
-        UDPConnectorServer.Factory udpServerFactory = org.livetribe.slp.settings.Factory.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
+        UDPConnectorServer.Factory udpServerFactory = Factories.newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY);
         UDPConnectorServer udpConnectorServer = udpServerFactory.newUDPConnectorServer(settings);
         UDPConnectorServer notificationConnectorServer = udpServerFactory.newNotificationUDPConnectorServer(settings);
         return new StandardUserAgent(udpConnector, tcpConnector, udpConnectorServer, notificationConnectorServer, settings);
