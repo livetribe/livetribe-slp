@@ -42,7 +42,8 @@ public class Factories
      */
     public static <T> T newInstance(Settings settings, Key<String> key) throws ServiceLocationException
     {
-        return newInstance(settings, key, Thread.currentThread().getContextClassLoader());
+        // Workaround for compiler bug (#6302954)
+        return Factories.<T>newInstance(settings, key, Thread.currentThread().getContextClassLoader());
     }
 
     /**

@@ -37,7 +37,7 @@ import org.livetribe.util.Listeners;
  * // TODO: RFC 2608 (8.6) suggests that ServiceAgents have an attribute 'service-type'
  * // TODO: whose value is all the service types of services represented by the SA.
  * // TODO: put a getServiceTypes() or something like that to support it
- * A cache for {@link ServiceInfo}s, that provides facilities to store, update, remove and query.
+ * A cache for {@link ServiceInfo}s, that provides facilities to store, update, remove and query ServiceInfos.
  *
  * @version $Rev: 252 $ $Date: 2006-08-21 09:56:15 +0200 (Mon, 21 Aug 2006) $
  */
@@ -48,11 +48,21 @@ public class ServiceInfoCache<T extends ServiceInfo>
     private final Map<ServiceInfo.Key, T> keysToServiceInfos = new HashMap<ServiceInfo.Key, T>();
     private final Listeners<ServiceListener> listeners = new Listeners<ServiceListener>();
 
+    /**
+     * Locks this cache in order to perform multiple operations atomically.
+     *
+     * @see #unlock()
+     */
     public void lock()
     {
         lock.lock();
     }
 
+    /**
+     * Unlocks this cache.
+     *
+     * @see #lock()
+     */
     public void unlock()
     {
         lock.unlock();
@@ -122,8 +132,9 @@ public class ServiceInfoCache<T extends ServiceInfo>
                         ": already registered under service type " + existingServiceType +
                         ", cannot be registered also under service type " + serviceType, ServiceLocationException.INVALID_REGISTRATION);
             keysToServiceTypes.put(service.getKey(), serviceType);
-            service.setRegistrationTime(System.currentTimeMillis());
             previous = keysToServiceInfos.put(service.getKey(), service);
+            service.setRegistered(true);
+            if (previous != null) previous.setRegistered(false);
         }
         finally
         {
@@ -148,7 +159,8 @@ public class ServiceInfoCache<T extends ServiceInfo>
     }
 
     /**
-     * Returns the service correspondent to the given {@link ServiceInfo.Key}.
+     * @param key the {@link ServiceInfo.Key} identifying the service
+     * @return the service correspondent to the given {@link ServiceInfo.Key}.
      */
     public T get(ServiceInfo.Key key)
     {
@@ -164,10 +176,11 @@ public class ServiceInfoCache<T extends ServiceInfo>
     }
 
     /**
-     * Updates an existing entry with the given service, adding information contained in the given service.
+     * Updates an existing ServiceInfo identified by the given Key, adding the given attributes.
      *
-     * @param service The service containing the values that update an eventually existing service
-     * @return The existing service prior update.
+     * @param key        the service's key
+     * @param attributes the attributes to add
+     * @return a result whose previous is the service prior the update and where current is the current service
      */
     public Result<T> addAttributes(ServiceInfo.Key key, Attributes attributes)
     {
@@ -183,8 +196,9 @@ public class ServiceInfoCache<T extends ServiceInfo>
                 throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.INVALID_UPDATE);
 
             current = (T)previous.addAttributes(attributes);
-            current.setRegistrationTime(System.currentTimeMillis());
             keysToServiceInfos.put(current.getKey(), current);
+            current.setRegistered(true);
+            previous.setRegistered(false);
         }
         finally
         {
@@ -196,11 +210,11 @@ public class ServiceInfoCache<T extends ServiceInfo>
     }
 
     /**
-     * Updates an existing entry with the given service, removing information contained in the given service;
-     * if the entry does not exist, does nothing.
+     * Updates an existing ServiceInfo identified by the given Key, removing the given attributes.
      *
-     * @param service The service containing the values that update an eventually existing service
-     * @return Null if no service already existed, or the existing service prior update.
+     * @param key        the service's key
+     * @param attributes the attributes to remove
+     * @return a result whose previous is the service prior the update and where current is the current service
      */
     public Result<T> removeAttributes(ServiceInfo.Key key, Attributes attributes)
     {
@@ -216,8 +230,9 @@ public class ServiceInfoCache<T extends ServiceInfo>
                 throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.INVALID_UPDATE);
 
             current = (T)previous.removeAttributes(attributes);
-            current.setRegistrationTime(System.currentTimeMillis());
             keysToServiceInfos.put(current.getKey(), current);
+            current.setRegistered(true);
+            previous.setRegistered(false);
         }
         finally
         {
@@ -231,7 +246,8 @@ public class ServiceInfoCache<T extends ServiceInfo>
     /**
      * Removes an existing entry with the given {@link ServiceInfo.Key}; if the entry does not exist, does nothing.
      *
-     * @return Null if no service existed, or the existing service.
+     * @param key the service's key
+     * @return a result whose previous is the existing service and where current is null
      */
     public Result<T> remove(ServiceInfo.Key key)
     {
@@ -243,6 +259,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
             ServiceType serviceType = keysToServiceTypes.remove(key);
             if (serviceType == null) return new Result<T>(null, null);
             previous = keysToServiceInfos.remove(key);
+            previous.setRegistered(false);
         }
         finally
         {
@@ -262,7 +279,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
         {
             for (T serviceInfo : keysToServiceInfos.values())
             {
-                if (!serviceInfo.isExpiredAsOf(now))
+                if (serviceInfo.isRegistered() && !serviceInfo.isExpiredAsOf(now))
                 {
                     if (matchServiceTypes(serviceInfo.resolveServiceType(), serviceType))
                     {

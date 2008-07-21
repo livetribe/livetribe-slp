@@ -385,7 +385,7 @@ public class StandardDirectoryAgentServerTest
             ServiceInfo registered = da.getServices().get(0);
             assert registered.getKey().equals(service.getKey());
             assert registered.getAttributes().equals(service.getAttributes());
-            assert registered.getRegistrationTime() > 0;
+            assert registered.isRegistered();
             assert registered.getScopes().equals(service.getScopes());
 
             // Registration with wrong scopes must fail

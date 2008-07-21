@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
@@ -37,8 +38,6 @@ import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.ua.UserAgentClient;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -46,137 +45,18 @@ import org.testng.annotations.Test;
  */
 public class StandardServiceAgentServerTest
 {
-    private Settings settings;
-    private StandardServiceAgentServer serviceAgentServer;
-
-    @BeforeMethod
-    public void initServer()
+    private Settings newSettings()
     {
-        settings = new MapSettings();
+        Settings settings = new MapSettings();
         settings.put(PORT_KEY, 4427);
-        serviceAgentServer = StandardServiceAgentServer.newInstance(settings);
-        serviceAgentServer.start();
-    }
-
-    @AfterMethod(alwaysRun = true)
-    public void destroyServer() throws InterruptedException
-    {
-        if (serviceAgentServer != null) serviceAgentServer.stop();
-        serviceAgentServer = null;
-    }
-
-    @Test
-    public void testRegisterWithWrongScope()
-    {
-        ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://wrongScope");
-        ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.from("wrong"), Attributes.NONE);
-        ServiceAgentClient client = SLP.newServiceAgentClient(settings);
-        try
-        {
-            client.register(service);
-            throw new AssertionError();
-        }
-        catch (ServiceLocationException x)
-        {
-            assert x.getErrorCode() == ServiceLocationException.SCOPE_NOT_SUPPORTED;
-        }
-    }
-
-    @Test
-    public void testRegisterWithNoLanguage()
-    {
-        ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://noLanguage");
-        ServiceInfo service = new ServiceInfo(serviceURL, null, Scopes.DEFAULT, Attributes.NONE);
-        ServiceAgentClient client = SLP.newServiceAgentClient(settings);
-        try
-        {
-            client.register(service);
-            throw new AssertionError();
-        }
-        catch (ServiceLocationException x)
-        {
-            assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
-        }
-    }
-
-    @Test
-    public void testRegisterWithInvalidLifetime()
-    {
-        ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://invalidLifetime", 0);
-        ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.DEFAULT, Attributes.NONE);
-        ServiceAgentClient client = SLP.newServiceAgentClient(settings);
-        try
-        {
-            client.register(service);
-            throw new AssertionError();
-        }
-        catch (ServiceLocationException x)
-        {
-            assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
-        }
-    }
-
-    @Test
-    public void testRegisterDeregisterWithoutDirectoryAgent()
-    {
-        List<ServiceInfo> services = serviceAgentServer.getServices();
-
-        ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://register");
-        ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.DEFAULT, Attributes.NONE);
-        ServiceAgentClient client = SLP.newServiceAgentClient(settings);
-        client.register(service);
-
-        List<ServiceInfo> services1 = serviceAgentServer.getServices();
-        assert services1.size() == services.size() + 1;
-        services1.removeAll(services);
-        assert services1.size() == 1;
-        assert services1.get(0).getKey().equals(service.getKey());
-
-        client.deregister(service.getServiceURL(), service.getLanguage());
-
-        List<ServiceInfo> services2 = serviceAgentServer.getServices();
-        assert services2.equals(services);
-    }
-
-    @Test
-    public void testRegisterDeregisterWithDirectoryAgent() throws Exception
-    {
-        StandardDirectoryAgentServer directoryAgent = newDirectoryAgent();
-        directoryAgent.start();
-
-        try
-        {
-            // Wait for the SAS to get the DAAdvert from DAS, so SAS gets also DAS different TCP port
-            Thread.sleep(500);
-
-            List<ServiceInfo> services = directoryAgent.getServices();
-
-            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://daregister");
-            ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.DEFAULT, Attributes.NONE);
-            ServiceAgentClient client = SLP.newServiceAgentClient(settings);
-            client.register(service);
-
-            List<ServiceInfo> services1 = directoryAgent.getServices();
-            assert services1.size() == services.size() + 1;
-            services1.removeAll(services);
-            assert services1.size() == 1;
-            assert services1.get(0).getKey().equals(service.getKey());
-
-            client.deregister(service.getServiceURL(), service.getLanguage());
-
-            List<ServiceInfo> services2 = serviceAgentServer.getServices();
-            assert services2.equals(services);
-        }
-        finally
-        {
-            directoryAgent.stop();
-        }
+        return settings;
     }
 
     private StandardDirectoryAgentServer newDirectoryAgent()
     {
         // Setup a DAS on a different TCP port, so that SAS and DAS can coexist
         // It's a hack, but it's only used in tests where SAS and DAS are needed
+        Settings settings = newSettings();
         int daPort = settings.get(PORT_KEY) + 1;
         UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
         TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
@@ -191,45 +71,245 @@ public class StandardServiceAgentServerTest
     }
 
     @Test
+    public void testRegisterWithWrongScope()
+    {
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://wrongScope");
+            ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.from("wrong"), Attributes.NONE);
+            ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+            try
+            {
+                client.register(service);
+                assert false;
+            }
+            catch (ServiceLocationException x)
+            {
+                assert x.getErrorCode() == ServiceLocationException.SCOPE_NOT_SUPPORTED;
+            }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    @Test
+    public void testRegisterWithNoLanguage()
+    {
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://noLanguage");
+            ServiceInfo service = new ServiceInfo(serviceURL, null, Scopes.DEFAULT, Attributes.NONE);
+            ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+            try
+            {
+                client.register(service);
+                assert false;
+            }
+            catch (ServiceLocationException x)
+            {
+                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+            }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    @Test
+    public void testRegisterWithInvalidLifetime()
+    {
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://invalidLifetime", 0);
+            ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.DEFAULT, Attributes.NONE);
+            ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+            try
+            {
+                client.register(service);
+                assert false;
+            }
+            catch (ServiceLocationException x)
+            {
+                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+            }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    @Test
+    public void testRegisterDeregisterWithoutDirectoryAgent()
+    {
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            List<ServiceInfo> services = sa.getServices();
+
+            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://register");
+            ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.DEFAULT, Attributes.NONE);
+            ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+            client.register(service);
+
+            List<ServiceInfo> services1 = sa.getServices();
+            assert services1.size() == services.size() + 1;
+            services1.removeAll(services);
+            assert services1.size() == 1;
+            assert services1.get(0).getKey().equals(service.getKey());
+
+            client.deregister(service.getServiceURL(), service.getLanguage());
+
+            List<ServiceInfo> services2 = sa.getServices();
+            assert services2.equals(services);
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    @Test
+    public void testRegisterDeregisterWithDirectoryAgent() throws Exception
+    {
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            StandardDirectoryAgentServer da = newDirectoryAgent();
+            da.start();
+            try
+            {
+                // Wait for the SAS to get the DAAdvert from DAS, so SAS gets also DAS different TCP port
+                Thread.sleep(500);
+
+                List<ServiceInfo> services = da.getServices();
+
+                ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://daregister");
+                ServiceInfo service = new ServiceInfo(serviceURL, Defaults.get(LANGUAGE_KEY), Scopes.DEFAULT, Attributes.NONE);
+                ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+                client.register(service);
+
+                List<ServiceInfo> services1 = da.getServices();
+                assert services1.size() == services.size() + 1;
+                services1.removeAll(services);
+                assert services1.size() == 1;
+                assert services1.get(0).getKey().equals(service.getKey());
+
+                client.deregister(service.getServiceURL(), service.getLanguage());
+
+                List<ServiceInfo> services2 = sa.getServices();
+                assert services2.equals(services);
+            }
+            finally
+            {
+                da.stop();
+            }
+        }
+        finally
+        {
+            sa.stop();
+        }
+    }
+
+    @Test
     public void testFindServices()
     {
-        List<ServiceInfo> services = serviceAgentServer.getServices();
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            List<ServiceInfo> services = sa.getServices();
 
-        ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://service");
-        String language = Defaults.get(LANGUAGE_KEY);
-        ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.DEFAULT, Attributes.NONE);
-        ServiceAgentClient client = SLP.newServiceAgentClient(settings);
-        client.register(service);
+            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://service");
+            String language = Defaults.get(LANGUAGE_KEY);
+            ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.DEFAULT, Attributes.NONE);
+            ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+            client.register(service);
 
-        UserAgentClient finder = SLP.newUserAgentClient(settings);
-        List<ServiceInfo> services1 = finder.findServices(serviceURL.getServiceType(), null, null, null);
-        assert services1.size() == services.size() + 1;
-        services1.removeAll(services);
-        assert services1.size() == 1;
-        ServiceInfo service1 = services1.get(0);
-        assert service1.getKey().equals(service.getKey());
-        assert service1.getScopes().equals(service.getScopes());
-        assert service1.getAttributes().equals(service.getAttributes());
+            UserAgentClient finder = SLP.newUserAgentClient(newSettings());
+            List<ServiceInfo> services1 = finder.findServices(serviceURL.getServiceType(), null, null, null);
+            assert services1.size() == services.size() + 1;
+            services1.removeAll(services);
+            assert services1.size() == 1;
+            ServiceInfo service1 = services1.get(0);
+            assert service1.getKey().equals(service.getKey());
+            assert service1.getScopes().equals(service.getScopes());
+            assert service1.getAttributes().equals(service.getAttributes());
+        }
+        finally
+        {
+            sa.stop();
+        }
     }
 
     @Test
     public void testListenForDirectoryAgents() throws Exception
     {
-        assert serviceAgentServer.getDirectoryAgents().size() == 0;
-
-        StandardDirectoryAgentServer directoryAgent = newDirectoryAgent();
-        directoryAgent.start();
-
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
         try
         {
-            // Wait for the SAS to get the DAAdvert from DAS
-            Thread.sleep(500);
+            assert sa.getDirectoryAgents().size() == 0;
 
-            assert serviceAgentServer.getDirectoryAgents().size() == 1;
+            StandardDirectoryAgentServer directoryAgent = newDirectoryAgent();
+            directoryAgent.start();
+
+            try
+            {
+                // Wait for the SAS to get the DAAdvert from DAS
+                Thread.sleep(500);
+
+                assert sa.getDirectoryAgents().size() == 1;
+            }
+            finally
+            {
+                directoryAgent.stop();
+            }
         }
         finally
         {
-            directoryAgent.stop();
+            sa.stop();
+        }
+    }
+
+    @Test
+    public void testServiceRenewalNotPerformed() throws Exception
+    {
+        StandardServiceAgentServer sa = StandardServiceAgentServer.newInstance(newSettings());
+        sa.start();
+        try
+        {
+            int lifetime = 2; // seconds
+            ServiceURL serviceURL = new ServiceURL("service:abstract:concrete://dontRenew", lifetime);
+            String language = Defaults.get(LANGUAGE_KEY);
+            ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.DEFAULT, Attributes.NONE);
+            ServiceAgentClient client = SLP.newServiceAgentClient(newSettings());
+            client.register(service);
+
+            UserAgentClient ua = SLP.newUserAgentClient(newSettings());
+            List<ServiceInfo> services = ua.findServices(serviceURL.getServiceType(), null, null, null);
+            assert services.size() == 1;
+
+            // Wait for the lifetime to expire
+            TimeUnit.SECONDS.sleep(lifetime + 1);
+
+            services = ua.findServices(serviceURL.getServiceType(), null, null, null);
+            assert services.size() == 0;
+        }
+        finally
+        {
+            sa.stop();
         }
     }
 }

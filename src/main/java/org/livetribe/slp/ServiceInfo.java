@@ -44,6 +44,19 @@ import org.livetribe.slp.spi.msg.SrvReg;
  */
 public class ServiceInfo
 {
+    /**
+     * Indicates that the service has been deregistered
+     *
+     * @see #setRegistered(boolean)
+     */
+    private static final long DEREGISTERED = -1L;
+    /**
+     * Indicates that it is unknown the registration status of the service
+     *
+     * @see #setRegistered(boolean)
+     */
+    private static final long UNREGISTERED = 0L;
+
     private final Key key;
     private final ServiceType serviceType;
     private final Scopes scopes;
@@ -102,6 +115,7 @@ public class ServiceInfo
         this.serviceType = serviceType;
         this.scopes = scopes;
         this.attributes = attributes;
+        registrationTime = UNREGISTERED;
     }
 
     /**
@@ -215,32 +229,36 @@ public class ServiceInfo
      * Clones this <code>ServiceInfo</code> using the given arguments.
      * Subclasses may override to clone additional state.
      *
+     * @param newScopes     the Scopes that the clone must have
      * @param newAttributes the Attributes that the clone must have
      * @return a new ServiceInfo instance
      */
-    protected ServiceInfo clone(Scopes scopes, Attributes newAttributes)
+    protected ServiceInfo clone(Scopes newScopes, Attributes newAttributes)
     {
-        ServiceInfo clone = new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), scopes, newAttributes);
-        clone.setRegistrationTime(getRegistrationTime());
+        ServiceInfo clone = new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), newScopes, newAttributes);
+        clone.registrationTime = registrationTime;
         return clone;
     }
 
     /**
-     * @return the registration time of this <code>ServiceInfo</code>, in milliseconds since the Unix epoch.
+     * Sets whether this <code>ServiceInfo</code> is registered.
+     *
+     * @param registered true if this <code>ServiceInfo</code> is registered, false otherwise.
+     * @see #isRegistered()
      */
-    public long getRegistrationTime()
+    public void setRegistered(boolean registered)
     {
-        return registrationTime;
+        registrationTime = registered ? System.currentTimeMillis() : DEREGISTERED;
     }
 
     /**
-     * Set the registration time of this <code>ServiceInfo</code>, in milliseconds since the Unix epoch.
-     *
-     * @param registrationTime the new registration time
+     * @return whether this <code>ServiceInfo</code> is registered or not
+     * @see #setRegistered(boolean)
+     * @see #isExpiredAsOf(long)
      */
-    public void setRegistrationTime(long registrationTime)
+    public boolean isRegistered()
     {
-        this.registrationTime = registrationTime;
+        return registrationTime > UNREGISTERED;
     }
 
     /**
@@ -256,14 +274,14 @@ public class ServiceInfo
     /**
      * @param time The time, in milliseconds since the Unix epoch, to check for expiration
      * @return true if the <code>ServiceURL</code>'s lifetime is expired, since its registration, as of the specified time.
-     * @see #getRegistrationTime()
+     * @see #isRegistered()
      * @see ServiceURL#getLifetime()
      */
     public boolean isExpiredAsOf(long time)
     {
         if (!expires()) return false;
         long lifetimeMillis = TimeUnit.SECONDS.toMillis(getServiceURL().getLifetime());
-        return getRegistrationTime() + lifetimeMillis <= time;
+        return registrationTime + lifetimeMillis <= time;
     }
 
     /**

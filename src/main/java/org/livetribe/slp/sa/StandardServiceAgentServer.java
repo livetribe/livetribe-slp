@@ -18,8 +18,6 @@ package org.livetribe.slp.sa;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
@@ -44,7 +42,6 @@ import org.livetribe.slp.spi.net.TCPConnectorServer;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.sa.AbstractServiceAgent;
-import org.livetribe.slp.spi.sa.SAServiceInfo;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 
 /**
@@ -86,8 +83,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         TCPConnector tcpConnector = Factories.<TCPConnector.Factory>newInstance(settings, TCP_CONNECTOR_FACTORY_KEY).newTCPConnector(settings);
         UDPConnectorServer udpConnectorServer = Factories.<UDPConnectorServer.Factory>newInstance(settings, UDP_CONNECTOR_SERVER_FACTORY_KEY).newUDPConnectorServer(settings);
         TCPConnectorServer tcpConnectorServer = Factories.<TCPConnectorServer.Factory>newInstance(settings, TCP_CONNECTOR_SERVER_FACTORY_KEY).newTCPConnectorServer(settings);
-        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, settings);
+        return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, settings);
     }
 
     private final MessageListener listener = new ServiceAgentMessageListener();
@@ -97,31 +93,29 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     /**
      * Creates a new StandardServiceAgentServer using the default settings
      *
-     * @param udpConnector             the connector that handles udp traffic
-     * @param tcpConnector             the connector that handles tcp traffic
-     * @param udpConnectorServer       the connector that listens for udp traffic
-     * @param tcpConnectorServer       the connector that listens for tcp traffic
-     * @param scheduledExecutorService the periodic task scheduler for this service agent server
+     * @param udpConnector       the connector that handles udp traffic
+     * @param tcpConnector       the connector that handles tcp traffic
+     * @param udpConnectorServer the connector that listens for udp traffic
+     * @param tcpConnectorServer the connector that listens for tcp traffic
      * @see org.livetribe.slp.settings.Defaults
      */
-    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, ScheduledExecutorService scheduledExecutorService)
+    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer)
     {
-        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, scheduledExecutorService, null);
+        this(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, null);
     }
 
     /**
      * Creates a new StandardServiceAgentServer
      *
-     * @param udpConnector             the connector that handles udp traffic
-     * @param tcpConnector             the connector that handles tcp traffic
-     * @param udpConnectorServer       the connector that listens for udp traffic
-     * @param tcpConnectorServer       the connector that listens for tcp traffic
-     * @param scheduledExecutorService the periodic task scheduler for this service agent server
-     * @param settings                 the configuration settings that override the defaults
+     * @param udpConnector       the connector that handles udp traffic
+     * @param tcpConnector       the connector that handles tcp traffic
+     * @param udpConnectorServer the connector that listens for udp traffic
+     * @param tcpConnectorServer the connector that listens for tcp traffic
+     * @param settings           the configuration settings that override the defaults
      */
-    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, ScheduledExecutorService scheduledExecutorService, Settings settings)
+    public StandardServiceAgentServer(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, TCPConnectorServer tcpConnectorServer, Settings settings)
     {
-        super(udpConnector, tcpConnector, udpConnectorServer, scheduledExecutorService, settings);
+        super(udpConnector, tcpConnector, udpConnectorServer, settings);
         this.tcpConnectorServer = tcpConnectorServer;
         this.tcpSrvAck = new TCPSrvAckPerformer(tcpConnector, settings);
         if (settings != null) setSettings(settings);
@@ -168,8 +162,8 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         try
         {
             boolean update = srvReg.isUpdating();
-            SAServiceInfo givenService = new SAServiceInfo(ServiceInfo.from(srvReg));
-            ServiceInfoCache.Result<SAServiceInfo> result = cacheService(givenService, update);
+            ServiceInfo givenService = ServiceInfo.from(srvReg);
+            ServiceInfoCache.Result<ServiceInfo> result = cacheService(givenService, update);
             forwardRegistration(givenService, result.getPrevious(), result.getCurrent(), update);
             tcpSrvAck.perform(socket, srvReg, SrvAck.SUCCESS);
         }
@@ -192,8 +186,8 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         try
         {
             boolean update = srvDeReg.isUpdating();
-            SAServiceInfo givenService = new SAServiceInfo(ServiceInfo.from(srvDeReg));
-            ServiceInfoCache.Result<SAServiceInfo> result = uncacheService(givenService, update);
+            ServiceInfo givenService = ServiceInfo.from(srvDeReg);
+            ServiceInfoCache.Result<ServiceInfo> result = uncacheService(givenService, update);
             forwardDeregistration(givenService, result.getPrevious(), result.getCurrent(), update);
             tcpSrvAck.perform(socket, srvDeReg, SrvAck.SUCCESS);
         }

@@ -446,8 +446,12 @@ public class StandardServiceAgentTest
             {
                 // Since there is not a DA, the UA must be notified of service renewal
                 // Sleep for the renewal to happen
-                Thread.sleep(TimeUnit.SECONDS.toMillis(lifetime));
+                TimeUnit.SECONDS.sleep(lifetime);
                 assert registered.get() == 1;
+
+                // Sleep again, be sure the renewal keeps going
+                TimeUnit.SECONDS.sleep(lifetime);
+                assert registered.get() == 2;
 
                 // Update the service; this should cancel the previous renewal and schedule a new one
                 registered.set(0);
@@ -458,8 +462,12 @@ public class StandardServiceAgentTest
                 assert registered.get() == 1;
 
                 // Sleep for the renewal to happen
-                Thread.sleep(TimeUnit.SECONDS.toMillis(lifetime));
+                TimeUnit.SECONDS.sleep(lifetime);
                 assert registered.get() == 2;
+
+                // Sleep again, be sure the renewal keeps going
+                TimeUnit.SECONDS.sleep(lifetime);
+                assert registered.get() == 3;
 
                 // Update again
                 registered.set(0);
@@ -470,8 +478,12 @@ public class StandardServiceAgentTest
                 assert deregistered.get() == 1;
 
                 // Sleep for the renewal to happen
-                Thread.sleep(TimeUnit.SECONDS.toMillis(lifetime));
+                TimeUnit.SECONDS.sleep(lifetime);
                 assert registered.get() == 1;
+
+                // Sleep again, be sure the renewal keeps going
+                TimeUnit.SECONDS.sleep(lifetime);
+                assert registered.get() == 2;
 
                 // Remove the service
                 registered.set(0);
@@ -483,7 +495,7 @@ public class StandardServiceAgentTest
                 assert deregistered.get() == 1;
 
                 // Sleep for the renewal period and check it has been cancelled
-                Thread.sleep(TimeUnit.SECONDS.toMillis(lifetime));
+                TimeUnit.SECONDS.sleep(lifetime);
                 assert registered.get() == 0;
             }
             finally
