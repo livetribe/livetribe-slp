@@ -94,7 +94,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         SrvAck ack = tcpSrvReg.perform(remoteAddress, service, update);
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
-            throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", errorCode);
+            throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", ServiceLocationException.Error.from(errorCode));
 
         if (logger.isLoggable(Level.FINE))
             logger.fine("Registered service " + service + " to ServiceAgent server");
@@ -118,7 +118,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         SrvAck ack = tcpSrvDeReg.perform(remoteAddress, service, update);
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
-            throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", errorCode);
+            throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", ServiceLocationException.Error.from(errorCode));
 
         if (logger.isLoggable(Level.FINE))
             logger.fine("Deregistered service " + service + " from ServiceAgent server");

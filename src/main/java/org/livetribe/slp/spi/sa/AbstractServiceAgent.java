@@ -236,7 +236,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not register service " + service + " to DirectoryAgent " + directoryAgent + ": error " + errorCode);
-            throw new ServiceLocationException("Could not register service " + service, errorCode);
+            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.Error.from(errorCode));
         }
         else
         {
@@ -297,7 +297,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not deregister service " + service + " from DirectoryAgent " + directoryAgent + ": error " + errorCode);
-            throw new ServiceLocationException("Could not deregister service " + service, errorCode);
+            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.Error.from(errorCode));
         }
         else
         {
@@ -402,7 +402,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not register service " + service + ", ServiceAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
         }
 
         return update ? services.addAttributes(service.getKey(), service.getAttributes()) : services.put(service);
@@ -420,7 +420,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not deregister service " + service + ", ServiceAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
         }
 
         return update ? services.removeAttributes(service.getKey(), service.getAttributes()) : services.remove(service.getKey());

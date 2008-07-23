@@ -164,9 +164,9 @@ public class Attributes
     public static byte[] opaqueToBytes(String opaqueString) throws ServiceLocationException
     {
         if (!opaqueString.startsWith(OPAQUE_PREFIX))
-            throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, ServiceLocationException.Error.PARSE_ERROR);
         if (opaqueString.length() % 3 != 0)
-            throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", ServiceLocationException.Error.PARSE_ERROR);
 
         byte[] result = new byte[(opaqueString.length() - OPAQUE_PREFIX.length()) / 3];
         int position = 0;
@@ -174,7 +174,7 @@ public class Attributes
         while (index < opaqueString.length())
         {
             if (opaqueString.charAt(index) != ESCAPE_PREFIX)
-                throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, ServiceLocationException.PARSE_ERROR);
+                throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, ServiceLocationException.Error.PARSE_ERROR);
             ++index;
             String hexString = opaqueString.substring(index, index + 2);
             result[position] = (byte)(Integer.parseInt(hexString, 16) & 0xFF);
@@ -283,7 +283,7 @@ public class Attributes
                 }
                 else
                 {
-                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.PARSE_ERROR);
+                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.Error.PARSE_ERROR);
                 }
             }
             else
@@ -297,13 +297,13 @@ public class Attributes
     private static void checkEscaped(String value, char[] reserved) throws ServiceLocationException
     {
         if (value.trim().length() == 0)
-            throw new ServiceLocationException("Escaped string could not be the empty string", ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("Escaped string could not be the empty string", ServiceLocationException.Error.PARSE_ERROR);
         for (int i = 0; i < value.length(); ++i)
         {
             char ch = value.charAt(i);
             // The backslash is a reserved character, but is present in escaped strings, skip it
             if (ch != ESCAPE_PREFIX && ch < reserved.length && reserved[ch] == ch)
-                throw new ServiceLocationException("Illegal character '" + ch + "' in " + value, ServiceLocationException.PARSE_ERROR);
+                throw new ServiceLocationException("Illegal character '" + ch + "' in " + value, ServiceLocationException.Error.PARSE_ERROR);
         }
     }
 
@@ -360,7 +360,7 @@ public class Attributes
             {
                 int close = escapedAttributeList.indexOf(')', open);
                 if (close < 0)
-                    throw new ServiceLocationException("Missing ')' in attribute list " + escapedAttributeList, ServiceLocationException.PARSE_ERROR);
+                    throw new ServiceLocationException("Missing ')' in attribute list " + escapedAttributeList, ServiceLocationException.Error.PARSE_ERROR);
                 nonPairs.append(escapedAttributeList.substring(start, open));
                 String pair = escapedAttributeList.substring(open, close + 1);
                 parseAttribute(pair, escapedAttributeList);
@@ -390,7 +390,7 @@ public class Attributes
 
             int equals = pair.indexOf('=');
             if (equals < 0)
-                throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing '=' in " + attribute, ServiceLocationException.PARSE_ERROR);
+                throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing '=' in " + attribute, ServiceLocationException.Error.PARSE_ERROR);
 
             String escapedTag = pair.substring(0, equals);
             String unescapedTag = unescapeTag(escapedTag);
@@ -540,7 +540,7 @@ public class Attributes
         {
             // It's not homogeneous, and there is one opaque entry: RFC 2608, 5.0 says it's illegal.
             if (opaquePresent)
-                throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one entry is opaque: " + Arrays.asList(values), ServiceLocationException.PARSE_ERROR);
+                throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one entry is opaque: " + Arrays.asList(values), ServiceLocationException.Error.PARSE_ERROR);
 
             Object[] entryValues = new Object[values.length];
             System.arraycopy(values, 0, entryValues, 0, values.length);

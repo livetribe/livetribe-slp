@@ -120,7 +120,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -149,7 +149,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 

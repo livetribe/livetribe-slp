@@ -90,7 +90,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (SocketException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -125,7 +125,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -150,7 +150,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 

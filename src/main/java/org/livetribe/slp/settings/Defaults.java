@@ -36,7 +36,7 @@ public class Defaults
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException("Could not read default slp configuration", x, ServiceLocationException.INTERNAL_SYSTEM_ERROR);
+            throw new ServiceLocationException("Could not read default slp configuration", x, ServiceLocationException.Error.INTERNAL_SYSTEM_ERROR);
         }
     }
 

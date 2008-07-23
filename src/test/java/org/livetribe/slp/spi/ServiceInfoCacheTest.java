@@ -76,7 +76,7 @@ public class ServiceInfoCacheTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+            assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
         }
     }
 

@@ -127,7 +127,7 @@ public class FilterParser
                     }
                     else
                     {
-                        throw new ServiceLocationException("Invalid filter expression " + expression, ServiceLocationException.PARSE_ERROR);
+                        throw new ServiceLocationException("Invalid filter expression " + expression, ServiceLocationException.Error.PARSE_ERROR);
                     }
                     break;
                 default:
@@ -135,7 +135,7 @@ public class FilterParser
             }
         }
         if (open >= 0)
-            throw new ServiceLocationException("Invalid filter expression " + expression, ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("Invalid filter expression " + expression, ServiceLocationException.Error.PARSE_ERROR);
         return operands;
     }
 
@@ -145,11 +145,11 @@ public class FilterParser
 
         int open = expression.indexOf('(');
         if (open < 0)
-            throw new ServiceLocationException("Invalid filter expression " + expression + ": does not contain '('", ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("Invalid filter expression " + expression + ": does not contain '('", ServiceLocationException.Error.PARSE_ERROR);
 
         int close = expression.lastIndexOf(')');
         if (close < 0)
-            throw new ServiceLocationException("Invalid filter expression " + expression + ": does not contain ')'", ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("Invalid filter expression " + expression + ": does not contain ')'", ServiceLocationException.Error.PARSE_ERROR);
 
         return expression.substring(open + 1, close);
     }
@@ -170,6 +170,6 @@ public class FilterParser
         if (eq > 0)
             return new ExpressionFilter(expression.substring(0, eq).trim(), ExpressionFilter.EQ, expression.substring(eq + ExpressionFilter.EQ.length()).trim());
 
-        throw new ServiceLocationException("Unknown expression " + expression, ServiceLocationException.PARSE_ERROR);
+        throw new ServiceLocationException("Unknown expression " + expression, ServiceLocationException.Error.PARSE_ERROR);
     }
 }

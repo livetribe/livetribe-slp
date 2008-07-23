@@ -432,7 +432,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getErrorCode());
+            tcpSrvAck.perform(socket, srvReg, x.getError().getCode());
         }
     }
 
@@ -455,7 +455,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getErrorCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getError().getCode());
         }
     }
 
@@ -473,7 +473,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not register service " + service + ", DirectoryAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
         }
 
         return update ? services.addAttributes(service.getKey(), service.getAttributes()) : services.put(service);
@@ -493,7 +493,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not deregister service " + service + ", DirectoryAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
         }
 
         return update ? services.removeAttributes(service.getKey(), service.getAttributes()) : services.remove(service.getKey());

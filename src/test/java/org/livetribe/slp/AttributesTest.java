@@ -126,7 +126,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException e)
         {
-            assert e.getErrorCode() == ServiceLocationException.PARSE_ERROR;
+            assert e.getError() == ServiceLocationException.Error.PARSE_ERROR;
         }
 
         try
@@ -136,7 +136,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException e)
         {
-            assert e.getErrorCode() == ServiceLocationException.PARSE_ERROR;
+            assert e.getError() == ServiceLocationException.Error.PARSE_ERROR;
         }
 
         try

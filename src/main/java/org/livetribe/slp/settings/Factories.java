@@ -78,7 +78,7 @@ public class Factories
         }
         catch (ClassNotFoundException x)
         {
-            throw new ServiceLocationException("Could not instantiate " + className, ServiceLocationException.INTERNAL_SYSTEM_ERROR);
+            throw new ServiceLocationException("Could not instantiate " + className, ServiceLocationException.Error.INTERNAL_SYSTEM_ERROR);
         }
     }
 
@@ -90,7 +90,7 @@ public class Factories
         }
         catch (Exception x)
         {
-            throw new ServiceLocationException("Could not instantiate " + klass, ServiceLocationException.INTERNAL_SYSTEM_ERROR);
+            throw new ServiceLocationException("Could not instantiate " + klass, ServiceLocationException.Error.INTERNAL_SYSTEM_ERROR);
         }
     }
 

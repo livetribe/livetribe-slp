@@ -109,7 +109,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -124,7 +124,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -151,7 +151,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -163,7 +163,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 

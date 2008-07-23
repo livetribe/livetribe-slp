@@ -107,10 +107,10 @@ public class DirectoryAgentInfo
         String authoritySeparator = "://";
         int index = url.indexOf(authoritySeparator);
         if (index < 0)
-            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, ServiceLocationException.Error.PARSE_ERROR);
         String host = url.substring(index + authoritySeparator.length());
         if (host.trim().length() == 0)
-            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, ServiceLocationException.Error.PARSE_ERROR);
         return host;
     }
 

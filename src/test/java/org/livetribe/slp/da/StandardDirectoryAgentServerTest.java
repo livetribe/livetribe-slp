@@ -398,7 +398,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.SCOPE_NOT_SUPPORTED;
+                assert x.getError() == ServiceLocationException.Error.SCOPE_NOT_SUPPORTED;
             }
 
             // Registration with no language must fail
@@ -410,7 +410,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+                assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
             }
 
             // Registration with invalid lifetime must fail
@@ -424,7 +424,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_REGISTRATION;
+                assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
             }
         }
         finally
@@ -486,7 +486,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_UPDATE;
+                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
 
@@ -499,7 +499,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_UPDATE;
+                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
         }
@@ -540,7 +540,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_UPDATE;
+                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
 
@@ -553,7 +553,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getErrorCode() == ServiceLocationException.INVALID_UPDATE;
+                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
         }

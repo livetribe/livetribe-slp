@@ -71,7 +71,7 @@ public class SocketTCPConnector implements TCPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
         finally
         {
@@ -87,7 +87,7 @@ public class SocketTCPConnector implements TCPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -101,7 +101,7 @@ public class SocketTCPConnector implements TCPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -161,7 +161,7 @@ public class SocketTCPConnector implements TCPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -183,7 +183,7 @@ public class SocketTCPConnector implements TCPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 

@@ -33,7 +33,7 @@ public class NetUtils
         }
         catch (UnknownHostException x)
         {
-            throw new ServiceLocationException("Could not retrieve localhost", ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not retrieve localhost", ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 
@@ -45,7 +45,7 @@ public class NetUtils
         }
         catch (UnknownHostException x)
         {
-            throw new ServiceLocationException("Could not retrieve host " + host, ServiceLocationException.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not retrieve host " + host, ServiceLocationException.Error.NETWORK_ERROR);
         }
     }
 

@@ -127,7 +127,7 @@ public class BytesBlock
         }
         catch (UnsupportedEncodingException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.PARSE_ERROR);
         }
     }
 
@@ -140,7 +140,7 @@ public class BytesBlock
         }
         catch (UnsupportedEncodingException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.PARSE_ERROR);
+            throw new ServiceLocationException(x, ServiceLocationException.Error.PARSE_ERROR);
         }
     }
 
@@ -184,7 +184,7 @@ public class BytesBlock
                 }
                 else
                 {
-                    throw new ServiceLocationException("Unknown escaped character \\" + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.PARSE_ERROR);
+                    throw new ServiceLocationException("Unknown escaped character \\" + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.Error.PARSE_ERROR);
                 }
             }
             else

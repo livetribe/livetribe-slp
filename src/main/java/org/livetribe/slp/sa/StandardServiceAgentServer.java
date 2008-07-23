@@ -169,7 +169,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getErrorCode());
+            tcpSrvAck.perform(socket, srvReg, x.getError().getCode());
         }
     }
 
@@ -193,7 +193,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getErrorCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getError().getCode());
         }
     }
 
