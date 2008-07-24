@@ -149,6 +149,12 @@ public class Keys
     public static final Key<String> SA_CLIENT_FACTORY_KEY = Key.from("livetribe.slp.sa.client.factory", String.class);
 
     /**
+     * The key to specify the IP address to which the ServiceAgentClient connects to.
+     * Default value is 127.0.0.1
+     */
+    public static final Key<String> SA_CLIENT_CONNECT_ADDRESS = Key.from("livetribe.slp.sa.client.connect.address", String.class);
+
+    /**
      * The key to specify the full qualified name of the ServiceAgent factory class.
      */
     public static final Key<String> SA_FACTORY_KEY = Key.from("livetribe.slp.sa.factory", String.class);

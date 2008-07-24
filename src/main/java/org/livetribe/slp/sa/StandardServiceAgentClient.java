@@ -49,6 +49,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     private final TCPSrvRegPerformer tcpSrvReg;
     private final TCPSrvDeRegPerformer tcpSrvDeReg;
     private int port = Defaults.get(PORT_KEY);
+    private String connectAddress = Defaults.get(SA_CLIENT_CONNECT_ADDRESS);
 
     public StandardServiceAgentClient(TCPConnector tcpConnector)
     {
@@ -65,6 +66,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
+        if (settings.containsKey(SA_CLIENT_CONNECT_ADDRESS)) setConnectAddress(settings.get(SA_CLIENT_CONNECT_ADDRESS));
     }
 
     /**
@@ -75,6 +77,16 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     public void setPort(int port)
     {
         this.port = port;
+    }
+
+    /**
+     * Sets the IP address to which this client connects to
+     *
+     * @param connectAddress the new connect address
+     */
+    public void setConnectAddress(String connectAddress)
+    {
+        this.connectAddress = connectAddress;
     }
 
     public void register(ServiceInfo service) throws ServiceLocationException
@@ -90,7 +102,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 
     protected void register(ServiceInfo service, boolean update)
     {
-        InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getLoopbackAddress(), port);
+        InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getByName(connectAddress), port);
         SrvAck ack = tcpSrvReg.perform(remoteAddress, service, update);
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
@@ -114,7 +126,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 
     protected void deregister(ServiceInfo service, boolean update) throws ServiceLocationException
     {
-        InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getLoopbackAddress(), port);
+        InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getByName(connectAddress), port);
         SrvAck ack = tcpSrvDeReg.perform(remoteAddress, service, update);
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
