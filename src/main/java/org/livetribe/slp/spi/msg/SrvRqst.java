@@ -195,7 +195,7 @@ public class SrvRqst extends Rqst
 
     public String toString()
     {
-        StringBuilder result = new StringBuilder("[SrvRqst@").append(Integer.toHexString(hashCode()));
+        StringBuilder result = new StringBuilder("[SrvRqst@").append(Integer.toHexString(System.identityHashCode(this)));
         result.append(" responders(");
         Set responders = getPreviousResponders();
         for (Iterator iterator = responders.iterator(); iterator.hasNext();)

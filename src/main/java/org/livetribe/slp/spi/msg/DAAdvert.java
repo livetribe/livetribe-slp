@@ -262,7 +262,7 @@ public class DAAdvert extends Rply
 
     public String toString()
     {
-        StringBuilder result = new StringBuilder("[DAAdvert@").append(Integer.toHexString(hashCode()));
+        StringBuilder result = new StringBuilder("[DAAdvert@").append(Integer.toHexString(System.identityHashCode(this)));
         result.append(" responder(");
         String responder = getResponder();
         if (responder != null) result.append(responder);
