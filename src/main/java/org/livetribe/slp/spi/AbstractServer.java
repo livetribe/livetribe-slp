@@ -15,7 +15,7 @@
  */
 package org.livetribe.slp.spi;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,50 +24,55 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractServer implements Server
 {
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+    private enum Status
+    {
+        READY, STARTING, RUNNING, STOPPING, STOPPED
+    }
 
-    private final AtomicBoolean starting = new AtomicBoolean(false);
-    private volatile boolean running;
+    protected final Logger logger = Logger.getLogger(getClass().getName());
+    private final AtomicReference<Status> status = new AtomicReference<Status>(Status.READY);
 
     public boolean isRunning()
     {
-        return running;
+        return status.get() == Status.RUNNING;
     }
 
-    public void start()
+    public boolean start()
     {
-        if (!starting.compareAndSet(false, true) || isRunning())
+        if (!status.compareAndSet(Status.READY, Status.STARTING))
         {
-            if (logger.isLoggable(Level.FINER)) logger.finer("Server " + this + " is already running");
-            return;
+            if (logger.isLoggable(Level.FINER)) logger.finer("Server " + this + " is not ready");
+            return false;
         }
 
         if (logger.isLoggable(Level.FINER)) logger.finer("Server " + this + " starting...");
 
         doStart();
 
-        running = true;
-
+        status.set(Status.RUNNING);
         if (logger.isLoggable(Level.FINE)) logger.fine("Server " + this + " started successfully");
+
+        return true;
     }
 
     protected abstract void doStart();
 
-    public void stop()
+    public boolean stop()
     {
-        if (!starting.compareAndSet(true, false) && !isRunning())
+        if (!status.compareAndSet(Status.RUNNING, Status.STOPPING))
         {
-            if (logger.isLoggable(Level.FINER)) logger.finer("Server " + this + " is already stopped");
-            return;
+            if (logger.isLoggable(Level.FINER)) logger.finer("Server " + this + " is not running");
+            return false;
         }
 
         if (logger.isLoggable(Level.FINER)) logger.finer("Server " + this + " stopping...");
 
         doStop();
 
-        running = false;
-
+        status.set(Status.STOPPED);
         if (logger.isLoggable(Level.FINE)) logger.fine("Server " + this + " stopped successfully");
+
+        return true;
     }
 
     protected abstract void doStop();

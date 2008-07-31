@@ -20,9 +20,9 @@ package org.livetribe.slp.spi;
  */
 public interface Server
 {
-    public void start();
+    public boolean start();
 
     public boolean isRunning();
 
-    public void stop();
+    public boolean stop();
 }

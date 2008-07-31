@@ -93,9 +93,9 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
         this.directoryAgentAddresses = directoryAgentAddresses;
     }
 
-    public void start()
+    public boolean start()
     {
-        server.start();
+        return server.start();
     }
 
     public boolean isRunning()
@@ -103,15 +103,16 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
         return server.isRunning();
     }
 
-    public void stop()
+    public boolean stop()
     {
-        server.stop();
+        return server.stop();
     }
 
     protected void doStart()
     {
         udpConnectorServer.addMessageListener(listener);
         udpConnectorServer.start();
+
         notificationConnectorServer.addMessageListener(listener);
         notificationConnectorServer.start();
 
