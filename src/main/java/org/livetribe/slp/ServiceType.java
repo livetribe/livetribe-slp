@@ -15,8 +15,6 @@
  */
 package org.livetribe.slp;
 
-import java.io.Serializable;
-
 /**
  * Services that offer the same functionalities are characterized by the same <code>ServiceType</code>.
  * <br />
@@ -42,18 +40,17 @@ import java.io.Serializable;
  * @version $Rev$ $Date$
  * @see ServiceURL
  */
-public class ServiceType implements Serializable
+public class ServiceType
 {
-    private static final long serialVersionUID = 4196123698679426411L;
     private static final String SERVICE = "service:";
 
     private final String type;
-    private transient boolean isServiceURL;
-    private transient boolean isAbstract;
-    private transient String abstractName;
-    private transient String protocolName;
-    private transient String concreteName;
-    private transient String namingAuthority;
+    private boolean isServiceURL;
+    private boolean isAbstract;
+    private String abstractName;
+    private String protocolName;
+    private String concreteName;
+    private String namingAuthority;
 
     /**
      * Creates a <code>ServiceType</code> parsing the given string.
@@ -62,8 +59,8 @@ public class ServiceType implements Serializable
      */
     public ServiceType(String type)
     {
-        this.type = type;
         parse(type);
+        this.type = type;
     }
 
     /**

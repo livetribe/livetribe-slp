@@ -15,8 +15,6 @@
  */
 package org.livetribe.slp;
 
-import java.io.Serializable;
-
 /**
  * A ServiceURL represents the location of a service.
  * <br />
@@ -31,10 +29,8 @@ import java.io.Serializable;
  * @version $Rev$ $Date$
  * @see ServiceType
  */
-public class ServiceURL implements Serializable
+public class ServiceURL
 {
-    private static final long serialVersionUID = 2989950945471457682L;
-
     /**
      * The constant used to denote that the service did not specify a port.
      */
