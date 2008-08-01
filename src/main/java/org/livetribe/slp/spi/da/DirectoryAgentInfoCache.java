@@ -41,12 +41,12 @@ public class DirectoryAgentInfoCache
     private final Map<DirectoryAgentInfo.Key, DirectoryAgentInfo> cache = new HashMap<DirectoryAgentInfo.Key, DirectoryAgentInfo>();
     private final Listeners<DirectoryAgentListener> listeners = new Listeners<DirectoryAgentListener>();
 
-    public boolean add(DirectoryAgentInfo directoryAgent)
+    public DirectoryAgentInfo add(DirectoryAgentInfo directoryAgent)
     {
         lock.lock();
         try
         {
-            return cache.put(directoryAgent.getKey(), directoryAgent) == null;
+            return cache.put(directoryAgent.getKey(), directoryAgent);
         }
         finally
         {
@@ -67,12 +67,12 @@ public class DirectoryAgentInfoCache
         }
     }
 
-    public boolean remove(DirectoryAgentInfo.Key key)
+    public DirectoryAgentInfo remove(DirectoryAgentInfo.Key key)
     {
         lock.lock();
         try
         {
-            return cache.remove(key) != null;
+            return cache.remove(key);
         }
         finally
         {
@@ -85,7 +85,7 @@ public class DirectoryAgentInfoCache
         lock.lock();
         try
         {
-            for (Map.Entry<DirectoryAgentInfo.Key, DirectoryAgentInfo> entry : cache.entrySet()) remove(entry.getKey());
+            cache.clear();
         }
         finally
         {
@@ -131,13 +131,13 @@ public class DirectoryAgentInfoCache
     {
         if (directoryAgent.isShuttingDown())
         {
-            boolean removed = remove(directoryAgent.getKey());
-            if (removed) notifyDirectoryAgentDied(directoryAgent);
+            DirectoryAgentInfo removed = remove(directoryAgent.getKey());
+            if (removed != null) notifyDirectoryAgentDied(directoryAgent);
         }
         else
         {
-            boolean added = add(directoryAgent);
-            if (added) notifyDirectoryAgentBorn(directoryAgent);
+            DirectoryAgentInfo existing = add(directoryAgent);
+            if (existing == null) notifyDirectoryAgentBorn(directoryAgent);
         }
     }
 
