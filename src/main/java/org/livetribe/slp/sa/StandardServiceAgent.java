@@ -71,7 +71,12 @@ public class StandardServiceAgent extends AbstractServiceAgent implements Servic
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(SA_SERVICE_RENEWAL_ENABLED_KEY))
-            setPeriodicServiceRenewalEnabled(settings.get(SA_SERVICE_RENEWAL_ENABLED_KEY));
+            this.periodicServiceRenewalEnabled = settings.get(SA_SERVICE_RENEWAL_ENABLED_KEY);
+    }
+
+    public boolean isPeriodicServiceRenewalEnabled()
+    {
+        return periodicServiceRenewalEnabled;
     }
 
     public void setPeriodicServiceRenewalEnabled(boolean periodicServiceRenewalEnabled)

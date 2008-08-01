@@ -144,7 +144,7 @@ public class ServiceLocationException extends RuntimeException
          */
         public static Error from(int code)
         {
-            return Errors.get(code);
+            return Errors.errors.get(code);
         }
 
         private final int code;
@@ -152,7 +152,7 @@ public class ServiceLocationException extends RuntimeException
         private Error(int code)
         {
             this.code = code;
-            Errors.put(code, this);
+            Errors.errors.put(code, this);
         }
 
         /**
@@ -171,16 +171,6 @@ public class ServiceLocationException extends RuntimeException
         private static class Errors
         {
             private static final Map<Integer, Error> errors = new HashMap<Integer, Error>();
-
-            public static Error get(int code)
-            {
-                return errors.get(code);
-            }
-
-            public static void put(int code, Error error)
-            {
-                errors.put(code, error);
-            }
         }
     }
 

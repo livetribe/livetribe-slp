@@ -65,8 +65,14 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
-        if (settings.containsKey(SA_CLIENT_CONNECT_ADDRESS)) setConnectAddress(settings.get(SA_CLIENT_CONNECT_ADDRESS));
+        if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
+        if (settings.containsKey(SA_CLIENT_CONNECT_ADDRESS))
+            this.connectAddress = settings.get(SA_CLIENT_CONNECT_ADDRESS);
+    }
+
+    public int getPort()
+    {
+        return port;
     }
 
     /**
@@ -77,6 +83,11 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     public void setPort(int port)
     {
         this.port = port;
+    }
+
+    public String getConnectAddress()
+    {
+        return connectAddress;
     }
 
     /**

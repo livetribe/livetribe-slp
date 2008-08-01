@@ -43,7 +43,12 @@ public class BroadcastSocketUDPConnector extends SocketUDPConnector
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(BROADCAST_ADDRESS_KEY)) setBroadcastAddress(settings.get(BROADCAST_ADDRESS_KEY));
+        if (settings.containsKey(BROADCAST_ADDRESS_KEY)) this.broadcastAddress = settings.get(BROADCAST_ADDRESS_KEY);
+    }
+
+    public String getBroadcastAddress()
+    {
+        return broadcastAddress;
     }
 
     public void setBroadcastAddress(String broadcastAddress)

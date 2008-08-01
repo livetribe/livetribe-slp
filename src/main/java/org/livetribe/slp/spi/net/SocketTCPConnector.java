@@ -52,7 +52,12 @@ public class SocketTCPConnector implements TCPConnector
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(TCP_MESSAGE_MAX_LENGTH_KEY))
-            setTCPMessageMaxLength(settings.get(TCP_MESSAGE_MAX_LENGTH_KEY));
+            this.tcpMessageMaxLength = settings.get(TCP_MESSAGE_MAX_LENGTH_KEY);
+    }
+
+    public int getTcpMessageMaxLength()
+    {
+        return tcpMessageMaxLength;
     }
 
     public void setTCPMessageMaxLength(int tcpMessageMaxLength)

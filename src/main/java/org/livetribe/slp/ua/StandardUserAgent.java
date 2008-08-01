@@ -85,7 +85,12 @@ public class StandardUserAgent extends AbstractUserAgent implements UserAgent
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(Keys.DA_ADDRESSES_KEY))
-            setDirectoryAgentAddresses(settings.get(Keys.DA_ADDRESSES_KEY));
+            this.directoryAgentAddresses = settings.get(Keys.DA_ADDRESSES_KEY);
+    }
+
+    public String[] getDirectoryAgentAddresses()
+    {
+        return directoryAgentAddresses;
     }
 
     public void setDirectoryAgentAddresses(String[] directoryAgentAddresses)

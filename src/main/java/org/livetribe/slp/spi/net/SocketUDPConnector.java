@@ -51,10 +51,15 @@ public abstract class SocketUDPConnector implements UDPConnector
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
-        if (settings.containsKey(NOTIFICATION_PORT_KEY)) setNotificationPort(settings.get(NOTIFICATION_PORT_KEY));
+        if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
+        if (settings.containsKey(NOTIFICATION_PORT_KEY)) this.notificationPort = settings.get(NOTIFICATION_PORT_KEY);
         if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
-            setMaxTransmissionUnit(settings.get(MAX_TRANSMISSION_UNIT_KEY));
+            this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
+    }
+
+    public int getPort()
+    {
+        return port;
     }
 
     public void setPort(int port)
@@ -62,9 +67,19 @@ public abstract class SocketUDPConnector implements UDPConnector
         this.port = port;
     }
 
+    public int getNotificationPort()
+    {
+        return notificationPort;
+    }
+
     public void setNotificationPort(int notificationPort)
     {
         this.notificationPort = notificationPort;
+    }
+
+    public int getMaxTransmissionUnit()
+    {
+        return maxTransmissionUnit;
     }
 
     public void setMaxTransmissionUnit(int maxTransmissionUnit)

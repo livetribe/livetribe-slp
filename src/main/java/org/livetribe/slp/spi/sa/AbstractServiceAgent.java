@@ -92,12 +92,17 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(DA_ADDRESSES_KEY)) setDirectoryAgentAddresses(settings.get(DA_ADDRESSES_KEY));
-        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
-        if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
-        if (settings.containsKey(SCOPES_KEY)) setScopes(Scopes.from(settings.get(SCOPES_KEY)));
-        if (settings.containsKey(SA_ATTRIBUTES_KEY)) setAttributes(Attributes.from(settings.get(SA_ATTRIBUTES_KEY)));
-        if (settings.containsKey(LANGUAGE_KEY)) setLanguage(settings.get(LANGUAGE_KEY));
+        if (settings.containsKey(DA_ADDRESSES_KEY)) this.directoryAgentAddresses = settings.get(DA_ADDRESSES_KEY);
+        if (settings.containsKey(ADDRESSES_KEY)) this.addresses = settings.get(ADDRESSES_KEY);
+        if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
+        if (settings.containsKey(SCOPES_KEY)) this.scopes = Scopes.from(settings.get(SCOPES_KEY));
+        if (settings.containsKey(SA_ATTRIBUTES_KEY)) this.attributes = Attributes.from(settings.get(SA_ATTRIBUTES_KEY));
+        if (settings.containsKey(LANGUAGE_KEY)) this.language = settings.get(LANGUAGE_KEY);
+    }
+
+    public String[] getDirectoryAgentAddresses()
+    {
+        return directoryAgentAddresses;
     }
 
     public void setDirectoryAgentAddresses(String[] directoryAgentAddresses)
@@ -105,12 +110,17 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         this.directoryAgentAddresses = directoryAgentAddresses;
     }
 
+    public String[] getAddresses()
+    {
+        return addresses;
+    }
+
     public void setAddresses(String[] addresses)
     {
         this.addresses = addresses;
     }
 
-    protected int getPort()
+    public int getPort()
     {
         return port;
     }
@@ -120,12 +130,17 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         this.port = port;
     }
 
+    public Scopes getScopes()
+    {
+        return scopes;
+    }
+
     public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
     }
 
-    protected Attributes getAttributes()
+    public Attributes getAttributes()
     {
         return attributes;
     }
@@ -133,6 +148,11 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     public void setAttributes(Attributes attributes)
     {
         this.attributes = attributes;
+    }
+
+    public String getLanguage()
+    {
+        return language;
     }
 
     public void setLanguage(String language)

@@ -160,15 +160,20 @@ public class StandardDirectoryAgentServer extends AbstractServer
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
-        if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
-        if (settings.containsKey(SCOPES_KEY)) setScopes(Scopes.from(settings.get(SCOPES_KEY)));
-        if (settings.containsKey(DA_ATTRIBUTES_KEY)) setAttributes(Attributes.from(settings.get(DA_ATTRIBUTES_KEY)));
-        if (settings.containsKey(LANGUAGE_KEY)) setLanguage(settings.get(LANGUAGE_KEY));
+        if (settings.containsKey(ADDRESSES_KEY)) this.addresses = settings.get(ADDRESSES_KEY);
+        if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
+        if (settings.containsKey(SCOPES_KEY)) this.scopes = Scopes.from(settings.get(SCOPES_KEY));
+        if (settings.containsKey(DA_ATTRIBUTES_KEY)) this.attributes = Attributes.from(settings.get(DA_ATTRIBUTES_KEY));
+        if (settings.containsKey(LANGUAGE_KEY)) this.language = settings.get(LANGUAGE_KEY);
         if (settings.containsKey(DA_ADVERTISEMENT_PERIOD_KEY))
-            setAdvertisementPeriod(settings.get(DA_ADVERTISEMENT_PERIOD_KEY));
+            this.advertisementPeriod = settings.get(DA_ADVERTISEMENT_PERIOD_KEY);
         if (settings.containsKey(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY))
-            setExpiredServicesPurgePeriod(settings.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY));
+            this.expiredServicesPurgePeriod = settings.get(DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY);
+    }
+
+    public String[] getAddresses()
+    {
+        return addresses;
     }
 
     /**
@@ -181,6 +186,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
         this.addresses = addresses;
     }
 
+    public int getPort()
+    {
+        return port;
+    }
+
     /**
      * Sets the SLP port
      *
@@ -189,6 +199,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
     public void setPort(int port)
     {
         this.port = port;
+    }
+
+    public Scopes getScopes()
+    {
+        return scopes;
     }
 
     /**
@@ -201,6 +216,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
         this.scopes = scopes;
     }
 
+    public Attributes getAttributes()
+    {
+        return attributes;
+    }
+
     /**
      * Sets the Attributes of this directory agent
      *
@@ -209,6 +229,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
     public void setAttributes(Attributes attributes)
     {
         this.attributes = attributes;
+    }
+
+    public String getLanguage()
+    {
+        return language;
     }
 
     /**
@@ -221,6 +246,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
         this.language = language;
     }
 
+    public int getAdvertisementPeriod()
+    {
+        return advertisementPeriod;
+    }
+
     /**
      * Sets the advertisement period, in seconds, between unsolicited DAAdverts
      *
@@ -229,6 +259,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
     public void setAdvertisementPeriod(int advertisementPeriod)
     {
         this.advertisementPeriod = advertisementPeriod;
+    }
+
+    public int getExpiredServicesPurgePeriod()
+    {
+        return expiredServicesPurgePeriod;
     }
 
     /**

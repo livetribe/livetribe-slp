@@ -68,7 +68,12 @@ public abstract class AbstractUserAgent implements IUserAgent
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(Keys.PORT_KEY)) setPort(settings.get(Keys.PORT_KEY));
+        if (settings.containsKey(Keys.PORT_KEY)) this.port = settings.get(Keys.PORT_KEY);
+    }
+
+    public int getPort()
+    {
+        return port;
     }
 
     public void setPort(int port)

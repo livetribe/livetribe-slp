@@ -62,9 +62,14 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(TCP_READ_TIMEOUT_KEY)) setTcpReadTimeout(settings.get(TCP_READ_TIMEOUT_KEY));
-        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
-        if (settings.containsKey(PORT_KEY)) setPort(settings.get(PORT_KEY));
+        if (settings.containsKey(TCP_READ_TIMEOUT_KEY)) this.tcpReadTimeout = settings.get(TCP_READ_TIMEOUT_KEY);
+        if (settings.containsKey(ADDRESSES_KEY)) this.addresses = settings.get(ADDRESSES_KEY);
+        if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
+    }
+
+    public int getTcpReadTimeout()
+    {
+        return tcpReadTimeout;
     }
 
     public void setTcpReadTimeout(int tcpReadTimeout)
@@ -72,9 +77,19 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         this.tcpReadTimeout = tcpReadTimeout;
     }
 
+    public String[] getAddresses()
+    {
+        return addresses;
+    }
+
     public void setAddresses(String[] addresses)
     {
         this.addresses = addresses;
+    }
+
+    public int getPort()
+    {
+        return port;
     }
 
     public void setPort(int port)

@@ -62,11 +62,11 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(ADDRESSES_KEY)) setAddresses(settings.get(ADDRESSES_KEY));
+        if (settings.containsKey(ADDRESSES_KEY)) this.addresses = settings.get(ADDRESSES_KEY);
         if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
-            setMaxTransmissionUnit(settings.get(MAX_TRANSMISSION_UNIT_KEY));
+            this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
         if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY))
-            setMulticastTimeToLive(settings.get(MULTICAST_TIME_TO_LIVE_KEY));
+            this.multicastTimeToLive = settings.get(MULTICAST_TIME_TO_LIVE_KEY);
     }
 
     protected int getBindPort()
@@ -74,9 +74,19 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         return bindPort;
     }
 
+    public String[] getAddresses()
+    {
+        return addresses;
+    }
+
     public void setAddresses(String[] addresses)
     {
         this.addresses = addresses;
+    }
+
+    public int getMaxTransmissionUnit()
+    {
+        return maxTransmissionUnit;
     }
 
     public void setMaxTransmissionUnit(int maxTransmissionUnit)
@@ -84,7 +94,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         this.maxTransmissionUnit = maxTransmissionUnit;
     }
 
-    protected int getMulticastTimeToLive()
+    public int getMulticastTimeToLive()
     {
         return multicastTimeToLive;
     }

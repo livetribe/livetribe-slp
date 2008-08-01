@@ -46,7 +46,12 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(MULTICAST_ADDRESS_KEY)) setMulticastAddress(settings.get(MULTICAST_ADDRESS_KEY));
+        if (settings.containsKey(MULTICAST_ADDRESS_KEY)) this.multicastAddress = settings.get(MULTICAST_ADDRESS_KEY);
+    }
+
+    public String getMulticastAddress()
+    {
+        return multicastAddress;
     }
 
     public void setMulticastAddress(String multicastAddress)
