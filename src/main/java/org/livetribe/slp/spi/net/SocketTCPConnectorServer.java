@@ -97,7 +97,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         this.port = port;
     }
 
-    protected synchronized void doStart()
+    protected void doStart()
     {
         int size = addresses.length;
         startBarrier = new CountDownLatch(size);
@@ -149,7 +149,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         return super.isRunning() && stopBarrier.getCount() > 0;
     }
 
-    protected synchronized void doStop()
+    protected void doStop()
     {
         for (ServerSocket serverSocket : serverSockets) closeServerSocket(serverSocket);
         threadPool.shutdownNow();
