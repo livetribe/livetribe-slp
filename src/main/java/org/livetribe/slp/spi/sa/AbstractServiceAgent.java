@@ -286,7 +286,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             ServiceInfoCache.Result<ServiceInfo> result = uncacheService(service, false);
             ServiceInfo oldService = result.getPrevious();
-            ServiceInfo givenService = new ServiceInfo(oldService.getServiceURL(), oldService.getLanguage(), Scopes.NONE, Attributes.NONE);
+            ServiceInfo givenService = new ServiceInfo(oldService.getServiceURL(), oldService.getLanguage(), oldService.getScopes(), Attributes.NONE);
             forwardDeregistration(givenService, oldService, null, false);
         }
     }
