@@ -16,13 +16,31 @@
 package org.livetribe.slp.spi;
 
 /**
+ * Lifecycle interface for server objects that can be started and stopped.
+ *
  * @version $Rev$ $Date$
  */
 public interface Server
 {
+    /**
+     * Starts this server.
+     *
+     * @return true if the server started, false if the server is already started or if it starting already
+     * @see #isRunning()
+     * @see #stop()
+     */
     public boolean start();
 
+    /**
+     * @return whether this server has been successfully started and it is not stopped
+     * @see #start()
+     */
     public boolean isRunning();
 
+    /**
+     * Stops this server.
+     *
+     * @return true if the server stopped, false if the server is not running or if it is stopping already
+     */
     public boolean stop();
 }
