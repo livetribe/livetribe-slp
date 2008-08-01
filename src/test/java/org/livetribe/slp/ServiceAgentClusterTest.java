@@ -27,7 +27,6 @@ import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.net.NetUtils;
-import org.livetribe.slp.ua.MatchingServiceInfoCache;
 import org.livetribe.slp.ua.UserAgent;
 import org.testng.annotations.Test;
 

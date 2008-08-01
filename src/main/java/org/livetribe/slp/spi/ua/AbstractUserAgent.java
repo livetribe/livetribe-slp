@@ -46,8 +46,6 @@ import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
- * TODO: how to handle scopes ?
- *
  * @version $Revision$ $Date$
  */
 public abstract class AbstractUserAgent implements IUserAgent
