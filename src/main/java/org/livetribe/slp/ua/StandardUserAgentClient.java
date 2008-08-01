@@ -19,9 +19,12 @@ import java.util.List;
 
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.da.DirectoryAgentInfo;
+import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
+import org.livetribe.slp.settings.Keys;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
+import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
@@ -32,12 +35,22 @@ import org.livetribe.slp.spi.ua.AbstractUserAgent;
  */
 public class StandardUserAgentClient extends AbstractUserAgent implements UserAgentClient
 {
-    public static UserAgentClient newInstance(Settings settings)
+    /**
+     * Creates and configures a new StandardUserAgentClient instance.
+     *
+     * @param settings the configuration settings
+     * @return a new configured StandardUserAgentClient
+     * @see Factory#newUserAgentClient(Settings)
+     */
+    public static StandardUserAgentClient newInstance(Settings settings)
     {
         UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
         TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
         return new StandardUserAgentClient(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), settings);
     }
+
+    private final DirectoryAgentInfoCache directoryAgents = new DirectoryAgentInfoCache();
+    private String[] directoryAgentAddresses = Defaults.get(Keys.DA_ADDRESSES_KEY);
 
     public StandardUserAgentClient(UDPConnector tcpConnector, TCPConnector udpConnector)
     {
@@ -47,18 +60,56 @@ public class StandardUserAgentClient extends AbstractUserAgent implements UserAg
     public StandardUserAgentClient(UDPConnector tcpConnector, TCPConnector udpConnector, Settings settings)
     {
         super(tcpConnector, udpConnector, settings);
+        if (settings != null) setSettings(settings);
+    }
+
+    private void setSettings(Settings settings)
+    {
+        if (settings.containsKey(Keys.DA_ADDRESSES_KEY))
+            this.directoryAgentAddresses = settings.get(Keys.DA_ADDRESSES_KEY);
+    }
+
+    public String[] getDirectoryAgentAddresses()
+    {
+        return directoryAgentAddresses;
+    }
+
+    public void setDirectoryAgentAddresses(String[] directoryAgentAddresses)
+    {
+        this.directoryAgentAddresses = directoryAgentAddresses;
+    }
+
+    public void init()
+    {
+        if (directoryAgentAddresses != null)
+        {
+            for (String daAddress : directoryAgentAddresses) directoryAgents.add(DirectoryAgentInfo.from(daAddress));
+        }
     }
 
     protected List<DirectoryAgentInfo> findDirectoryAgents(Scopes scopes, Filter filter)
     {
-        return discoverDirectoryAgents(scopes, filter);
+        List<DirectoryAgentInfo> matchingDAs = directoryAgents.match(scopes, filter);
+        if (matchingDAs.isEmpty())
+            return discoverDirectoryAgents(scopes, filter);
+        else
+            return matchingDAs;
     }
 
     public static class Factory implements UserAgentClient.Factory
     {
+        /**
+         * Creates, configures and initializes a new StandardUserAgentClient instance.
+         *
+         * @param settings the configuration settings
+         * @return a new configured and initialized instance of StandardUserAgentClient
+         * @see StandardUserAgentClient#newInstance(Settings)
+         */
         public UserAgentClient newUserAgentClient(Settings settings)
         {
-            return newInstance(settings);
+            StandardUserAgentClient userAgentClient = newInstance(settings);
+            userAgentClient.init();
+            return userAgentClient;
         }
     }
 }
