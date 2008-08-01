@@ -16,7 +16,7 @@
 package org.livetribe.slp.spi.net;
 
 import org.livetribe.slp.spi.AbstractServer;
-import org.livetribe.util.Listeners;
+import org.livetribe.slp.util.Listeners;
 
 /**
  * @version $Revision$ $Date$

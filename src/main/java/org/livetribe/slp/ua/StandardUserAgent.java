@@ -42,7 +42,7 @@ import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.ua.AbstractUserAgent;
-import org.livetribe.util.Listeners;
+import org.livetribe.slp.util.Listeners;
 
 /**
  * @version $Revision$ $Date$

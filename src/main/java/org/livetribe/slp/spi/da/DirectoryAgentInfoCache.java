@@ -27,7 +27,7 @@ import org.livetribe.slp.da.DirectoryAgentEvent;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.spi.filter.Filter;
-import org.livetribe.util.Listeners;
+import org.livetribe.slp.util.Listeners;
 
 /**
  * A thread-safe class that caches {@link DirectoryAgentInfo}.

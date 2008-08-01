@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.util.logging;
+package org.livetribe.slp.util.logging;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

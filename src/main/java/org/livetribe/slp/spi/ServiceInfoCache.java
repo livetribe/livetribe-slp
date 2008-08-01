@@ -31,7 +31,7 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.sa.ServiceEvent;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.spi.filter.Filter;
-import org.livetribe.util.Listeners;
+import org.livetribe.slp.util.Listeners;
 
 /**
  * // TODO: RFC 2608 (8.6) suggests that ServiceAgents have an attribute 'service-type'
