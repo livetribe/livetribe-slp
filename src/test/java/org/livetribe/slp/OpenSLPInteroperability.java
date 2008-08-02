@@ -53,27 +53,37 @@ public class OpenSLPInteroperability
         ServiceAgent sa = SLP.newServiceAgent(null);
         ServiceURL serviceURL = new ServiceURL("service:jmx:rmi://host/path", ServiceURL.LIFETIME_DEFAULT);
         ServiceInfo service = new ServiceInfo(serviceURL, Locale.ITALY.getLanguage(), Scopes.DEFAULT, Attributes.from("present,(a=1,2),(b=true),(c=A description),(d=\\FF\\00)"));
-        sa.register(service);
+        sa.start();
+        System.out.println("Service Agent: discovered DA");
         try
         {
-            System.out.println("Service Agent: discovering DA and registering service " + serviceURL);
-            sa.start();
+            sa.register(service);
             System.out.println("Service Agent: registered service " + serviceURL);
 
-            System.out.println("User Agent: discovering DA");
             UserAgent ua = SLP.newUserAgent(null);
+            ua.start();
+            System.out.println("User Agent: discovered DA");
             try
             {
-                ua.start();
                 ServiceType serviceType = serviceURL.getServiceType();
                 System.out.println("User Agent: finding service of type " + serviceType);
                 List<ServiceInfo> services = ua.findServices(serviceType, service.getLanguage(), service.getScopes(), null);
-                if (services.isEmpty()) throw new AssertionError("Expected at least one service registered");
-
                 System.out.println("User Agent: found services " + services);
+                if (services.isEmpty()) throw new AssertionError("Expected at least one service registered");
                 ServiceURL registered = services.get(0).getServiceURL();
                 if (!registered.equals(serviceURL))
                     throw new AssertionError("Expecting " + serviceURL + " got instead " + registered);
+
+                // OpenSLP does not seem to handle attribute addition and removal, so we skip these
+
+//                sa.addAttributes(service.getServiceURL(), service.getLanguage(), Attributes.from("(a=3),(e=1)"));
+//                System.out.println("Service Agent: added service attributes");
+
+//                sa.removeAttributes(service.getServiceURL(), service.getLanguage(), Attributes.from("c,d"));
+//                System.out.println("Service Agent: removed service attributes");
+
+                sa.deregister(service.getServiceURL(), service.getLanguage());
+                System.out.println("Service Agent Client: deregistered service " + serviceURL);
 
                 System.out.println("Interoperability with OpenSLP successful");
             }
