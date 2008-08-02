@@ -217,11 +217,10 @@ public class ServiceInfo
      */
     public ServiceInfo removeAttributes(Attributes thatAttrs)
     {
-        if (thatAttrs == null || thatAttrs.isEmpty()) return null;
         Attributes thisAttr = getAttributes();
-        if (thisAttr == null)
-            return new ServiceInfo(getServiceType(), getServiceURL(), getLanguage(), getScopes(), getAttributes());
-        Attributes mergedAttrs = thisAttr.unmerge(thatAttrs);
+        Attributes mergedAttrs = null;
+        if (thisAttr != null)
+            mergedAttrs = thisAttr.unmerge(thatAttrs);
         return clone(getScopes(), mergedAttrs);
     }
 
