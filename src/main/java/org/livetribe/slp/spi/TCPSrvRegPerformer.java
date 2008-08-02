@@ -55,6 +55,7 @@ public class TCPSrvRegPerformer
         SrvReg srvReg = new SrvReg();
         srvReg.setFresh(!update);
         srvReg.setURLEntry(urlEntry);
+        srvReg.setServiceType(service.resolveServiceType());
         srvReg.setScopes(service.getScopes());
         srvReg.setAttributes(service.getAttributes());
         srvReg.setXID(Message.newXID());
