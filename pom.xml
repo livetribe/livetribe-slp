@@ -13,7 +13,7 @@
     <artifactId>livetribe-slp</artifactId>
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
     <version>2.0.0-SNAPSHOT</version>
 
     <build>
@@ -37,33 +37,6 @@
                     <goals>deploy</goals>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.0.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Export-Package>
-                            org.livetribe.slp,
-                            org.livetribe.slp.da,
-                            org.livetribe.slp.sa,
-                            org.livetribe.slp.settings,
-                            org.livetribe.slp.spi,
-                            org.livetribe.slp.spi.da,
-                            org.livetribe.slp.spi.filter,
-                            org.livetribe.slp.spi.msg,
-                            org.livetribe.slp.spi.net,
-                            org.livetribe.slp.spi.sa,
-                            org.livetribe.slp.spi.ua,
-                            org.livetribe.slp.ua,
-                            org.livetribe.slp.util,
-                            org.livetribe.slp.util.logging,
-                        </Export-Package>
-                        <Bundle-RequiredExecutionEnvironment>J2SE-1.5, JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
-                    </instructions>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
@@ -77,16 +50,4 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>codehaus</id>
-            <name>CodeHaus Repository</name>
-            <url>http://repository.codehaus.org</url>
-        </repository>
-        <repository>
-            <id>codehaus.snapshots</id>
-            <name>CodeHaus Snapshots Repository</name>
-            <url>http://snapshots.repository.codehaus.org</url>
-        </repository>
-    </repositories>
 </project>
