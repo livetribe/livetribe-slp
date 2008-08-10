@@ -65,7 +65,6 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
         {
             MulticastSocket multicastSocket = new MulticastSocket(bindAddress);
             if (logger.isLoggable(Level.FINER)) logger.finer("Bound multicast socket to " + bindAddress);
-            multicastSocket.setLoopbackMode(true);
             multicastSocket.setTimeToLive(getMulticastTimeToLive());
             multicastSocket.joinGroup(NetUtils.getByName(multicastAddress));
             if (logger.isLoggable(Level.FINER))
