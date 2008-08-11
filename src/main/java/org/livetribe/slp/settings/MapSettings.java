@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class MapSettings implements Settings
 {
-    private Map<Key<?>, Object> properties = new HashMap<Key<?>, Object>();
+    private final Map<Key<?>, Object> properties = new HashMap<Key<?>, Object>();
 
     public <V> V get(Key<V> key)
     {
