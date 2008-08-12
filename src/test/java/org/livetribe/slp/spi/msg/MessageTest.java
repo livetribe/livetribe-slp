@@ -104,6 +104,14 @@ public class MessageTest
     {
         DAAdvert original = new DAAdvert();
         original.setErrorCode(1);
+
+        byte[] serialized = original.serialize();
+        DAAdvert deserialized = (DAAdvert)Message.deserialize(serialized);
+
+        assert original.getErrorCode() == deserialized.getErrorCode();
+
+        original = new DAAdvert();
+        original.setErrorCode(1);
         Long bootTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
         original.setBootTime(bootTime.intValue());
         original.setURL("service:directory-agent://test");
@@ -114,8 +122,8 @@ public class MessageTest
         // TODO: test auth blocks
 //        original.setAuthenticationBlocks();
 
-        byte[] serialized = original.serialize();
-        DAAdvert deserialized = (DAAdvert)Message.deserialize(serialized);
+        serialized = original.serialize();
+        deserialized = (DAAdvert)Message.deserialize(serialized);
 
         assert original.getErrorCode() == deserialized.getErrorCode();
         assert original.getBootTime() == deserialized.getBootTime();
@@ -243,5 +251,31 @@ public class MessageTest
         assert original.getXID() == deserialized.getXID();
         assert deserialized.getSecurityParameterIndex() != null;
         assert original.getSecurityParameterIndex().equals(deserialized.getSecurityParameterIndex());
+    }
+
+    @Test
+    public void testAttrRplySerializeDeserialize()
+    {
+        AttrRply original = new AttrRply();
+        original.setErrorCode(3);
+
+        byte[] serialized = original.serialize();
+        AttrRply deserialized = (AttrRply)Message.deserialize(serialized);
+
+        assert original.getErrorCode() == deserialized.getErrorCode();
+
+        original = new AttrRply();
+        original.setErrorCode(7);
+        original.setAttributes(Attributes.from("(a=1,2),foo,(b=1),(separator=\\2c),(d=string),(condition=true),(cofee\\5Fbytes=\\FF\\CA\\FE)"));
+        // TODO: test auth blocks
+//        original.setAuthenticationBlocks();
+
+        serialized = original.serialize();
+        deserialized = (AttrRply)Message.deserialize(serialized);
+
+        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getAttributes().equals(deserialized.getAttributes());
+        // TODO: test auth blocks
+//        assert Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks());
     }
 }

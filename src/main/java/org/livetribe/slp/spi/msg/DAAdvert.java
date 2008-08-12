@@ -147,6 +147,9 @@ public class DAAdvert extends Rply
         int offset = 0;
         setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
 
+        // The message may be truncated if an error occurred (RFC 2608, Chapter 7)
+        if (getErrorCode() != 0 && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
+
         offset += ERROR_CODE_BYTES_LENGTH;
         setBootTime(readInt(bytes, offset, BOOT_TIME_BYTES_LENGTH));
 
