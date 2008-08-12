@@ -40,7 +40,7 @@ package org.livetribe.slp;
  * @version $Rev$ $Date$
  * @see ServiceURL
  */
-public class ServiceType
+public class ServiceType implements Comparable<ServiceType>
 {
     private static final String SERVICE = "service:";
 
@@ -173,6 +173,11 @@ public class ServiceType
                 return getPrincipleTypeName().equals(serviceType.getPrincipleTypeName());
             }
         }
+    }
+
+    public int compareTo(ServiceType that)
+    {
+        return type.compareTo(that.type);
     }
 
     public boolean equals(Object obj)

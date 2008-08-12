@@ -29,7 +29,7 @@ package org.livetribe.slp;
  * @version $Rev$ $Date$
  * @see ServiceType
  */
-public class ServiceURL
+public class ServiceURL implements Comparable<ServiceURL>
 {
     /**
      * The constant used to denote that the service did not specify a port.
@@ -147,6 +147,11 @@ public class ServiceURL
     public String getURL()
     {
         return url;
+    }
+
+    public int compareTo(ServiceURL that)
+    {
+        return getURL().compareTo(that.getURL());
     }
 
     public boolean equals(Object obj)
