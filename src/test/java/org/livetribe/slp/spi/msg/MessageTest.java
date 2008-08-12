@@ -204,4 +204,44 @@ public class MessageTest
         // TODO: test auth blocks
 //        assert Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks());
     }
+
+    @Test
+    public void testAttrRqstSerializeDeserialize()
+    {
+        AttrRqst original = new AttrRqst();
+        original.setURL("service:jmx:rmi:///jndi/jmxrmi");
+        original.setTags(Attributes.fromTags("tag1,foo*"));
+        Scopes scopes = Scopes.from("scope1", "scope2");
+        original.setScopes(scopes);
+        Set<String> previousResponders = new HashSet<String>();
+        previousResponders.add("1.2.3.4");
+        previousResponders.add("4.3.2.1");
+        original.setPreviousResponders(previousResponders);
+        original.setMulticast(true);
+        original.setOverflow(true);
+        original.setFresh(true);
+        original.setLanguage("en");
+        original.setXID(5);
+        original.setSecurityParameterIndex("spi1");
+
+        byte[] serialized = original.serialize();
+        AttrRqst deserialized = (AttrRqst)Message.deserialize(serialized);
+
+        assert deserialized.getURL() != null;
+        assert original.getURL().equals(deserialized.getURL());
+        assert deserialized.getTags() != null;
+        assert original.getTags().equals(deserialized.getTags());
+        assert deserialized.getScopes() != null;
+        assert original.getScopes().equals(deserialized.getScopes());
+        Set deserializedResponders = deserialized.getPreviousResponders();
+        assert deserializedResponders != null;
+        assert previousResponders.equals(deserializedResponders);
+        assert deserialized.isMulticast();
+        assert deserialized.isOverflow();
+        assert deserialized.isFresh();
+        assert original.getLanguage().equals(deserialized.getLanguage());
+        assert original.getXID() == deserialized.getXID();
+        assert deserialized.getSecurityParameterIndex() != null;
+        assert original.getSecurityParameterIndex().equals(deserialized.getSecurityParameterIndex());
+    }
 }
