@@ -173,7 +173,7 @@ public class MessageTest
         urlEntry.setURL("url1");
         urlEntry.setLifetime(123);
         original.setURLEntry(urlEntry);
-        Attributes tags = Attributes.from("(tag1=foo),tag2");
+        Attributes tags = Attributes.from("tag1,tag2");
         original.setTags(tags);
 
         byte[] serialized = original.serialize();
