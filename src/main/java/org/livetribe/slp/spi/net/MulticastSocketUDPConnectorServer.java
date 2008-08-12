@@ -35,7 +35,7 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
 
     public MulticastSocketUDPConnectorServer(ExecutorService threadPool, int bindPort)
     {
-        super(null, bindPort);
+        this(threadPool, bindPort, null);
     }
 
     public MulticastSocketUDPConnectorServer(ExecutorService threadPool, int bindPort, Settings settings)
