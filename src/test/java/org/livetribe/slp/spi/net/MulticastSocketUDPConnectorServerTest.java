@@ -26,6 +26,9 @@ import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.URLEntry;
 import org.testng.annotations.Test;
 
 /**
@@ -69,14 +72,15 @@ public class MulticastSocketUDPConnectorServerTest
         InetAddress multicastAddress = InetAddress.getByName(settings.get(MULTICAST_ADDRESS_KEY, Defaults.get(MULTICAST_ADDRESS_KEY)));
         ExecutorService threadPool = Executors.newCachedThreadPool();
         MulticastSocketUDPConnectorServer connector = new MulticastSocketUDPConnectorServer(threadPool, port, settings);
+        connector.addMessageListener(listener);
         connector.start();
         try
         {
-            DatagramSocket client = new DatagramSocket();
             byte[] messageBytes = new byte[0];
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length);
             packet.setPort(port);
             packet.setAddress(multicastAddress);
+            DatagramSocket client = new DatagramSocket();
             client.send(packet);
             client.close();
 
@@ -92,52 +96,53 @@ public class MulticastSocketUDPConnectorServerTest
         }
     }
 
-//    /**
-//     * @testng.test
-//     */
-//    public void testClientSendsMessage() throws Exception
-//    {
-//        SocketUDPConnector connector = new SocketUDPConnector();
-//        connector.setPort(getPort());
-//
-//        final AtomicReference message = new AtomicReference(null);
-//        connector.addMessageListener(new MessageListener()
-//        {
-//            public void handle(MessageEvent event)
-//            {
-//                message.set(event);
-//            }
-//        });
-//
-//        try
-//        {
-//            connector.start();
-//            sleep(500);
-//
-//            SrvRply reply = new SrvRply();
-//            URLEntry entry = new URLEntry();
-//            entry.setURL("url1");
-//            reply.addURLEntry(entry);
-//
-//            byte[] messageBytes = reply.serialize();
-//            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length);
-//            packet.setPort(connector.getPort());
-//            packet.setAddress(connector.getMulticastAddress());
-//
-//            DatagramSocket client = new DatagramSocket();
-//            client.send(packet);
-//            client.close();
-//
-//            sleep(500);
-//
-//            assert connector.isRunning();
-//            MessageEvent event = (MessageEvent)message.get();
-//            assert event != null;
-//            assert Arrays.equals(messageBytes, event.getMessageBytes());
-//        }
-//        finally
-//        {
-//            connector.stop();
-//        }
-//    }
+    @Test
+    public void testClientSendsMessage() throws Exception
+    {
+        final AtomicReference<MessageEvent> message = new AtomicReference<MessageEvent>(null);
+        MessageListener listener = new MessageListener()
+        {
+            public void handle(MessageEvent event)
+            {
+                message.set(event);
+            }
+        };
+        Settings settings = newSettings();
+        Integer port = settings.get(PORT_KEY, Defaults.get(PORT_KEY));
+        InetAddress multicastAddress = InetAddress.getByName(settings.get(MULTICAST_ADDRESS_KEY, Defaults.get(MULTICAST_ADDRESS_KEY)));
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        MulticastSocketUDPConnectorServer connector = new MulticastSocketUDPConnectorServer(threadPool, port, settings);
+        connector.addMessageListener(listener);
+        connector.start();
+        try
+        {
+            SrvRply srvRply = new SrvRply();
+            URLEntry urlEntry = new URLEntry();
+            urlEntry.setURL("testURL");
+            srvRply.addURLEntry(urlEntry);
+            byte[] messageBytes = srvRply.serialize();
+            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length);
+            packet.setPort(port);
+            packet.setAddress(multicastAddress);
+            DatagramSocket client = new DatagramSocket();
+            client.send(packet);
+            client.close();
+
+            // Wait for message to arrive
+            Thread.sleep(500);
+
+            assert connector.isRunning();
+            MessageEvent event = message.get();
+            assert event != null;
+            Message testMessage = event.getMessage();
+            assert testMessage.getMessageType() == srvRply.getMessageType();
+            SrvRply testSrvReply = (SrvRply)testMessage;
+            assert testSrvReply.getURLEntries().size() == 1;
+            assert testSrvReply.getURLEntries().get(0).equals(urlEntry);
+        }
+        finally
+        {
+            connector.stop();
+        }
+    }
 }
