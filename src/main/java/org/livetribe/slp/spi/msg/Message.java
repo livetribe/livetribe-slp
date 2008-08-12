@@ -376,4 +376,10 @@ public abstract class Message extends BytesBlock
         if (attributes == null) return EMPTY_BYTES;
         return writeString(attributes.asString(), false);
     }
+
+    protected static byte[] tagsToBytes(Attributes attributes)
+    {
+        if (attributes == null) return EMPTY_BYTES;
+        return writeString(attributes.asTagsString(), false);
+    }
 }

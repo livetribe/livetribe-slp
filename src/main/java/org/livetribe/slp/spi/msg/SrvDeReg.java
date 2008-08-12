@@ -52,7 +52,7 @@ public class SrvDeReg extends Message
         int scopesLength = scopesBytes.length;
         byte[] urlBytes = getURLEntry().serialize();
         int urlLength = urlBytes.length;
-        byte[] tagsBytes = attributesToBytes(getTags());
+        byte[] tagsBytes = tagsToBytes(getTags());
         int tagsLength = tagsBytes.length;
 
         int bodyLength = SCOPES_LENGTH_BYTES_LENGTH + scopesLength + urlLength + TAGS_LENGTH_BYTES_LENGTH + tagsLength;
@@ -92,7 +92,7 @@ public class SrvDeReg extends Message
         int tagsLength = readInt(bytes, offset, TAGS_LENGTH_BYTES_LENGTH);
 
         offset += TAGS_LENGTH_BYTES_LENGTH;
-        setTags(Attributes.from(readString(bytes, offset, tagsLength, false)));
+        setTags(Attributes.fromTags(readString(bytes, offset, tagsLength, false)));
     }
 
     public byte getMessageType()

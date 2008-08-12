@@ -46,27 +46,27 @@ public class ExpressionFilter implements Filter
     {
         if (attributes == null) return false;
 
-        Attributes.Entry entry = attributes.valueFor(lhs);
-        if (entry == null) return false;
+        Attributes.Value value = attributes.valueFor(lhs);
+        if (value == null) return false;
 
         // Check for presence only
-        if (entry.isPresenceType() && EQ.equals(operator) && ANY.equals(rhs)) return true;
+        if (value.isPresenceType() && EQ.equals(operator) && ANY.equals(rhs)) return true;
 
-        return compare(entry, operator, rhs);
+        return compare(value, operator, rhs);
     }
 
-    private boolean compare(Attributes.Entry entry, String operator, String compare)
+    private boolean compare(Attributes.Value attributeValue, String operator, String compare)
     {
-        if (entry.isStringType())
+        if (attributeValue.isStringType())
         {
             if (GE.equals(operator))
             {
-                String value = (String)entry.getValue();
+                String value = (String)attributeValue.getValue();
                 return value.compareToIgnoreCase(compare) >= 0;
             }
             else if (LE.equals(operator))
             {
-                String value = (String)entry.getValue();
+                String value = (String)attributeValue.getValue();
                 return value.compareToIgnoreCase(compare) <= 0;
             }
             else if (EQ.equals(operator))
@@ -76,7 +76,7 @@ public class ExpressionFilter implements Filter
                 {
                     // Wildcard comparison
                     String[] parts = compare.split("\\*", 0);
-                    Object[] values = entry.getValues();
+                    Object[] values = attributeValue.getValues();
                     for (Object value : values)
                     {
                         String stringValue = ((String)value).toLowerCase();
@@ -98,7 +98,7 @@ public class ExpressionFilter implements Filter
                 else
                 {
                     // Direct comparison
-                    Object[] values = entry.getValues();
+                    Object[] values = attributeValue.getValues();
                     for (Object value : values)
                     {
                         String stringValue = (String)value;
@@ -112,14 +112,14 @@ public class ExpressionFilter implements Filter
                 throw new AssertionError("Invalid operator " + operator);
             }
         }
-        else if (entry.isIntegerType())
+        else if (attributeValue.isIntegerType())
         {
             try
             {
                 int compareInteger = Integer.parseInt(compare);
                 if (GE.equals(operator))
                 {
-                    Object[] values = entry.getValues();
+                    Object[] values = attributeValue.getValues();
                     boolean result = false;
                     for (Object value : values)
                     {
@@ -130,7 +130,7 @@ public class ExpressionFilter implements Filter
                 }
                 else if (LE.equals(operator))
                 {
-                    Object[] values = entry.getValues();
+                    Object[] values = attributeValue.getValues();
                     boolean result = false;
                     for (Object value : values)
                     {
@@ -141,7 +141,7 @@ public class ExpressionFilter implements Filter
                 }
                 else if (EQ.equals(operator))
                 {
-                    Object[] values = entry.getValues();
+                    Object[] values = attributeValue.getValues();
                     boolean result = false;
                     for (Object value : values)
                     {
@@ -160,17 +160,17 @@ public class ExpressionFilter implements Filter
                 return false;
             }
         }
-        else if (entry.isBooleanType())
+        else if (attributeValue.isBooleanType())
         {
             if (!EQ.equals(operator)) return false;
             if (!"true".equalsIgnoreCase(compare) && !"false".equalsIgnoreCase(compare)) return false;
-            Boolean value = (Boolean)entry.getValue();
+            Boolean value = (Boolean)attributeValue.getValue();
             return value.equals(Boolean.valueOf(compare));
         }
-        else if (entry.isOpaqueType())
+        else if (attributeValue.isOpaqueType())
         {
             if (!EQ.equals(operator)) return false;
-            String value = (String)entry.getValue();
+            String value = (String)attributeValue.getValue();
             return compare.equals(value);
         }
         else

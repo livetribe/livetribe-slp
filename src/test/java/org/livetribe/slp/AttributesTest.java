@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 public class AttributesTest
 {
     @Test
-    public void testParsing() throws Exception
+    public void testParseAttributeList()
     {
         Attributes attributes = Attributes.NONE;
         assert attributes.isEmpty();
@@ -79,6 +79,100 @@ public class AttributesTest
         assert attributes.valueFor("foo").getValue() == null;
         assert Arrays.equals(new Object[]{"bar", "baz"}, attributes.valueFor("a").getValues());
         assert Arrays.equals(new byte[]{(byte)0}, (byte[])attributes.valueFor("b").getValue());
+    }
+
+    @Test
+    public void testParseBadAttributeList()
+    {
+        // Character '*' is not allowed in tags of an attribute list
+        String attributeList = "(foo*=1)";
+        try
+        {
+            Attributes.from(attributeList);
+            assert false;
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+        }
+
+        // Character '_' is not allowed in tags of an attribute list
+        attributeList = "(foo_bar=1)";
+        try
+        {
+            Attributes.from(attributeList);
+            assert false;
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+        }
+
+        // Character '!' is not allowed in values of an attribute list
+        attributeList = "(separator=!)";
+        try
+        {
+            Attributes.from(attributeList);
+            assert false;
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+        }
+    }
+
+    @Test
+    public void testParseTagList()
+    {
+        // Character '*' is allowed in tag list
+        String tagList = "foo*,bar";
+        Attributes attributes = Attributes.fromTags(tagList);
+        assert !attributes.containsTag("foo");
+        assert attributes.containsTag("bar");
+
+        tagList = "re\\2at"; // Hex 2a stands for character '*'
+        attributes = Attributes.fromTags(tagList);
+        assert attributes.containsTag("re*t");
+    }
+
+    @Test
+    public void testParseBadTagList()
+    {
+        // Not a tag list
+        String tagList = "(foo=1)";
+        try
+        {
+            Attributes.fromTags(tagList);
+            assert false;
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+        }
+
+        // Not a tag list
+        tagList = "foo,(bar=1)";
+        try
+        {
+            Attributes.fromTags(tagList);
+            assert false;
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+        }
+
+        // Tag list with reserved character
+        tagList = "foo, b~r";
+        try
+        {
+            Attributes.fromTags(tagList);
+            assert false;
+        }
+        catch (ServiceLocationException x)
+        {
+            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+        }
     }
 
     @Test
@@ -180,7 +274,7 @@ public class AttributesTest
     }
 
     @Test
-    public void testEscapedTag()
+    public void testTagWithReservedChar()
     {
         String tag = "tag!"; // Character '!' is not allowed in tag, must be escaped
         Integer value = 1;
@@ -189,17 +283,103 @@ public class AttributesTest
     }
 
     @Test
-    public void testEscapedValue()
+    public void testValueWithReservedChar()
     {
         String tag = "tag";
-        String value = "<1>";
+        String value = "<1>"; // Characters '<' and '>' are reserved in values
         Attributes attributes = Attributes.from("(" + tag + "=" + Attributes.escapeValue(value) + ")");
         assert value.equals(attributes.valueFor(tag).getValue());
     }
 
     @Test
-    public void testSerializeDeserialize()
+    public void testNegativeIntegerValue()
     {
-//        Attributes attributes = Attributes.from("a=1,b=true,c=long string,d=\\FF\\CA\\FE\\BA\\BE");
+        Attributes attributes = Attributes.from("(a=-1,-2)");
+        assert attributes.containsTag("a");
+        Attributes.Value value = attributes.valueFor("a");
+        assert value.isMultiValued();
+        assert value.isIntegerType();
+        assert Arrays.equals(new Object[]{-1, -2}, value.getValues());
+
+        attributes = Attributes.from("(a=1,-2)");
+        assert attributes.containsTag("a");
+        value = attributes.valueFor("a");
+        assert value.isMultiValued();
+        assert value.isIntegerType();
+        assert Arrays.equals(new Object[]{1, -2}, value.getValues());
+    }
+
+    @Test
+    public void testMerge()
+    {
+        Attributes attributes1 = Attributes.from("(a=1)");
+        Attributes attributes2 = Attributes.from("(b=true)");
+        Attributes result = attributes1.merge(attributes2);
+        assert attributes1.getSize() == 1;
+        assert attributes1.containsTag("a");
+        assert attributes2.getSize() == 1;
+        assert attributes2.containsTag("b");
+        assert result.getSize() == 2;
+        assert result.containsTag("a");
+        assert result.containsTag("b");
+        assert Integer.valueOf(1).equals(result.valueFor("a").getValue());
+        assert Boolean.TRUE.equals(result.valueFor("b").getValue());
+    }
+
+    @Test
+    public void testUnmerge()
+    {
+        Attributes attributes1 = Attributes.from("(a=1),(b=1,2),(c=3),cad,(cod=5)");
+        Attributes attributes2 = Attributes.fromTags("a");
+        Attributes result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 4;
+        assert !result.containsTag("a");
+
+        attributes2 = Attributes.fromTags("cad");
+        result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 4;
+        assert !result.containsTag("cad");
+
+        attributes2 = Attributes.fromTags("*a");
+        result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 4;
+        assert !result.containsTag("a");
+
+        attributes2 = Attributes.fromTags("*a*");
+        result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 3;
+        assert !result.containsTag("a");
+        assert !result.containsTag("cad");
+
+        attributes2 = Attributes.fromTags("c*");
+        result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 2;
+        assert !result.containsTag("c");
+        assert !result.containsTag("cad");
+        assert !result.containsTag("cod");
+
+        attributes2 = Attributes.fromTags("c*d");
+        result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 3;
+        assert !result.containsTag("cad");
+        assert !result.containsTag("cod");
+
+        attributes2 = Attributes.fromTags("*");
+        result = attributes1.unmerge(attributes2);
+        assert attributes1.getSize() == 5;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 0;
     }
 }
