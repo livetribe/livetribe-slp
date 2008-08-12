@@ -695,8 +695,13 @@ public class Attributes
                 if (opaquePresent)
                     throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one value is opaque: " + Arrays.asList(attributeValues), ServiceLocationException.Error.PARSE_ERROR);
 
+                // Not homogeneus, convert everything to string
                 Object[] values = new Object[attributeValues.length];
-                System.arraycopy(attributeValues, 0, values, 0, attributeValues.length);
+                for (int i = 0; i < attributeValues.length; ++i)
+                {
+                    Value value = attributeValues[i];
+                    values[i] = String.valueOf(value.getValue());
+                }
                 return new Value(values, Value.STRING);
             }
         }
