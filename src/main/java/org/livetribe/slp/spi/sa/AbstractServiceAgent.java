@@ -39,12 +39,15 @@ import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.TCPSrvDeRegPerformer;
 import org.livetribe.slp.spi.TCPSrvRegPerformer;
+import org.livetribe.slp.spi.UDPSrvAckPerformer;
 import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.filter.FilterParser;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
@@ -60,10 +63,11 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 {
     private final ServiceInfoCache<ServiceInfo> services = new ServiceInfoCache<ServiceInfo>();
     private final DirectoryAgentInfoCache directoryAgents = new DirectoryAgentInfoCache();
-    private final MessageListener listener = new ServiceAgentMessageListener();
+    private final MessageListener udpListener = new UDPMessageListener();
     private final Map<String, ServiceAgentInfo> serviceAgents = new HashMap<String, ServiceAgentInfo>();
     private final UDPConnectorServer udpConnectorServer;
     private final MulticastDASrvRqstPerformer multicastDASrvRqst;
+    private final UDPSrvAckPerformer udpSrvAck;
     private final TCPSrvRegPerformer tcpSrvReg;
     private final TCPSrvDeRegPerformer tcpSrvDeReg;
     private final NotifySrvRegPerformer notifySrvReg;
@@ -81,6 +85,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     {
         this.udpConnectorServer = udpConnectorServer;
         this.multicastDASrvRqst = new MulticastDASrvRqstPerformer(udpConnector, settings);
+        this.udpSrvAck = new UDPSrvAckPerformer(udpConnector, settings);
         this.tcpSrvReg = new TCPSrvRegPerformer(tcpConnector, settings);
         this.tcpSrvDeReg = new TCPSrvDeRegPerformer(tcpConnector, settings);
         this.notifySrvReg = new NotifySrvRegPerformer(udpConnector, settings);
@@ -203,7 +208,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
             directoryAgents.addAll(discoverDirectoryAgents(scopes, null));
         addDirectoryAgentListener(this);
 
-        udpConnectorServer.addMessageListener(listener);
+        udpConnectorServer.addMessageListener(udpListener);
         udpConnectorServer.start();
     }
 
@@ -214,7 +219,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         // RFC 2608, 10.6, requires services to deregister when no longer available
         deregisterServices();
 
-        udpConnectorServer.removeMessageListener(listener);
+        udpConnectorServer.removeMessageListener(udpListener);
         udpConnectorServer.stop();
 
         removeDirectoryAgentListener(this);
@@ -326,7 +331,13 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         }
     }
 
-    protected void handleMulticastSrvRqst(SrvRqst srvRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
+    protected void handleMulticastDAAdvert(DAAdvert daAdvert)
+    {
+        DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
+        directoryAgents.handle(directoryAgent);
+    }
+
+    protected void handleUDPSrvRqst(SrvRqst srvRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
     {
         String address = NetUtils.convertWildcardAddress(localAddress.getAddress()).getHostAddress();
         ServiceAgentInfo serviceAgent = serviceAgents.get(address);
@@ -359,7 +370,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " sending UDP unicast reply to " + remoteAddress);
-            udpSAAdvert.perform(remoteAddress, serviceAgent, srvRqst);
+            udpSAAdvert.perform(localAddress, remoteAddress, serviceAgent, srvRqst);
         }
         else if (DirectoryAgentInfo.SERVICE_TYPE.equals(serviceType))
         {
@@ -371,7 +382,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
             List<ServiceInfo> matchingServices = matchServices(serviceType, srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
             if (logger.isLoggable(Level.FINE))
                 logger.fine("ServiceAgent " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
-            udpSrvRply.perform(remoteAddress, serviceAgent, srvRqst, matchingServices);
+            udpSrvRply.perform(localAddress, remoteAddress, serviceAgent, srvRqst, matchingServices);
         }
     }
 
@@ -385,10 +396,36 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         return result;
     }
 
-    protected void handleMulticastDAAdvert(DAAdvert daAdvert)
+    protected void handleUDPSrvReg(SrvReg srvReg, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
     {
-        DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
-        directoryAgents.handle(directoryAgent);
+        try
+        {
+            boolean update = srvReg.isUpdating();
+            ServiceInfo givenService = ServiceInfo.from(srvReg);
+            ServiceInfoCache.Result<ServiceInfo> result = cacheService(givenService, update);
+            forwardRegistration(givenService, result.getPrevious(), result.getCurrent(), update);
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, SrvAck.SUCCESS);
+        }
+        catch (ServiceLocationException x)
+        {
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getError().getCode());
+        }
+    }
+
+    protected void handleUDPSrvDeReg(SrvDeReg srvDeReg, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
+    {
+        try
+        {
+            boolean update = srvDeReg.isUpdating();
+            ServiceInfo givenService = ServiceInfo.from(srvDeReg);
+            ServiceInfoCache.Result<ServiceInfo> result = uncacheService(givenService, update);
+            forwardDeregistration(givenService, result.getPrevious(), result.getCurrent(), update);
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, SrvAck.SUCCESS);
+        }
+        catch (ServiceLocationException x)
+        {
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getError().getCode());
+        }
     }
 
     public void directoryAgentBorn(DirectoryAgentEvent event)
@@ -447,14 +484,9 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     }
 
     /**
-     * ServiceAgents listen for multicast messages that may arrive.
-     * They are interested in:
-     * <ul>
-     * <li>DAAdverts, from DirectoryAgents that boot or shutdown; no reply, just update of internal caches</li>
-     * <li>SrvRqsts, from UserAgents that want to discover services in absence of DAs; the reply is a SrvRply or a SAAdvert</li>
-     * </ul>
+     * ServiceAgents listen for udp messages that may arrive.
      */
-    private class ServiceAgentMessageListener implements MessageListener
+    private class UDPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {
@@ -462,23 +494,29 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
             if (logger.isLoggable(Level.FINEST))
                 logger.finest("ServiceAgent message listener received message " + message);
 
-            if (message.isMulticast())
+            InetSocketAddress localAddress = event.getLocalSocketAddress();
+            InetSocketAddress remoteAddress = event.getRemoteSocketAddress();
+            switch (message.getMessageType())
             {
-                InetSocketAddress localAddress = event.getLocalSocketAddress();
-                InetSocketAddress remoteAddress = event.getRemoteSocketAddress();
-                switch (message.getMessageType())
-                {
-                    case Message.DA_ADVERT_TYPE:
+                case Message.DA_ADVERT_TYPE:
+                    if (message.isMulticast())
                         handleMulticastDAAdvert((DAAdvert)message);
-                        break;
-                    case Message.SRV_RQST_TYPE:
-                        handleMulticastSrvRqst((SrvRqst)message, localAddress, remoteAddress);
-                        break;
-                    default:
-                        if (logger.isLoggable(Level.FINE))
-                            logger.fine("UserAgent " + this + " dropping multicast message " + message + ": not handled by ServiceAgents");
-                        break;
-                }
+                    else if (logger.isLoggable(Level.FINE))
+                        logger.fine("ServiceAgent " + this + " dropping message " + message + ": DAAdvert must be multicast");
+                    break;
+                case Message.SRV_RQST_TYPE:
+                    handleUDPSrvRqst((SrvRqst)message, localAddress, remoteAddress);
+                    break;
+                case Message.SRV_REG_TYPE:
+                    handleUDPSrvReg((SrvReg)message, localAddress, remoteAddress);
+                    break;
+                case Message.SRV_DEREG_TYPE:
+                    handleUDPSrvDeReg((SrvDeReg)message, localAddress, remoteAddress);
+                    break;
+                default:
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("UserAgent " + this + " dropping multicast message " + message + ": not handled by ServiceAgents");
+                    break;
             }
         }
     }

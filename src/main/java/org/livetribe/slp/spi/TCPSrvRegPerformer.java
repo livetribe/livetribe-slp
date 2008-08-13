@@ -18,18 +18,16 @@ package org.livetribe.slp.spi;
 import java.net.InetSocketAddress;
 
 import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvReg;
-import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvRegPerformer
+public class TCPSrvRegPerformer extends SrvRegPerformer
 {
     private final TCPConnector tcpConnector;
 
@@ -44,22 +42,5 @@ public class TCPSrvRegPerformer
         byte[] requestBytes = srvReg.serialize();
         byte[] replyBytes = tcpConnector.writeAndRead(address, requestBytes);
         return (SrvAck)Message.deserialize(replyBytes);
-    }
-
-    private SrvReg newSrvReg(ServiceInfo service, boolean update)
-    {
-        ServiceURL serviceURL = service.getServiceURL();
-        URLEntry urlEntry = new URLEntry();
-        urlEntry.setLifetime(serviceURL.getLifetime());
-        urlEntry.setURL(serviceURL.getURL());
-        SrvReg srvReg = new SrvReg();
-        srvReg.setFresh(!update);
-        srvReg.setURLEntry(urlEntry);
-        srvReg.setServiceType(service.resolveServiceType());
-        srvReg.setScopes(service.getScopes());
-        srvReg.setAttributes(service.getAttributes());
-        srvReg.setXID(Message.newXID());
-        srvReg.setLanguage(service.getLanguage());
-        return srvReg;
     }
 }

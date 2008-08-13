@@ -35,11 +35,11 @@ public class UDPDAAdvertPerformer
         this.udpConnector = udpConnector;
     }
 
-    public void perform(InetSocketAddress remoteAddress, DirectoryAgentInfo directoryAgent, Message message)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, DirectoryAgentInfo directoryAgent, Message message)
     {
         DAAdvert daAdvert = newDAAdvert(directoryAgent, message);
         byte[] bytes = daAdvert.serialize();
-        udpConnector.unicastSend(directoryAgent.getHostAddress(), remoteAddress, bytes);
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }
 
     private DAAdvert newDAAdvert(DirectoryAgentInfo directoryAgent, Message message)

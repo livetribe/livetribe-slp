@@ -30,9 +30,12 @@ import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.TCPSrvDeRegPerformer;
 import org.livetribe.slp.spi.TCPSrvRegPerformer;
+import org.livetribe.slp.spi.UDPSrvDeRegPerformer;
+import org.livetribe.slp.spi.UDPSrvRegPerformer;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
@@ -41,24 +44,30 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 {
     public static StandardServiceAgentClient newInstance(Settings settings)
     {
+        UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
         TCPConnector.Factory tcpFactory = Factories.newInstance(settings, TCP_CONNECTOR_FACTORY_KEY);
-        return new StandardServiceAgentClient(tcpFactory.newTCPConnector(settings), settings);
+        return new StandardServiceAgentClient(udpFactory.newUDPConnector(settings), tcpFactory.newTCPConnector(settings), settings);
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
+    private final UDPSrvRegPerformer udpSrvReg;
     private final TCPSrvRegPerformer tcpSrvReg;
+    private final UDPSrvDeRegPerformer udpSrvDeReg;
     private final TCPSrvDeRegPerformer tcpSrvDeReg;
     private int port = Defaults.get(PORT_KEY);
     private String connectAddress = Defaults.get(SA_CLIENT_CONNECT_ADDRESS);
+    private boolean useTCP = Defaults.get(SA_CLIENT_USE_TCP);
 
-    public StandardServiceAgentClient(TCPConnector tcpConnector)
+    public StandardServiceAgentClient(UDPConnector udpConnector, TCPConnector tcpConnector)
     {
-        this(tcpConnector, null);
+        this(udpConnector, tcpConnector, null);
     }
 
-    public StandardServiceAgentClient(TCPConnector tcpConnector, Settings settings)
+    public StandardServiceAgentClient(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
+        this.udpSrvReg = new UDPSrvRegPerformer(udpConnector, settings);
         this.tcpSrvReg = new TCPSrvRegPerformer(tcpConnector, settings);
+        this.udpSrvDeReg = new UDPSrvDeRegPerformer(udpConnector, settings);
         this.tcpSrvDeReg = new TCPSrvDeRegPerformer(tcpConnector, settings);
         if (settings != null) setSettings(settings);
     }
@@ -68,6 +77,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
         if (settings.containsKey(SA_CLIENT_CONNECT_ADDRESS))
             this.connectAddress = settings.get(SA_CLIENT_CONNECT_ADDRESS);
+        if (settings.containsKey(SA_CLIENT_USE_TCP)) this.useTCP = settings.get(SA_CLIENT_USE_TCP);
     }
 
     public int getPort()
@@ -100,6 +110,16 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         this.connectAddress = connectAddress;
     }
 
+    public boolean isUseTCP()
+    {
+        return useTCP;
+    }
+
+    public void setUseTCP(boolean useTCP)
+    {
+        this.useTCP = useTCP;
+    }
+
     public void register(ServiceInfo service) throws ServiceLocationException
     {
         register(service, false);
@@ -114,7 +134,9 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     protected void register(ServiceInfo service, boolean update)
     {
         InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getByName(connectAddress), port);
-        SrvAck ack = tcpSrvReg.perform(remoteAddress, service, update);
+
+        SrvAck ack = useTCP ? tcpSrvReg.perform(remoteAddress, service, update) : udpSrvReg.perform(remoteAddress, service, update);
+
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
             throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", ServiceLocationException.Error.from(errorCode));
@@ -138,7 +160,9 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     protected void deregister(ServiceInfo service, boolean update) throws ServiceLocationException
     {
         InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getByName(connectAddress), port);
-        SrvAck ack = tcpSrvDeReg.perform(remoteAddress, service, update);
+
+        SrvAck ack = useTCP ? tcpSrvDeReg.perform(remoteAddress, service, update) : udpSrvDeReg.perform(remoteAddress, service, update);
+
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
             throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", ServiceLocationException.Error.from(errorCode));

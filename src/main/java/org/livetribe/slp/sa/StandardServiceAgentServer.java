@@ -86,7 +86,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, settings);
     }
 
-    private final MessageListener listener = new ServiceAgentMessageListener();
+    private final MessageListener tcpListener = new TCPMessageListener();
     private final TCPConnectorServer tcpConnectorServer;
     private final TCPSrvAckPerformer tcpSrvAck;
 
@@ -131,7 +131,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
 
         super.doStart();
 
-        tcpConnectorServer.addMessageListener(listener);
+        tcpConnectorServer.addMessageListener(tcpListener);
         tcpConnectorServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Shutdown());
@@ -145,7 +145,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     protected void doStop()
     {
         super.doStop();
-        tcpConnectorServer.removeMessageListener(listener);
+        tcpConnectorServer.removeMessageListener(tcpListener);
         tcpConnectorServer.stop();
     }
 
@@ -198,14 +198,9 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     }
 
     /**
-     * ServiceAgents listen for tcp messages from ServiceAgentClients.
-     * They are interested in:
-     * <ul>
-     * <li>SrvReg, from ServiceAgentClients that want register services; the reply is a SrvAck</li>
-     * <li>SrvDeReg, from ServiceAgentClients that want deregister services; the reply is a SrvAck</li>
-     * </ul>
+     * ServiceAgents listen for tcp messages that may arrive.
      */
-    private class ServiceAgentMessageListener implements MessageListener
+    private class TCPMessageListener implements MessageListener
     {
         public void handle(MessageEvent event)
         {

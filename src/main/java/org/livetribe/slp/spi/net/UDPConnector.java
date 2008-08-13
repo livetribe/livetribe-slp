@@ -63,7 +63,16 @@ public interface UDPConnector
      * @param remoteAddress the remote address to send the bytes to
      * @param bytes         the bytes to send
      */
-    public void unicastSend(String localAddress, InetSocketAddress remoteAddress, byte[] bytes);
+    public void send(String localAddress, InetSocketAddress remoteAddress, byte[] bytes);
+
+    /**
+     * Sends the given bytes to the given remote address, and receives a reply.
+     *
+     * @param remoteAddress the remote address to send the bytes to
+     * @param bytes         the bytes to send
+     * @return the DatagramPacket received
+     */
+    public DatagramPacket sendAndReceive(InetSocketAddress remoteAddress, byte[] bytes);
 
     /**
      * Sends the given bytes to the SLP multicast (or broadcast) address and SLP notification port from the given local address.

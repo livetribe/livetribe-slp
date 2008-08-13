@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.livetribe.slp.spi.da;
 
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.livetribe.slp.ServiceInfo;
@@ -23,24 +23,25 @@ import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRply;
-import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvRplyPerformer extends SrvRplyPerformer
+public class UDPSrvRplyPerformer extends SrvRplyPerformer
 {
-    private final TCPConnector tcpConnector;
+    private final UDPConnector udpConnector;
 
-    public TCPSrvRplyPerformer(TCPConnector tcpConnector, Settings settings)
+    public UDPSrvRplyPerformer(UDPConnector udpConnector, Settings settings)
     {
-        this.tcpConnector = tcpConnector;
+        this.udpConnector = udpConnector;
     }
 
-    public void perform(Socket socket, Message message, List<? extends ServiceInfo> services)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, List<? extends ServiceInfo> services)
     {
+        // TODO: must be sure to fit the MTU in case of many services
         SrvRply srvRply = newSrvRply(message, services);
         byte[] bytes = srvRply.serialize();
-        tcpConnector.write(socket, bytes);
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }
 }

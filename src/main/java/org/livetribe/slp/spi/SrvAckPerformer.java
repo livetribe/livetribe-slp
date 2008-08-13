@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,20 @@
  */
 package org.livetribe.slp.spi;
 
-import java.net.Socket;
-
-import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
-import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvAckPerformer extends SrvAckPerformer
+public class SrvAckPerformer
 {
-    private final TCPConnector tcpConnector;
-
-    public TCPSrvAckPerformer(TCPConnector tcpConnector, Settings settings)
+    protected SrvAck newSrvAck(Message message, int errorCode)
     {
-        this.tcpConnector = tcpConnector;
-    }
-
-    public void perform(Socket socket, Message message, int errorCode)
-    {
-        SrvAck srvAck = newSrvAck(message, errorCode);
-        byte[] bytes = srvAck.serialize();
-        tcpConnector.write(socket, bytes);
+        SrvAck srvAck = new SrvAck();
+        srvAck.setXID(message.getXID());
+        srvAck.setLanguage(message.getLanguage());
+        srvAck.setErrorCode(errorCode);
+        return srvAck;
     }
 }

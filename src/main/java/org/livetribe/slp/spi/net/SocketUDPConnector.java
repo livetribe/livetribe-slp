@@ -38,6 +38,7 @@ public abstract class SocketUDPConnector implements UDPConnector
     private int port = Defaults.get(PORT_KEY);
     private int notificationPort = Defaults.get(NOTIFICATION_PORT_KEY);
     private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
+    private int[] unicastTimeouts = Defaults.get(UNICAST_TIMEOUTS_KEY);
 
     public SocketUDPConnector()
     {
@@ -55,6 +56,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         if (settings.containsKey(NOTIFICATION_PORT_KEY)) this.notificationPort = settings.get(NOTIFICATION_PORT_KEY);
         if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
             this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
+        if (settings.containsKey(UNICAST_TIMEOUTS_KEY)) this.unicastTimeouts = settings.get(UNICAST_TIMEOUTS_KEY);
     }
 
     public int getPort()
@@ -87,11 +89,18 @@ public abstract class SocketUDPConnector implements UDPConnector
         this.maxTransmissionUnit = maxTransmissionUnit;
     }
 
+    public int[] getUnicastTimeouts()
+    {
+        return unicastTimeouts;
+    }
+
+    public void setUnicastTimeouts(int[] unicastTimeouts)
+    {
+        this.unicastTimeouts = unicastTimeouts;
+    }
+
     protected abstract String getManycastAddress();
 
-    /**
-     * @return a new DatagramSocket bound to the wildcard address and an ephemeral port
-     */
     public DatagramSocket newDatagramSocket()
     {
         return newDatagramSocket(null);
@@ -169,7 +178,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
     }
 
-    public void unicastSend(String localAddress, InetSocketAddress remoteAddress, byte[] bytes)
+    public void send(String localAddress, InetSocketAddress remoteAddress, byte[] bytes)
     {
         DatagramSocket socket = newDatagramSocket(localAddress);
         try
@@ -177,6 +186,29 @@ public abstract class SocketUDPConnector implements UDPConnector
             DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
             packet.setSocketAddress(remoteAddress);
             send(socket, packet);
+        }
+        finally
+        {
+            socket.close();
+        }
+    }
+
+    public DatagramPacket sendAndReceive(InetSocketAddress remoteAddress, byte[] bytes)
+    {
+        DatagramSocket socket = newDatagramSocket();
+        try
+        {
+            DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+            packet.setSocketAddress(remoteAddress);
+
+            for (int timeout : unicastTimeouts)
+            {
+                send(socket, packet);
+                DatagramPacket result = receive(socket, timeout);
+                if (result != null) return result;
+            }
+
+            return null;
         }
         finally
         {

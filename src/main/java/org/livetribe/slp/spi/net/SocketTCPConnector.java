@@ -38,6 +38,7 @@ public class SocketTCPConnector implements TCPConnector
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private int tcpMessageMaxLength = Defaults.get(TCP_MESSAGE_MAX_LENGTH_KEY);
+    private int tcpReadTimeout = Defaults.get(TCP_READ_TIMEOUT_KEY);
 
     public SocketTCPConnector()
     {
@@ -53,6 +54,7 @@ public class SocketTCPConnector implements TCPConnector
     {
         if (settings.containsKey(TCP_MESSAGE_MAX_LENGTH_KEY))
             this.tcpMessageMaxLength = settings.get(TCP_MESSAGE_MAX_LENGTH_KEY);
+        if (settings.containsKey(TCP_READ_TIMEOUT_KEY)) this.tcpReadTimeout = settings.get(TCP_READ_TIMEOUT_KEY);
     }
 
     public int getTcpMessageMaxLength()
@@ -63,6 +65,16 @@ public class SocketTCPConnector implements TCPConnector
     public void setTCPMessageMaxLength(int tcpMessageMaxLength)
     {
         this.tcpMessageMaxLength = tcpMessageMaxLength;
+    }
+
+    public int getTcpReadTimeout()
+    {
+        return tcpReadTimeout;
+    }
+
+    public void setTcpReadTimeout(int tcpReadTimeout)
+    {
+        this.tcpReadTimeout = tcpReadTimeout;
     }
 
     public byte[] writeAndRead(InetSocketAddress address, byte[] bytes)
@@ -114,6 +126,8 @@ public class SocketTCPConnector implements TCPConnector
     {
         try
         {
+            socket.setSoTimeout(tcpReadTimeout);
+
             InputStream input = socket.getInputStream();
             ByteArrayOutputStream data = new ByteArrayOutputStream();
 

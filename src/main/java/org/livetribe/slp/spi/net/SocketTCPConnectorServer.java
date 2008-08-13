@@ -41,7 +41,6 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
 {
     private final ExecutorService threadPool;
     private final SocketTCPConnector connector;
-    private int tcpReadTimeout = Defaults.get(TCP_READ_TIMEOUT_KEY);
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
     private ServerSocket[] serverSockets;
@@ -62,19 +61,8 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
 
     private void setSettings(Settings settings)
     {
-        if (settings.containsKey(TCP_READ_TIMEOUT_KEY)) this.tcpReadTimeout = settings.get(TCP_READ_TIMEOUT_KEY);
         if (settings.containsKey(ADDRESSES_KEY)) this.addresses = settings.get(ADDRESSES_KEY);
         if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
-    }
-
-    public int getTcpReadTimeout()
-    {
-        return tcpReadTimeout;
-    }
-
-    public void setTcpReadTimeout(int tcpReadTimeout)
-    {
-        this.tcpReadTimeout = tcpReadTimeout;
     }
 
     public String[] getAddresses()
@@ -271,16 +259,6 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
 
             try
             {
-                try
-                {
-                    socket.setSoTimeout(tcpReadTimeout);
-                }
-                catch (SocketException ignored)
-                {
-                    if (logger.isLoggable(Level.FINEST))
-                        logger.finest("Count not set read timeout on socket " + socket + ", ignoring");
-                }
-
                 try
                 {
                     while (true)

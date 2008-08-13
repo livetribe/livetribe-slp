@@ -19,22 +19,17 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.spi.msg.AttributeListExtension;
+import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
-import org.livetribe.slp.spi.msg.LanguageExtension;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.ScopeListExtension;
 import org.livetribe.slp.spi.msg.SrvRply;
-import org.livetribe.slp.spi.msg.URLEntry;
-import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class UDPSrvRplyPerformer
+public class UDPSrvRplyPerformer extends SrvRplyPerformer
 {
     private final UDPConnector udpConnector;
 
@@ -43,63 +38,16 @@ public class UDPSrvRplyPerformer
         this.udpConnector = udpConnector;
     }
 
-    public void perform(InetSocketAddress remoteAddress, ServiceAgentInfo serviceAgent, Message message, List<? extends ServiceInfo> services)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, ServiceAgentInfo serviceAgent, Message message, List<? extends ServiceInfo> services)
     {
         // TODO: must be sure to fit the MTU in case of many services
-        SrvRply srvRply = newSrvRply(serviceAgent, message, services);
-        byte[] bytes = srvRply.serialize();
-        udpConnector.unicastSend(serviceAgent.getHost(), remoteAddress, bytes);
-    }
-
-    private SrvRply newSrvRply(ServiceAgentInfo serviceAgent, Message message, List<? extends ServiceInfo> services)
-    {
-        SrvRply srvRply = new SrvRply();
-        // Replies must have the same language and XID as the request (RFC 2608, 8.0)
-        srvRply.setLanguage(message.getLanguage());
-        srvRply.setXID(message.getXID());
+        SrvRply srvRply = newSrvRply(message, services);
         if (serviceAgent.getIdentifier() != null)
         {
-            IdentifierExtension identifierExtension = new IdentifierExtension(NetUtils.getLocalhost().getHostAddress(), serviceAgent.getIdentifier());
+            IdentifierExtension identifierExtension = new IdentifierExtension(serviceAgent.getHostAddress(), serviceAgent.getIdentifier());
             srvRply.addExtension(identifierExtension);
         }
-
-        for (ServiceInfo service : services)
-        {
-            ServiceURL serviceURL = service.getServiceURL();
-
-            URLEntry urlEntry = new URLEntry();
-            urlEntry.setURL(serviceURL.getURL());
-            urlEntry.setLifetime(serviceURL.getLifetime());
-            srvRply.addURLEntry(urlEntry);
-
-            // Add language only if it has been requested
-            if (LanguageExtension.findFirst(message.getExtensions()) != null)
-            {
-                LanguageExtension languageExtension = new LanguageExtension();
-                languageExtension.setURL(serviceURL.getURL());
-                languageExtension.setLanguage(service.getLanguage());
-                srvRply.addExtension(languageExtension);
-            }
-
-            // Add attributes only if they were requested
-            if (AttributeListExtension.findFirst(message.getExtensions()) != null)
-            {
-                AttributeListExtension attributesExt = new AttributeListExtension();
-                attributesExt.setURL(serviceURL.getURL());
-                attributesExt.setAttributes(service.getAttributes());
-                srvRply.addExtension(attributesExt);
-            }
-
-            // Add scopes only if they were requested
-            if (ScopeListExtension.findFirst(message.getExtensions()) != null)
-            {
-                ScopeListExtension scopesExt = new ScopeListExtension();
-                scopesExt.setURL(serviceURL.getURL());
-                scopesExt.setScopes(service.getScopes());
-                srvRply.addExtension(scopesExt);
-            }
-        }
-
-        return srvRply;
+        byte[] bytes = srvRply.serialize();
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }
 }

@@ -64,6 +64,15 @@ public class Keys
     public static final Key<Integer> DA_ADVERTISEMENT_PERIOD_KEY = Key.from("net.slp.DAHeartBeat", Integer.class);
 
     /**
+     * The key to specify a comma separated list of timeouts, in milliseconds, to wait after unicast message sends.
+     * The number of timeouts also specifies the number of times to retry before giving up.
+     * Default value is the list "150,250,400".
+     *
+     * @see #MULTICAST_TIMEOUTS_KEY
+     */
+    public static final Key<int[]> UNICAST_TIMEOUTS_KEY = Key.from("net.slp.datagramTimeouts", int[].class);
+
+    /**
      * The key to specify a comma separated list of IP addresses in case of multihomed hosts with no multicast
      * routing between interfaces.
      * Default value is the any address, "0.0.0.0".
@@ -104,6 +113,8 @@ public class Keys
     /**
      * The key to specify a comma separated list of timeouts, in milliseconds, in the multicast convergence algorithm.
      * Default value is the list "150,250,400,600,1000".
+     *
+     * @see #UNICAST_TIMEOUTS_KEY
      */
     public static final Key<int[]> MULTICAST_TIMEOUTS_KEY = Key.from("net.slp.multicastTimeouts", int[].class);
 
@@ -144,15 +155,20 @@ public class Keys
     public static final Key<Integer> DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY = Key.from("livetribe.slp.da.expired.services.purge.period", Integer.class);
 
     /**
+     * The key to specify the IP address to which the ServiceAgentClient connects to.
+     * Default value is 127.0.0.1
+     */
+    public static final Key<String> SA_CLIENT_CONNECT_ADDRESS = Key.from("livetribe.slp.sa.client.connect.address", String.class);
+
+    /**
      * The key to specify the full qualified name of the ServiceAgentClient factory class.
      */
     public static final Key<String> SA_CLIENT_FACTORY_KEY = Key.from("livetribe.slp.sa.client.factory", String.class);
 
     /**
-     * The key to specify the IP address to which the ServiceAgentClient connects to.
-     * Default value is 127.0.0.1
+     * The key to specify whether the ServiceAgentClient should use TCP to contact the ServiceAgentServer.
      */
-    public static final Key<String> SA_CLIENT_CONNECT_ADDRESS = Key.from("livetribe.slp.sa.client.connect.address", String.class);
+    public static final Key<Boolean> SA_CLIENT_USE_TCP = Key.from("livetribe.slp.sa.client.use.tcp", Boolean.class);
 
     /**
      * The key to specify the full qualified name of the ServiceAgent factory class.

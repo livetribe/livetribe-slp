@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,40 @@
  */
 package org.livetribe.slp.spi;
 
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 
 import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvDeReg;
-import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvDeRegPerformer extends SrvDeRegPerformer
+public class UDPSrvDeRegPerformer extends SrvDeRegPerformer
 {
-    private final TCPConnector tcpConnector;
+    private final UDPConnector udpConnector;
 
-    public TCPSrvDeRegPerformer(TCPConnector tcpConnector, Settings settings)
+    public UDPSrvDeRegPerformer(UDPConnector udpConnector, Settings settings)
     {
-        this.tcpConnector = tcpConnector;
+        this.udpConnector = udpConnector;
     }
 
     public SrvAck perform(InetSocketAddress remoteAddress, ServiceInfo service, boolean update)
     {
         SrvDeReg srvDeReg = newSrvDeReg(service, update);
         byte[] requestBytes = srvDeReg.serialize();
-        byte[] replyBytes = tcpConnector.writeAndRead(remoteAddress, requestBytes);
+
+        DatagramPacket packet = udpConnector.sendAndReceive(remoteAddress, requestBytes);
+        if (packet == null)
+            throw new ServiceLocationException("Unable to contact " + remoteAddress, ServiceLocationException.Error.NETWORK_ERROR);
+
+        byte[] replyBytes = new byte[packet.getLength()];
+        System.arraycopy(packet.getData(), packet.getOffset(), replyBytes, 0, replyBytes.length);
         return (SrvAck)Message.deserialize(replyBytes);
     }
 }

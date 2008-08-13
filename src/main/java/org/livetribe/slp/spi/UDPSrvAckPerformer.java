@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,27 @@ package org.livetribe.slp.spi;
 
 import java.net.InetSocketAddress;
 
-import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
-import org.livetribe.slp.spi.msg.SrvDeReg;
-import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvDeRegPerformer extends SrvDeRegPerformer
+public class UDPSrvAckPerformer extends SrvAckPerformer
 {
-    private final TCPConnector tcpConnector;
+    private final UDPConnector udpConnector;
 
-    public TCPSrvDeRegPerformer(TCPConnector tcpConnector, Settings settings)
+    public UDPSrvAckPerformer(UDPConnector udpConnector, Settings settings)
     {
-        this.tcpConnector = tcpConnector;
+        this.udpConnector = udpConnector;
     }
 
-    public SrvAck perform(InetSocketAddress remoteAddress, ServiceInfo service, boolean update)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, int errorCode)
     {
-        SrvDeReg srvDeReg = newSrvDeReg(service, update);
-        byte[] requestBytes = srvDeReg.serialize();
-        byte[] replyBytes = tcpConnector.writeAndRead(remoteAddress, requestBytes);
-        return (SrvAck)Message.deserialize(replyBytes);
+        SrvAck srvAck = newSrvAck(message, errorCode);
+        byte[] bytes = srvAck.serialize();
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }
 }

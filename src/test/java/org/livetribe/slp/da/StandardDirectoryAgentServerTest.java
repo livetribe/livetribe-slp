@@ -370,7 +370,21 @@ public class StandardDirectoryAgentServerTest
     }
 
     @Test
-    public void testServiceRegistration() throws Exception
+    public void testUDPServiceRegistration() throws Exception
+    {
+        Settings settings = newSettings();
+        testServiceRegistration(settings);
+    }
+
+    @Test
+    public void testTCPServiceRegistration() throws Exception
+    {
+        Settings settings = newSettings();
+        settings.put(SA_CLIENT_USE_TCP, true);
+        testServiceRegistration(settings);
+    }
+
+    private void testServiceRegistration(Settings saSettings) throws Exception
     {
         StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
         da.start();
@@ -379,7 +393,7 @@ public class StandardDirectoryAgentServerTest
         {
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi");
             ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.NONE);
-            ServiceAgentClient registrar = SLP.newServiceAgentClient(newSettings());
+            ServiceAgentClient registrar = SLP.newServiceAgentClient(saSettings);
             registrar.register(service);
             assert da.getServices().size() == 1;
             ServiceInfo registered = da.getServices().get(0);
@@ -434,7 +448,21 @@ public class StandardDirectoryAgentServerTest
     }
 
     @Test
-    public void testServiceUpdate() throws Exception
+    public void testUDPServiceUpdate() throws Exception
+    {
+        Settings settings = newSettings();
+        testServiceUpdate(settings);
+    }
+
+    @Test
+    public void testTCPServiceUpdate() throws Exception
+    {
+        Settings settings = newSettings();
+        settings.put(SA_CLIENT_USE_TCP, true);
+        testServiceUpdate(settings);
+    }
+
+    private void testServiceUpdate(Settings saSettings) throws Exception
     {
         StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
         da.start();
@@ -443,7 +471,7 @@ public class StandardDirectoryAgentServerTest
         {
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi");
             ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.from("(a=1,2),(b=true),(c=long string),(d=\\FF\\00),e"));
-            ServiceAgentClient registrar = SLP.newServiceAgentClient(newSettings());
+            ServiceAgentClient registrar = SLP.newServiceAgentClient(saSettings);
             registrar.register(service);
             assert da.getServices().size() == 1;
             ServiceInfo registered = da.getServices().get(0);
@@ -510,7 +538,21 @@ public class StandardDirectoryAgentServerTest
     }
 
     @Test
-    public void testServiceDeregistration() throws Exception
+    public void testUDPServiceDeregistration() throws Exception
+    {
+        Settings settings = newSettings();
+        testServiceDeregistration(settings);
+    }
+
+    @Test
+    public void testTCPServiceDeregistration() throws Exception
+    {
+        Settings settings = newSettings();
+        settings.put(SA_CLIENT_USE_TCP, true);
+        testServiceDeregistration(settings);
+    }
+
+    private void testServiceDeregistration(Settings saSettings) throws Exception
     {
         StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
         da.start();
@@ -519,7 +561,7 @@ public class StandardDirectoryAgentServerTest
         {
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///jmxrmi");
             ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.from("(a=1,2),(b=true),(c=long string),(d=\\FF\\00),e"));
-            ServiceAgentClient registrar = SLP.newServiceAgentClient(newSettings());
+            ServiceAgentClient registrar = SLP.newServiceAgentClient(saSettings);
             registrar.register(service);
             assert da.getServices().size() == 1;
 

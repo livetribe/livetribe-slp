@@ -100,7 +100,7 @@ public class ServiceAgentInfo
         return language;
     }
 
-    public String getHost()
+    public String getHostAddress()
     {
         return host;
     }

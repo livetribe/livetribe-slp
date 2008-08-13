@@ -35,11 +35,11 @@ public class UDPSAAdvertPerformer
         this.udpConnector = udpConnector;
     }
 
-    public void perform(InetSocketAddress remoteAddress, ServiceAgentInfo serviceAgent, Message message)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, ServiceAgentInfo serviceAgent, Message message)
     {
         SAAdvert saAdvert = newSAAdvert(serviceAgent, message);
         byte[] bytes = saAdvert.serialize();
-        udpConnector.unicastSend(serviceAgent.getHost(), remoteAddress, bytes);
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }
 
     private SAAdvert newSAAdvert(ServiceAgentInfo serviceAgent, Message message)
@@ -53,7 +53,7 @@ public class UDPSAAdvertPerformer
         saAdvert.setURL(serviceAgent.getURL());
         if (serviceAgent.hasIdentifier())
         {
-            IdentifierExtension extension = new IdentifierExtension(serviceAgent.getHost(), serviceAgent.getIdentifier());
+            IdentifierExtension extension = new IdentifierExtension(serviceAgent.getHostAddress(), serviceAgent.getIdentifier());
             saAdvert.addExtension(extension);
         }
         return saAdvert;

@@ -20,6 +20,7 @@ import java.util.Collection;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.DAAdvert;
+import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
@@ -38,9 +39,14 @@ public class MulticastDAAdvertPerformer
     {
         for (DirectoryAgentInfo directoryAgent : directoryAgents)
         {
+            String address = directoryAgent.getHostAddress();
+
+            // Skip advertisement on the loopback interface
+            if (NetUtils.getLoopbackAddress().getHostAddress().equals(address)) continue;
+
             DAAdvert daAdvert = newDAAdvert(directoryAgent, shutdown);
             byte[] bytes = daAdvert.serialize();
-            udpConnector.manycastSend(directoryAgent.getHostAddress(), bytes);
+            udpConnector.manycastSend(address, bytes);
         }
     }
 
