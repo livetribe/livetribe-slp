@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -270,7 +271,7 @@ public abstract class Message extends BytesBlock
             int offset = 0;
             byte version = bytes[offset];
             if (version != SLP_VERSION)
-                throw new ServiceLocationException("Unsupported SLP version " + version + ", only version " + SLP_VERSION + " is supported", ServiceLocationException.Error.VERSION_NOT_SUPPORTED);
+                throw new ServiceLocationException("Unsupported SLP version " + version + ", only version " + SLP_VERSION + " is supported", SLPError.VERSION_NOT_SUPPORTED);
 
             offset += VERSION_BYTES_LENGTH;
             byte messageType = bytes[offset];
@@ -278,7 +279,7 @@ public abstract class Message extends BytesBlock
             offset += MESSAGE_TYPE_BYTES_LENGTH;
             int length = readInt(bytes, offset, MESSAGE_LENGTH_BYTES_LENGTH);
             if (bytes.length != length)
-                throw new ServiceLocationException("Expected message length is " + length + ", got instead " + bytes.length, ServiceLocationException.Error.PARSE_ERROR);
+                throw new ServiceLocationException("Expected message length is " + length + ", got instead " + bytes.length, SLPError.PARSE_ERROR);
 
             offset += MESSAGE_LENGTH_BYTES_LENGTH;
             int flags = readInt(bytes, offset, FLAGS_BYTES_LENGTH);
@@ -319,7 +320,7 @@ public abstract class Message extends BytesBlock
         }
         catch (IndexOutOfBoundsException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException(x, SLPError.PARSE_ERROR);
         }
     }
 
@@ -356,7 +357,7 @@ public abstract class Message extends BytesBlock
             case SA_ADVERT_TYPE:
                 return new SAAdvert();
         }
-        throw new ServiceLocationException("Message not supported " + messageType, ServiceLocationException.Error.MESSAGE_NOT_SUPPORTED);
+        throw new ServiceLocationException("Message not supported " + messageType, SLPError.MESSAGE_NOT_SUPPORTED);
     }
 
     protected static byte[] serviceTypeToBytes(ServiceType serviceType)

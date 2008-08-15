@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
 import org.testng.annotations.Test;
@@ -257,15 +258,15 @@ public class MessageTest
     public void testAttrRplySerializeDeserialize()
     {
         AttrRply original = new AttrRply();
-        original.setErrorCode(3);
+        original.setSLPError(SLPError.INTERNAL_ERROR);
 
         byte[] serialized = original.serialize();
         AttrRply deserialized = (AttrRply)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
 
         original = new AttrRply();
-        original.setErrorCode(7);
+        original.setSLPError(SLPError.TYPE_ERROR);
         original.setAttributes(Attributes.from("(a=1,2),foo,(b=1),(separator=\\2c),(d=string),(condition=true),(cofee\\5Fbytes=\\FF\\CA\\FE)"));
         // TODO: test auth blocks
 //        original.setAuthenticationBlocks();
@@ -273,7 +274,7 @@ public class MessageTest
         serialized = original.serialize();
         deserialized = (AttrRply)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
         assert original.getAttributes().equals(deserialized.getAttributes());
         // TODO: test auth blocks
 //        assert Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks());

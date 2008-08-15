@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -35,7 +36,6 @@ import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
-import org.livetribe.slp.spi.MulticastSrvRqstPerformer;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRply;
@@ -43,6 +43,7 @@ import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
+import org.livetribe.slp.spi.ua.MulticastSrvRqstPerformer;
 import org.testng.annotations.Test;
 
 /**
@@ -360,7 +361,7 @@ public class StandardDirectoryAgentServerTest
             assert !daAdverts.isEmpty();
 
             // Multicast DASrvRqst is ignored by DA when scopes do not match
-            daAdverts = daSrvRqstPerformer.perform(Scopes.from("scope"), null, null);
+            daAdverts = daSrvRqstPerformer.perform(null, Scopes.from("scope"), null);
             assert daAdverts.isEmpty();
         }
         finally
@@ -412,7 +413,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.SCOPE_NOT_SUPPORTED;
+                assert x.getSLPError() == SLPError.SCOPE_NOT_SUPPORTED;
             }
 
             // Registration with no language must fail
@@ -424,7 +425,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+                assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
             }
 
             // Registration with invalid lifetime must fail
@@ -438,7 +439,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+                assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
             }
         }
         finally
@@ -488,7 +489,7 @@ public class StandardDirectoryAgentServerTest
             assert registered.getAttributes().equals(service.getAttributes());
 
             // Update with different attributes must pass
-            Attributes newAttributes = service.getAttributes().merge(Attributes.from("(b=false),(f=1)"));
+            Attributes newAttributes = service.getAttributes().union(Attributes.from("(b=false),(f=1)"));
             registrar.addAttributes(service.getServiceURL(), service.getLanguage(), newAttributes);
             assert da.getServices().size() == 1;
             registered = da.getServices().get(0);
@@ -514,7 +515,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
+                assert x.getSLPError() == SLPError.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
 
@@ -527,7 +528,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
+                assert x.getSLPError() == SLPError.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
         }
@@ -582,7 +583,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
+                assert x.getSLPError() == SLPError.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
 
@@ -595,7 +596,7 @@ public class StandardDirectoryAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_UPDATE;
+                assert x.getSLPError() == SLPError.INVALID_UPDATE;
                 assert da.getServices().size() == 1;
             }
         }

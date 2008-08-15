@@ -17,6 +17,7 @@ package org.livetribe.slp.spi.msg;
 
 import java.io.UnsupportedEncodingException;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -127,7 +128,7 @@ public class BytesBlock
         }
         catch (UnsupportedEncodingException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException(x, SLPError.PARSE_ERROR);
         }
     }
 
@@ -140,7 +141,7 @@ public class BytesBlock
         }
         catch (UnsupportedEncodingException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException(x, SLPError.PARSE_ERROR);
         }
     }
 
@@ -184,7 +185,7 @@ public class BytesBlock
                 }
                 else
                 {
-                    throw new ServiceLocationException("Unknown escaped character \\" + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.Error.PARSE_ERROR);
+                    throw new ServiceLocationException("Unknown escaped character \\" + codeString + " at position " + (i + 1) + " of " + value, SLPError.PARSE_ERROR);
                 }
             }
             else

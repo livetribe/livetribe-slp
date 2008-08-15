@@ -23,6 +23,7 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.sa.ServiceAgentClient;
@@ -52,7 +53,6 @@ public class StandardUserAgentClientTest
     {
         StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
         da.start();
-
         try
         {
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///test");
@@ -96,4 +96,72 @@ public class StandardUserAgentClientTest
             da.stop();
         }
     }
+
+    @Test
+    public void testFindAttributesWithServiceType()
+    {
+        StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
+        da.start();
+        try
+        {
+            ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
+
+            ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi:///jndi/rmi");
+            Attributes attributes1 = Attributes.from("(a=1)");
+            ServiceInfo service1 = new ServiceInfo(serviceURL1, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes1);
+            sa.register(service1);
+
+            ServiceURL serviceURL2 = new ServiceURL("service:jmx:iiop:///jndi/iiop");
+            Attributes attributes2 = Attributes.from("(a=2),(b=true)");
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes2);
+            sa.register(service2);
+
+            StandardUserAgentClient ua = StandardUserAgentClient.newInstance(newSettings());
+            ua.init();
+
+            ServiceType serviceType = new ServiceType("service:jmx");
+            Attributes attributes = ua.findAttributes(serviceType, null, null, null);
+            assert attributes.getSize() == 2;
+            Attributes.Value aValue = attributes.valueFor("a");
+            assert aValue.isMultiValued();
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+    @Test
+    public void testFindAttributesWithServiceURL()
+    {
+        StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
+        da.start();
+        try
+        {
+            ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
+
+            ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi:///jndi/rmi");
+            Attributes attributes1 = Attributes.from("(a=1)");
+            ServiceInfo service1 = new ServiceInfo(serviceURL1, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes1);
+            sa.register(service1);
+
+            ServiceURL serviceURL2 = new ServiceURL("service:jmx:iiop:///jndi/iiop");
+            Attributes attributes2 = Attributes.from("(a=2),(b=true)");
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes2);
+            sa.register(service2);
+
+            StandardUserAgentClient ua = StandardUserAgentClient.newInstance(newSettings());
+            ua.init();
+
+            Attributes attributes = ua.findAttributes(serviceURL2, null, null, null);
+            assert attributes.getSize() == 2;
+            assert attributes.equals(attributes2);
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
+
+
 }

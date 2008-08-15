@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi;
+package org.livetribe.slp.spi.ua;
 
 import java.util.List;
 
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.settings.Settings;
+import org.livetribe.slp.spi.Converger;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.LanguageExtension;
@@ -34,14 +35,14 @@ import org.livetribe.slp.spi.net.UDPConnector;
  */
 public class MulticastSrvRqstPerformer
 {
-    private final SrvRqstConverger converger;
+    private final Converger<SrvRply> converger;
 
     public MulticastSrvRqstPerformer(UDPConnector udpConnector, Settings settings)
     {
-        converger = new SrvRqstConverger(udpConnector, settings);
+        converger = new Converger<SrvRply>(udpConnector, settings);
     }
 
-    public List<SrvRply> perform(ServiceType serviceType, Scopes scopes, Filter filter, String language)
+    public List<SrvRply> perform(ServiceType serviceType, String language, Scopes scopes, Filter filter)
     {
         SrvRqst srvRqst = new SrvRqst();
         srvRqst.setLanguage(language);

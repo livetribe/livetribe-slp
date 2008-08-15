@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceType;
@@ -31,10 +32,9 @@ import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
-import org.livetribe.slp.spi.MulticastSrvRqstPerformer;
-import org.livetribe.slp.spi.TCPSrvRqstPerformer;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.filter.FilterParser;
+import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.msg.LanguageExtension;
@@ -54,6 +54,8 @@ public abstract class AbstractUserAgent implements IUserAgent
     private final MulticastDASrvRqstPerformer multicastDASrvRqst;
     private final TCPSrvRqstPerformer tcpSrvRqst;
     private final MulticastSrvRqstPerformer multicastSrvRqst;
+    private final TCPAttrRqstPerformer tcpAttrRqst;
+    private final MulticastAttrRqstPerformer multicastAttrRqst;
     private int port = Defaults.get(Keys.PORT_KEY);
 
     public AbstractUserAgent(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
@@ -61,6 +63,8 @@ public abstract class AbstractUserAgent implements IUserAgent
         this.multicastSrvRqst = new MulticastSrvRqstPerformer(udpConnector, settings);
         this.tcpSrvRqst = new TCPSrvRqstPerformer(tcpConnector, settings);
         this.multicastDASrvRqst = new MulticastDASrvRqstPerformer(udpConnector, settings);
+        this.tcpAttrRqst = new TCPAttrRqstPerformer(tcpConnector, settings);
+        this.multicastAttrRqst = new MulticastAttrRqstPerformer(udpConnector, settings);
         if (settings != null) setSettings(settings);
     }
 
@@ -89,18 +93,52 @@ public abstract class AbstractUserAgent implements IUserAgent
         {
             for (DirectoryAgentInfo directoryAgent : directoryAgents)
             {
-                InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getPort(port));
+                InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getTCPPort(port));
                 SrvRply srvRply = tcpSrvRqst.perform(address, serviceType, language, scopes, filter);
+                // TODO: handle error code
                 result.addAll(srvRplyToServiceInfos(srvRply, scopes));
             }
         }
         else
         {
-            List<SrvRply> srvRplys = multicastSrvRqst.perform(serviceType, scopes, filter, language);
+            List<SrvRply> srvRplys = multicastSrvRqst.perform(serviceType, language, scopes, filter);
             for (SrvRply srvRply : srvRplys)
             {
                 result.addAll(srvRplyToServiceInfos(srvRply, scopes));
             }
+        }
+
+        return result;
+    }
+
+    public Attributes findAttributes(ServiceType serviceType, String language, Scopes scopes, Attributes tags)
+    {
+        return findAttributes(serviceType.asString(), language, scopes, tags);
+    }
+
+    public Attributes findAttributes(ServiceURL serviceURL, String language, Scopes scopes, Attributes tags)
+    {
+        return findAttributes(serviceURL.getURL(), language, scopes, tags);
+    }
+
+    protected Attributes findAttributes(String url, String language, Scopes scopes, Attributes tags)
+    {
+        Attributes result = Attributes.NONE;
+
+        List<DirectoryAgentInfo> directoryAgents = findDirectoryAgents(scopes, null);
+        if (!directoryAgents.isEmpty())
+        {
+            for (DirectoryAgentInfo directoryAgent : directoryAgents)
+            {
+                InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getTCPPort(port));
+                AttrRply attrRply = tcpAttrRqst.perform(address, url, language, scopes, tags);
+                if (attrRply.getSLPError() == SLPError.NO_ERROR) result = result.merge(attrRply.getAttributes());
+            }
+        }
+        else
+        {
+            List<AttrRply> attrRplys = multicastAttrRqst.perform(url, language, scopes, tags);
+            for (AttrRply attrRply : attrRplys) result = result.merge(attrRply.getAttributes());
         }
 
         return result;
@@ -111,7 +149,7 @@ public abstract class AbstractUserAgent implements IUserAgent
     protected List<DirectoryAgentInfo> discoverDirectoryAgents(Scopes scopes, Filter filter)
     {
         List<DirectoryAgentInfo> result = new ArrayList<DirectoryAgentInfo>();
-        List<DAAdvert> daAdverts = multicastDASrvRqst.perform(scopes, filter, null);
+        List<DAAdvert> daAdverts = multicastDASrvRqst.perform(null, scopes, filter);
         for (DAAdvert daAdvert : daAdverts) result.add(DirectoryAgentInfo.from(daAdvert));
         if (logger.isLoggable(Level.FINE)) logger.fine("UserAgent " + this + " discovered DAs: " + result);
         return result;

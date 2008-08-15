@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi;
+package org.livetribe.slp.spi.sa;
 
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Settings;
@@ -45,7 +46,7 @@ public class UDPSrvDeRegPerformer extends SrvDeRegPerformer
 
         DatagramPacket packet = udpConnector.sendAndReceive(remoteAddress, requestBytes);
         if (packet == null)
-            throw new ServiceLocationException("Unable to contact " + remoteAddress, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException("Unable to contact " + remoteAddress, SLPError.NETWORK_ERROR);
 
         byte[] replyBytes = new byte[packet.getLength()];
         System.arraycopy(packet.getData(), packet.getOffset(), replyBytes, 0, replyBytes.length);

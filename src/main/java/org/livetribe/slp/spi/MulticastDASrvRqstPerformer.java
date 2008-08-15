@@ -32,14 +32,14 @@ import org.livetribe.slp.spi.net.UDPConnector;
 public class MulticastDASrvRqstPerformer
 {
     private final ServiceType serviceType = new ServiceType("service:directory-agent");
-    private final DASrvRqstConverger converger;
+    private final Converger<DAAdvert> converger;
 
     public MulticastDASrvRqstPerformer(UDPConnector udpConnector, Settings settings)
     {
-        converger = new DASrvRqstConverger(udpConnector, settings);
+        converger = new Converger<DAAdvert>(udpConnector, settings);
     }
 
-    public List<DAAdvert> perform(Scopes scopes, Filter filter, String language)
+    public List<DAAdvert> perform(String language, Scopes scopes, Filter filter)
     {
         SrvRqst srvRqst = new SrvRqst();
         srvRqst.setLanguage(language);

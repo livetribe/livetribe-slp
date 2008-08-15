@@ -22,6 +22,7 @@ import java.util.Set;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceURL;
 
 
 /**
@@ -185,5 +186,20 @@ public class AttrRqst extends Rqst
     public void setSecurityParameterIndex(String securityParameterIndex)
     {
         this.securityParameterIndex = securityParameterIndex;
+    }
+
+    public boolean isForServiceType()
+    {
+        // A ServiceType string cannot be parsed as ServiceURL
+        // If the parsing fails, it is a ServiceType, otherwise it is a ServiceURL
+        try
+        {
+            new ServiceURL(getURL());
+            return false;
+        }
+        catch (Exception x)
+        {
+            return true;
+        }
     }
 }

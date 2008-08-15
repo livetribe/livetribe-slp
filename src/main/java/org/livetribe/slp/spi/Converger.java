@@ -30,6 +30,7 @@ import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
+import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.Rqst;
 import org.livetribe.slp.spi.net.UDPConnector;
@@ -48,7 +49,7 @@ import org.livetribe.slp.spi.net.UDPConnector;
  *
  * @version $Revision$ $Date$
  */
-public abstract class Converger<T extends Rply>
+public class Converger<T extends Rply>
 {
     protected final Logger logger = Logger.getLogger(getClass().getName());
     private final UDPConnector udpConnector;
@@ -56,7 +57,7 @@ public abstract class Converger<T extends Rply>
     private int multicastMaxWait = Defaults.get(Keys.MULTICAST_MAX_WAIT_KEY);
     private int maxTransmissionUnit = Defaults.get(Keys.MAX_TRANSMISSION_UNIT_KEY);
 
-    protected Converger(UDPConnector udpConnector, Settings settings)
+    public Converger(UDPConnector udpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
         if (settings != null) setSettings(settings);
@@ -291,8 +292,21 @@ public abstract class Converger<T extends Rply>
      * If null is returned, it is like the reply did not arrive.
      *
      * @param rplyBytes the bytes to convert
-     * @param address
+     * @param address   the remote address from which the bytes arrive
      * @return a reply message or null if the message bytes are not a proper reply
      */
-    protected abstract T convert(byte[] rplyBytes, InetSocketAddress address);
+    protected T convert(byte[] rplyBytes, InetSocketAddress address)
+    {
+        Message message = Message.deserialize(rplyBytes);
+        try
+        {
+            return (T)message;
+        }
+        catch (ClassCastException x)
+        {
+            if (logger.isLoggable(Level.FINEST))
+                logger.finest("Ignoring message received from " + address + ": " + message + ", it is of the wrong type");
+            return null;
+        }
+    }
 }

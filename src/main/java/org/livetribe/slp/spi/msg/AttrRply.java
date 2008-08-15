@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -42,7 +43,7 @@ public class AttrRply extends Rply
     private static final int ATTRIBUTES_LENGTH_BYTES_LENGTH = 2;
     private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
 
-    private int errorCode;
+    private SLPError error;
     private Attributes attributes;
     private AuthenticationBlock[] authenticationBlocks;
 
@@ -65,7 +66,7 @@ public class AttrRply extends Rply
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
+        writeInt(getSLPError().getCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
 
         offset += ERROR_CODE_BYTES_LENGTH;
         writeInt(attrsLength, result, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
@@ -91,10 +92,10 @@ public class AttrRply extends Rply
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
+        setSLPError(SLPError.from(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH)));
 
         // The message may be truncated if an error occurred (RFC 2608, Chapter 7)
-        if (getErrorCode() != 0 && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
+        if (getSLPError() != SLPError.NO_ERROR && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
 
         offset += ERROR_CODE_BYTES_LENGTH;
         int attrsLength = readInt(bytes, offset, ATTRIBUTES_LENGTH_BYTES_LENGTH);
@@ -123,14 +124,14 @@ public class AttrRply extends Rply
         return ATTR_RPLY_TYPE;
     }
 
-    public int getErrorCode()
+    public SLPError getSLPError()
     {
-        return errorCode;
+        return error;
     }
 
-    public void setErrorCode(int errorCode)
+    public void setSLPError(SLPError error)
     {
-        this.errorCode = errorCode;
+        this.error = error;
     }
 
     public Attributes getAttributes()

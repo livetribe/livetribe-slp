@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,24 @@
  */
 package org.livetribe.slp.spi.ua;
 
-import java.util.List;
-
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
-import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.spi.msg.AttrRqst;
+import org.livetribe.slp.spi.msg.Message;
 
 /**
  * @version $Revision$ $Date$
  */
-public interface IUserAgent
+public class AttrRqstPerformer
 {
-    public List<ServiceInfo> findServices(ServiceType serviceType, String language, Scopes scopes, String filter);
-
-    public Attributes findAttributes(ServiceType serviceType, String language, Scopes scopes, Attributes tags);
-
-    public Attributes findAttributes(ServiceURL serviceURL, String language, Scopes scopes, Attributes tags);
+    protected AttrRqst newAttrRqst(String url, String language, Scopes scopes, Attributes tags)
+    {
+        AttrRqst attrRqst = new AttrRqst();
+        attrRqst.setXID(Message.newXID());
+        attrRqst.setLanguage(language);
+        attrRqst.setURL(url);
+        attrRqst.setScopes(scopes);
+        attrRqst.setTags(tags);
+        return attrRqst;
+    }
 }

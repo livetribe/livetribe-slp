@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -579,7 +580,7 @@ public class StandardServiceAgentTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+            assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
         }
         finally
         {
@@ -601,7 +602,7 @@ public class StandardServiceAgentTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+            assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
         }
         finally
         {
@@ -624,7 +625,7 @@ public class StandardServiceAgentTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.SCOPE_NOT_SUPPORTED;
+            assert x.getSLPError() == SLPError.SCOPE_NOT_SUPPORTED;
         }
         finally
         {

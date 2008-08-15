@@ -17,6 +17,7 @@ package org.livetribe.slp.settings;
 
 import java.io.IOException;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -36,7 +37,7 @@ public class Defaults
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException("Could not read default slp configuration", x, ServiceLocationException.Error.INTERNAL_SYSTEM_ERROR);
+            throw new ServiceLocationException("Could not read default slp configuration", x, SLPError.INTERNAL_SYSTEM_ERROR);
         }
     }
 

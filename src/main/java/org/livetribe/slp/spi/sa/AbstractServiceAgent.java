@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -37,8 +38,6 @@ import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.AbstractServer;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
 import org.livetribe.slp.spi.ServiceInfoCache;
-import org.livetribe.slp.spi.TCPSrvDeRegPerformer;
-import org.livetribe.slp.spi.TCPSrvRegPerformer;
 import org.livetribe.slp.spi.UDPSrvAckPerformer;
 import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.spi.filter.Filter;
@@ -229,7 +228,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     protected List<DirectoryAgentInfo> discoverDirectoryAgents(Scopes scopes, Filter filter)
     {
         List<DirectoryAgentInfo> result = new ArrayList<DirectoryAgentInfo>();
-        List<DAAdvert> daAdverts = multicastDASrvRqst.perform(scopes, filter, null);
+        List<DAAdvert> daAdverts = multicastDASrvRqst.perform(null, scopes, filter);
         for (DAAdvert daAdvert : daAdverts) result.add(DirectoryAgentInfo.from(daAdvert));
         if (logger.isLoggable(Level.FINE)) logger.fine("ServiceAgent " + this + " discovered DAs: " + result);
         return result;
@@ -254,14 +253,14 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     protected void registerServiceWithDirectoryAgent(ServiceInfo service, ServiceInfo oldService, ServiceInfo currentService, DirectoryAgentInfo directoryAgent, boolean update)
     {
-        InetSocketAddress daAddress = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getPort(port));
+        InetSocketAddress daAddress = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getTCPPort(port));
         SrvAck srvAck = tcpSrvReg.perform(daAddress, service, update);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != SrvAck.SUCCESS)
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not register service " + service + " to DirectoryAgent " + directoryAgent + ": error " + errorCode);
-            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.Error.from(errorCode));
+            throw new ServiceLocationException("Could not register service " + service, SLPError.from(errorCode));
         }
         else
         {
@@ -315,14 +314,14 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     protected void deregisterServiceWithDirectoryAgent(ServiceInfo service, ServiceInfo oldService, ServiceInfo currentService, DirectoryAgentInfo directoryAgent, boolean update)
     {
-        InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getPort(port));
+        InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getTCPPort(port));
         SrvAck srvAck = tcpSrvDeReg.perform(address, service, update);
         int errorCode = srvAck.getErrorCode();
         if (errorCode != SrvAck.SUCCESS)
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not deregister service " + service + " from DirectoryAgent " + directoryAgent + ": error " + errorCode);
-            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.Error.from(errorCode));
+            throw new ServiceLocationException("Could not deregister service " + service, SLPError.from(errorCode));
         }
         else
         {
@@ -408,7 +407,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getSLPError().getCode());
         }
     }
 
@@ -424,7 +423,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getSLPError().getCode());
         }
     }
 
@@ -459,7 +458,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not register service " + service + ", ServiceAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not register service " + service, SLPError.SCOPE_NOT_SUPPORTED);
         }
 
         return update ? services.addAttributes(service.getKey(), service.getAttributes()) : services.put(service);
@@ -477,7 +476,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not deregister service " + service + ", ServiceAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not deregister service " + service, SLPError.SCOPE_NOT_SUPPORTED);
         }
 
         return update ? services.removeAttributes(service.getKey(), service.getAttributes()) : services.remove(service.getKey());

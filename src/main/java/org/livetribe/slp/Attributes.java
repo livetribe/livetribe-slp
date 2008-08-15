@@ -167,9 +167,9 @@ public class Attributes
     public static byte[] opaqueToBytes(String opaqueString)
     {
         if (!opaqueString.startsWith(OPAQUE_PREFIX))
-            throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("Opaque strings must begin with " + OPAQUE_PREFIX, SLPError.PARSE_ERROR);
         if (opaqueString.length() % 3 != 0)
-            throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("Opaque strings must be of the form: [\\<HEX><HEX>]+", SLPError.PARSE_ERROR);
 
         byte[] result = new byte[(opaqueString.length() - OPAQUE_PREFIX.length()) / 3];
         int position = 0;
@@ -177,7 +177,7 @@ public class Attributes
         while (index < opaqueString.length())
         {
             if (opaqueString.charAt(index) != ESCAPE)
-                throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, ServiceLocationException.Error.PARSE_ERROR);
+                throw new ServiceLocationException("Invalid escape sequence at index " + index + " of " + opaqueString, SLPError.PARSE_ERROR);
             ++index;
             String hexString = opaqueString.substring(index, index + 2);
             result[position] = (byte)(Integer.parseInt(hexString, 16) & 0xFF);
@@ -285,7 +285,7 @@ public class Attributes
                 }
                 else
                 {
-                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.Error.PARSE_ERROR);
+                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE + codeString + " at position " + (i + 1) + " of " + value, SLPError.PARSE_ERROR);
                 }
             }
             else
@@ -299,7 +299,7 @@ public class Attributes
     private static void checkEscaped(String string, char[] reserved, boolean allowStar) throws ServiceLocationException
     {
         if (string.trim().length() == 0)
-            throw new ServiceLocationException("Escaped string could not be the empty string", ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("Escaped string could not be the empty string", SLPError.PARSE_ERROR);
         for (int i = 0; i < string.length(); ++i)
         {
             char ch = string.charAt(i);
@@ -308,7 +308,7 @@ public class Attributes
             // Allow globbing in tags
             if (ch == STAR && allowStar) continue;
             if (ch < reserved.length && reserved[ch] == ch)
-                throw new ServiceLocationException("Illegal character '" + ch + "' in " + string, ServiceLocationException.Error.PARSE_ERROR);
+                throw new ServiceLocationException("Illegal character '" + ch + "' in " + string, SLPError.PARSE_ERROR);
         }
     }
 
@@ -364,7 +364,7 @@ public class Attributes
             {
                 int close = escapedAttributeList.indexOf(')', open);
                 if (close < 0)
-                    throw new ServiceLocationException("Missing ')' in attribute list " + escapedAttributeList, ServiceLocationException.Error.PARSE_ERROR);
+                    throw new ServiceLocationException("Missing ')' in attribute list " + escapedAttributeList, SLPError.PARSE_ERROR);
                 tagList.append(escapedAttributeList.substring(start, open));
                 String attributeString = escapedAttributeList.substring(open, close + 1);
                 Attribute attribute = parseAttribute(attributeString, escapedAttributeList);
@@ -384,14 +384,14 @@ public class Attributes
         attribute = attribute.trim();
         if (attribute.length() == 0) return null;
         if (!attribute.startsWith("("))
-            throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing parenthesis around attribute " + attribute, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing parenthesis around attribute " + attribute, SLPError.PARSE_ERROR);
 
         int closeParenthesis = attribute.indexOf(')');
         String pair = attribute.substring(1, closeParenthesis);
 
         int equals = pair.indexOf('=');
         if (equals < 0)
-            throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing '=' in " + attribute, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("Could not parse attributes " + attributeList + ", missing '=' in " + attribute, SLPError.PARSE_ERROR);
 
         String escapedTag = pair.substring(0, equals).trim();
         Tag tag = Tag.from(escapedTag, false);
@@ -509,17 +509,19 @@ public class Attributes
     }
 
     /**
-     * Merges the attributes of this <code>Attributes</code> object with the attributes of the given <code>Attributes</code>
-     * object into a new <code>Attributes</code> object.
+     * Adds the attributes of the given <code>Attributes</code> object to this <code>Attributes</code> object,
+     * replacing duplicates, returning a new <code>Attributes</code> object.
      * If the given <code>Attributes</code> is null, a clone of this <code>Attributes</code> object will be returned.
      * If this <code>Attributes</code> contains a tag that exists in the given <code>Attributes</code>, the merged
      * <code>Attributes</code> will contain the value from the given <code>Attributes</code> object (overwriting the one
      * from this <code>Attributes</code> object).
      *
-     * @param that The <code>Attributes</code> to merge with
-     * @return A new <code>Attributes</code> object containing the merged attributes.
+     * @param that The <code>Attributes</code> to unite with
+     * @return A new <code>Attributes</code> object containing the union of the attributes.
+     * @see #complement(Attributes)
+     * @see #intersect(Attributes)
      */
-    public Attributes merge(Attributes that)
+    public Attributes union(Attributes that)
     {
         Attributes result = new Attributes(this);
         if (that != null) result.attributes.putAll(that.attributes);
@@ -527,18 +529,20 @@ public class Attributes
     }
 
     /**
-     * Unmerges the attributes of this <code>Attributes</code> object with the attributes of the given <code>Attributes</code>
-     * object into a new <code>Attributes</code> object.
-     * The unmerged <code>Attributes</code> will contain only the attributes whose tags are present in this
+     * Removes the attributes of this <code>Attributes</code> object that are present in the given
+     * <code>Attributes</code> object, returning a new <code>Attributes</code> object.
+     * The resulting <code>Attributes</code> will contain only the attributes whose tags are present in this
      * <code>Attributes</code> object but not in the given <code>Attributes</code> object.
      * If a tag in the given <code>Attributes</code> object contains the globbing character '*', all attributes in this
      * <code>Attributes</code> object that match will be removed.
      * If the given <code>Attributes</code> is null, a clone of this <code>Attributes</code> object will be returned.
      *
-     * @param that The <code>Attributes</code> to unmerge with
-     * @return A new <code>Attributes</code> object containing the unmerged attributes.
+     * @param that The <code>Attributes</code> to complement with
+     * @return A new <code>Attributes</code> object containing the complement of the attributes.
+     * @see #union(Attributes)
+     * @see #intersect(Attributes)
      */
-    public Attributes unmerge(Attributes that)
+    public Attributes complement(Attributes that)
     {
         Attributes result = new Attributes(this);
         if (that != null)
@@ -551,6 +555,45 @@ public class Attributes
                     if (tagToRemove.matches(tag)) tags.remove();
                 }
             }
+        }
+        return result;
+    }
+
+    /**
+     * Retains the attributes of this <code>Attributes</code> object that are present in the given
+     * <code>Attributes</code> object, returning a new <code>Attributes</code> object.
+     * The resulting <code>Attributes</code> will contain only the attributes whose tags are present in this
+     * <code>Attributes</code> object and in the given <code>Attributes</code> object.
+     * If the given <code>Attributes</code> is null or empty, {@link Attributes#NONE} will be returned.
+     *
+     * @param that The <code>Attributes</code> to intersect with
+     * @return A new <code>Attributes</code> object containing the intersection of the attributes.
+     * @see #union(Attributes)
+     * @see #complement(Attributes)
+     */
+    public Attributes intersect(Attributes that)
+    {
+        if (that == null || that.isEmpty()) return NONE;
+
+        Attributes result = new Attributes(this);
+        for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext();)
+        {
+            Tag tag = tags.next();
+            if (!that.attributes.containsKey(tag)) tags.remove();
+        }
+        return result;
+    }
+
+    public Attributes merge(Attributes that)
+    {
+        Attributes result = union(that);
+        Attributes intersection = intersect(that);
+        for (Tag tag : intersection.attributes.keySet())
+        {
+            Value thisValue = attributes.get(tag);
+            Value thatValue = that.attributes.get(tag);
+            Value mergedValue = thisValue.merge(thatValue);
+            result.attributes.put(tag, mergedValue);
         }
         return result;
     }
@@ -693,7 +736,7 @@ public class Attributes
             {
                 // It's not homogeneous, and there is one opaque value: RFC 2608, 5.0 says it's illegal.
                 if (opaquePresent)
-                    throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one value is opaque: " + Arrays.asList(attributeValues), ServiceLocationException.Error.PARSE_ERROR);
+                    throw new ServiceLocationException("Attribute values must be homogeneous: considering values to be strings, but one value is opaque: " + Arrays.asList(attributeValues), SLPError.PARSE_ERROR);
 
                 // Not homogeneus, convert everything to string
                 Object[] values = new Object[attributeValues.length];
@@ -717,7 +760,7 @@ public class Attributes
             // Is it a boolean ?
             if (isBoolean(value)) return new Value(Boolean.valueOf(value), Value.BOOLEAN);
 
-            // Then it's a tag
+            // Then it's a string
             return new Value(unescapeValue(value), Value.STRING);
         }
 
@@ -817,6 +860,65 @@ public class Attributes
             if (isPresenceType()) return null;
             if (multiValued) return (Object[])value;
             return new Object[]{value};
+        }
+
+        private Value merge(Value that)
+        {
+            if (isPresenceType())
+            {
+                if (that.isPresenceType())
+                    return new Value(null, PRESENCE);
+                else
+                    return new Value(that.value, that.type);
+            }
+            else if (isBooleanType())
+            {
+                if (that.isPresenceType() || that.isOpaqueType())
+                    return new Value(value, type);
+                else if (that.isBooleanType())
+                    return new Value(coalesceArrays(getValues(), that.getValues(), false), BOOLEAN);
+                else
+                    return new Value(coalesceArrays(getValues(), that.getValues(), true), STRING);
+            }
+            else if (isIntegerType())
+            {
+                if (that.isPresenceType() || that.isOpaqueType())
+                    return new Value(value, type);
+                else if (that.isIntegerType())
+                    return new Value(coalesceArrays(getValues(), that.getValues(), false), INTEGER);
+                else
+                    return new Value(coalesceArrays(getValues(), that.getValues(), true), STRING);
+            }
+            else if (isOpaqueType())
+            {
+                if (that.isPresenceType())
+                    return new Value(value, type);
+                else
+                    return new Value(that.value, that.type);
+            }
+            else
+            {
+                if (that.isPresenceType() || that.isOpaqueType())
+                    return new Value(value, type);
+                else
+                    return new Value(coalesceArrays(getValues(), that.getValues(), true), STRING);
+            }
+        }
+
+        private Object[] coalesceArrays(Object[] values1, Object[] values2, boolean convertToString)
+        {
+            Object[] result = new Object[values1.length + values2.length];
+            for (int i = 0; i < values1.length; i++)
+            {
+                Object value1 = values1[i];
+                result[i] = convertToString ? String.valueOf(value1) : value1;
+            }
+            for (int i = 0; i < values2.length; ++i)
+            {
+                Object value2 = values2[i];
+                result[values1.length + i] = convertToString ? String.valueOf(value2) : value2;
+            }
+            return result;
         }
 
         public boolean equals(Object obj)

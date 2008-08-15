@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
@@ -130,7 +131,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_ERROR);
         }
     }
 
@@ -159,7 +160,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not stop TCPConnectorServer " + this, SLPError.NETWORK_ERROR);
         }
     }
 

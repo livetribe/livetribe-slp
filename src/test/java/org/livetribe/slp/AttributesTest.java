@@ -93,7 +93,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert x.getSLPError() == SLPError.PARSE_ERROR;
         }
 
         // Character '_' is not allowed in tags of an attribute list
@@ -105,7 +105,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert x.getSLPError() == SLPError.PARSE_ERROR;
         }
 
         // Character '!' is not allowed in values of an attribute list
@@ -117,7 +117,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert x.getSLPError() == SLPError.PARSE_ERROR;
         }
     }
 
@@ -147,7 +147,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert x.getSLPError() == SLPError.PARSE_ERROR;
         }
 
         // Not a tag list
@@ -159,7 +159,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert x.getSLPError() == SLPError.PARSE_ERROR;
         }
 
         // Tag list with reserved character
@@ -171,7 +171,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert x.getSLPError() == SLPError.PARSE_ERROR;
         }
     }
 
@@ -220,7 +220,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException e)
         {
-            assert e.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert e.getSLPError() == SLPError.PARSE_ERROR;
         }
 
         try
@@ -230,7 +230,7 @@ public class AttributesTest
         }
         catch (ServiceLocationException e)
         {
-            assert e.getError() == ServiceLocationException.Error.PARSE_ERROR;
+            assert e.getSLPError() == SLPError.PARSE_ERROR;
         }
 
         try
@@ -310,11 +310,11 @@ public class AttributesTest
     }
 
     @Test
-    public void testMerge()
+    public void testUnion()
     {
         Attributes attributes1 = Attributes.from("(a=1)");
         Attributes attributes2 = Attributes.from("(b=true)");
-        Attributes result = attributes1.merge(attributes2);
+        Attributes result = attributes1.union(attributes2);
         assert attributes1.getSize() == 1;
         assert attributes1.containsTag("a");
         assert attributes2.getSize() == 1;
@@ -327,32 +327,32 @@ public class AttributesTest
     }
 
     @Test
-    public void testUnmerge()
+    public void testComplement()
     {
         Attributes attributes1 = Attributes.from("(a=1),(b=1,2),(c=3),cad,(cod=5)");
         Attributes attributes2 = Attributes.fromTags("a");
-        Attributes result = attributes1.unmerge(attributes2);
+        Attributes result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 4;
         assert !result.containsTag("a");
 
         attributes2 = Attributes.fromTags("cad");
-        result = attributes1.unmerge(attributes2);
+        result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 4;
         assert !result.containsTag("cad");
 
         attributes2 = Attributes.fromTags("*a");
-        result = attributes1.unmerge(attributes2);
+        result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 4;
         assert !result.containsTag("a");
 
         attributes2 = Attributes.fromTags("*a*");
-        result = attributes1.unmerge(attributes2);
+        result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 3;
@@ -360,7 +360,7 @@ public class AttributesTest
         assert !result.containsTag("cad");
 
         attributes2 = Attributes.fromTags("c*");
-        result = attributes1.unmerge(attributes2);
+        result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 2;
@@ -369,7 +369,7 @@ public class AttributesTest
         assert !result.containsTag("cod");
 
         attributes2 = Attributes.fromTags("c*d");
-        result = attributes1.unmerge(attributes2);
+        result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 3;
@@ -377,9 +377,58 @@ public class AttributesTest
         assert !result.containsTag("cod");
 
         attributes2 = Attributes.fromTags("*");
-        result = attributes1.unmerge(attributes2);
+        result = attributes1.complement(attributes2);
         assert attributes1.getSize() == 5;
         assert attributes2.getSize() == 1;
         assert result.getSize() == 0;
+    }
+
+    @Test
+    public void testMerge()
+    {
+        Attributes attributes1 = Attributes.from("(a=1),  (b=true), (c=string),(d=\\FF\\00), e,   (f=true),(g=true),(h=123456),i");
+        Attributes attributes2 = Attributes.from("(a=1,2),(b=false),(c=strong),(d=\\FF\\FF),(e=1), f,      (g=1234),(h=string),j");
+        Attributes merged = attributes1.merge(attributes2);
+
+        Attributes.Value aValue = merged.valueFor("a");
+        assert aValue.isIntegerType();
+        assert aValue.isMultiValued();
+        assert Arrays.equals(new Object[]{1, 1, 2}, aValue.getValues());
+
+        Attributes.Value bValue = merged.valueFor("b");
+        assert bValue.isBooleanType();
+        assert bValue.isMultiValued();
+        assert Arrays.equals(new Object[]{true, false}, bValue.getValues());
+
+        Attributes.Value cValue = merged.valueFor("c");
+        assert cValue.isStringType();
+        assert cValue.isMultiValued();
+        assert Arrays.equals(new Object[]{"string", "strong"}, cValue.getValues());
+
+        // No merge for opaque values
+        Attributes.Value dValue = merged.valueFor("d");
+        assert dValue.equals(attributes2.valueFor("d"));
+
+        // Presence values merge is particular
+        Attributes.Value eValue = merged.valueFor("e");
+        assert eValue.equals(attributes2.valueFor("e"));
+        Attributes.Value fValue = merged.valueFor("f");
+        assert fValue.equals(attributes1.valueFor("f"));
+
+        // Merge of boolean and integer yields string
+        Attributes.Value gValue = merged.valueFor("g");
+        assert gValue.isStringType();
+        assert gValue.isMultiValued();
+        assert Arrays.equals(new Object[]{"true", "1234"}, gValue.getValues());
+
+        // Merge of integer and string yields string
+        Attributes.Value hValue = merged.valueFor("h");
+        assert hValue.isStringType();
+        assert hValue.isMultiValued();
+        assert Arrays.equals(new Object[]{"123456", "string"}, hValue.getValues());
+
+        assert merged.containsTag("i");
+
+        assert merged.containsTag("j");
     }
 }

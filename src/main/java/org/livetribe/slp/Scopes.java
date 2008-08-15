@@ -258,7 +258,7 @@ public class Scopes
                 }
                 else
                 {
-                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, ServiceLocationException.Error.PARSE_ERROR);
+                    throw new ServiceLocationException("Unknown escaped character " + ESCAPE_PREFIX + codeString + " at position " + (i + 1) + " of " + value, SLPError.PARSE_ERROR);
                 }
             }
             else

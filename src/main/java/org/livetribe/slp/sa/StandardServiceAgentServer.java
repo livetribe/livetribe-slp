@@ -127,7 +127,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
 
     protected void doStart()
     {
-        setAttributes(getAttributes().merge(Attributes.from("(" + ServiceAgentInfo.TCP_PORT_TAG + "=" + getPort() + ")")));
+        setAttributes(getAttributes().union(Attributes.from("(" + ServiceAgentInfo.TCP_PORT_TAG + "=" + getPort() + ")")));
 
         super.doStart();
 
@@ -169,7 +169,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getError().getCode());
+            tcpSrvAck.perform(socket, srvReg, x.getSLPError().getCode());
         }
     }
 
@@ -193,7 +193,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getError().getCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError().getCode());
         }
     }
 

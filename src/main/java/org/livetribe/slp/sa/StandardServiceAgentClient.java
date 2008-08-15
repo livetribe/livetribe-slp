@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -28,14 +29,14 @@ import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.spi.TCPSrvDeRegPerformer;
-import org.livetribe.slp.spi.TCPSrvRegPerformer;
-import org.livetribe.slp.spi.UDPSrvDeRegPerformer;
-import org.livetribe.slp.spi.UDPSrvRegPerformer;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
+import org.livetribe.slp.spi.sa.TCPSrvDeRegPerformer;
+import org.livetribe.slp.spi.sa.TCPSrvRegPerformer;
+import org.livetribe.slp.spi.sa.UDPSrvDeRegPerformer;
+import org.livetribe.slp.spi.sa.UDPSrvRegPerformer;
 
 /**
  * @version $Revision$ $Date$
@@ -139,7 +140,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
-            throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", ServiceLocationException.Error.from(errorCode));
+            throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", SLPError.from(errorCode));
 
         if (logger.isLoggable(Level.FINE))
             logger.fine("Registered service " + service + " to ServiceAgent server");
@@ -165,7 +166,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 
         int errorCode = ack.getErrorCode();
         if (errorCode != 0)
-            throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", ServiceLocationException.Error.from(errorCode));
+            throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", SLPError.from(errorCode));
 
         if (logger.isLoggable(Level.FINE))
             logger.fine("Deregistered service " + service + " from ServiceAgent server");

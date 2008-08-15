@@ -193,16 +193,16 @@ public class ServiceInfo
      *
      * @param thatAttrs The <code>Attributes</code> to add to this instance's Attributes
      * @return A newly created <code>ServiceInfo</code> containing of the sum of the Attributes
-     * @see Attributes#merge(Attributes)
+     * @see Attributes#union(Attributes)
      */
     public ServiceInfo addAttributes(Attributes thatAttrs)
     {
         Attributes thisAttrs = getAttributes();
         Attributes mergedAttrs = null;
         if (thisAttrs == null)
-            mergedAttrs = thatAttrs == null ? null : thatAttrs.merge(null);
+            mergedAttrs = thatAttrs == null ? null : thatAttrs.union(null);
         else
-            mergedAttrs = thisAttrs.merge(thatAttrs);
+            mergedAttrs = thisAttrs.union(thatAttrs);
         return clone(getScopes(), mergedAttrs);
     }
 
@@ -213,14 +213,14 @@ public class ServiceInfo
      *
      * @param thatAttrs The <code>Attributes</code> tags to remove from this instance's Attributes
      * @return A newly created <code>ServiceInfo</code> containing the difference of the Attributes
-     * @see Attributes#unmerge(Attributes)
+     * @see Attributes#complement(Attributes)
      */
     public ServiceInfo removeAttributes(Attributes thatAttrs)
     {
         Attributes thisAttr = getAttributes();
         Attributes mergedAttrs = null;
         if (thisAttr != null)
-            mergedAttrs = thisAttr.unmerge(thatAttrs);
+            mergedAttrs = thisAttr.complement(thatAttrs);
         return clone(getScopes(), mergedAttrs);
     }
 

@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.net;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -33,7 +34,7 @@ public class NetUtils
         }
         catch (UnknownHostException x)
         {
-            throw new ServiceLocationException("Could not retrieve localhost", ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not retrieve localhost", SLPError.NETWORK_ERROR);
         }
     }
 
@@ -45,7 +46,7 @@ public class NetUtils
         }
         catch (UnknownHostException x)
         {
-            throw new ServiceLocationException("Could not retrieve host " + host, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not retrieve host " + host, SLPError.NETWORK_ERROR);
         }
     }
 

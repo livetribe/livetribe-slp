@@ -13,32 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi;
+package org.livetribe.slp.spi.sa;
 
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.URLEntry;
 
 /**
  * @version $Revision$ $Date$
  */
-public class SrvDeRegPerformer
+public class SrvRegPerformer
 {
-    protected SrvDeReg newSrvDeReg(ServiceInfo service, boolean update)
+    protected SrvReg newSrvReg(ServiceInfo service, boolean update)
     {
         ServiceURL serviceURL = service.getServiceURL();
         URLEntry urlEntry = new URLEntry();
         urlEntry.setLifetime(serviceURL.getLifetime());
         urlEntry.setURL(serviceURL.getURL());
-        SrvDeReg srvDeReg = new SrvDeReg();
-        srvDeReg.setFresh(!update);
-        srvDeReg.setURLEntry(urlEntry);
-        srvDeReg.setScopes(service.getScopes());
-        srvDeReg.setTags(service.getAttributes());
-        srvDeReg.setXID(Message.newXID());
-        srvDeReg.setLanguage(service.getLanguage());
-        return srvDeReg;
+        SrvReg srvReg = new SrvReg();
+        srvReg.setFresh(!update);
+        srvReg.setURLEntry(urlEntry);
+        srvReg.setServiceType(service.resolveServiceType());
+        srvReg.setScopes(service.getScopes());
+        srvReg.setAttributes(service.getAttributes());
+        srvReg.setXID(Message.newXID());
+        srvReg.setLanguage(service.getLanguage());
+        return srvReg;
     }
 }

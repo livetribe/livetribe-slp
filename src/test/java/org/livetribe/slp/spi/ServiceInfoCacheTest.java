@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -76,7 +77,7 @@ public class ServiceInfoCacheTest
         }
         catch (ServiceLocationException x)
         {
-            assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+            assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
         }
     }
 
@@ -99,7 +100,7 @@ public class ServiceInfoCacheTest
         assert cache.getSize() == 1;
         ServiceInfo merged = result.getCurrent();
         assert merged != null;
-        Attributes mergedAttributes = attributes1.merge(attributes2);
+        Attributes mergedAttributes = attributes1.union(attributes2);
         assert merged.getAttributes().equals(mergedAttributes);
     }
 
@@ -121,7 +122,7 @@ public class ServiceInfoCacheTest
         assert cache.getSize() == 1;
         ServiceInfo merged = result.getCurrent();
         assert merged != null;
-        Attributes mergedAttributes = attributes1.unmerge(attributes2);
+        Attributes mergedAttributes = attributes1.complement(attributes2);
         assert merged.getAttributes().equals(mergedAttributes);
     }
 

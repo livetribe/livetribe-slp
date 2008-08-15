@@ -24,6 +24,7 @@ import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
@@ -114,7 +115,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (SocketException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
         }
     }
 
@@ -149,7 +150,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
         }
     }
 
@@ -174,7 +175,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2008 the original author or authors
+ * Copyright 2005-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,42 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi;
+package org.livetribe.slp.spi.sa;
 
-import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 
 import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvReg;
-import org.livetribe.slp.spi.net.UDPConnector;
+import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class UDPSrvRegPerformer extends SrvRegPerformer
+public class TCPSrvRegPerformer extends SrvRegPerformer
 {
-    private final UDPConnector udpConnector;
+    private final TCPConnector tcpConnector;
 
-    public UDPSrvRegPerformer(UDPConnector udpConnector, Settings settings)
+    public TCPSrvRegPerformer(TCPConnector tcpConnector, Settings settings)
     {
-        this.udpConnector = udpConnector;
+        this.tcpConnector = tcpConnector;
     }
 
-    public SrvAck perform(InetSocketAddress remoteAddress, ServiceInfo service, boolean update)
+    public SrvAck perform(InetSocketAddress address, ServiceInfo service, boolean update)
     {
         SrvReg srvReg = newSrvReg(service, update);
         byte[] requestBytes = srvReg.serialize();
-
-        DatagramPacket packet = udpConnector.sendAndReceive(remoteAddress, requestBytes);
-        if (packet == null)
-            throw new ServiceLocationException("Unable to contact " + remoteAddress, ServiceLocationException.Error.NETWORK_ERROR);
-
-        byte[] replyBytes = new byte[packet.getLength()];
-        System.arraycopy(packet.getData(), packet.getOffset(), replyBytes, 0, replyBytes.length);
+        byte[] replyBytes = tcpConnector.writeAndRead(address, requestBytes);
         return (SrvAck)Message.deserialize(replyBytes);
     }
 }

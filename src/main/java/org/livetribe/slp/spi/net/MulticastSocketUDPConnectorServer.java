@@ -21,6 +21,7 @@ import java.net.MulticastSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
@@ -73,7 +74,7 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
         }
     }
 
@@ -92,7 +93,7 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
         }
     }
 }

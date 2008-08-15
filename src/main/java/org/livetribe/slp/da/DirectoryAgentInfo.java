@@ -16,6 +16,7 @@
 package org.livetribe.slp.da;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -107,10 +108,10 @@ public class DirectoryAgentInfo
         String authoritySeparator = "://";
         int index = url.indexOf(authoritySeparator);
         if (index < 0)
-            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, SLPError.PARSE_ERROR);
         String host = url.substring(index + authoritySeparator.length());
         if (host.trim().length() == 0)
-            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("DirectoryAgent URL is malformed: " + url, SLPError.PARSE_ERROR);
         return host;
     }
 
@@ -210,7 +211,7 @@ public class DirectoryAgentInfo
      * @param defaultPort the port to return if no information on the TCP port is available in the Attributes
      * @return the TCP port this DirectoryAgent is listening on, or the given port
      */
-    public int getPort(int defaultPort)
+    public int getTCPPort(int defaultPort)
     {
         return attributes.containsTag(TCP_PORT_TAG) ? (Integer)attributes.valueFor(TCP_PORT_TAG).getValue() : defaultPort;
     }

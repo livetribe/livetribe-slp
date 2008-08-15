@@ -28,10 +28,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
@@ -41,6 +43,7 @@ import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.AbstractServer;
 import org.livetribe.slp.spi.Server;
 import org.livetribe.slp.spi.ServiceInfoCache;
+import org.livetribe.slp.spi.TCPAttrRplyPerformer;
 import org.livetribe.slp.spi.TCPSrvAckPerformer;
 import org.livetribe.slp.spi.UDPSrvAckPerformer;
 import org.livetribe.slp.spi.da.MulticastDAAdvertPerformer;
@@ -48,6 +51,7 @@ import org.livetribe.slp.spi.da.TCPSrvRplyPerformer;
 import org.livetribe.slp.spi.da.UDPDAAdvertPerformer;
 import org.livetribe.slp.spi.da.UDPSrvRplyPerformer;
 import org.livetribe.slp.spi.filter.FilterParser;
+import org.livetribe.slp.spi.msg.AttrRqst;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvDeReg;
@@ -118,6 +122,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     private final TCPSrvRplyPerformer tcpSrvRply;
     private final UDPSrvAckPerformer udpSrvAck;
     private final TCPSrvAckPerformer tcpSrvAck;
+    private final TCPAttrRplyPerformer tcpAttrRply;
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
     private Scopes scopes = Scopes.from(Defaults.get(SCOPES_KEY));
@@ -162,6 +167,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         this.tcpSrvRply = new TCPSrvRplyPerformer(tcpConnector, settings);
         this.udpSrvAck = new UDPSrvAckPerformer(udpConnector, settings);
         this.tcpSrvAck = new TCPSrvAckPerformer(tcpConnector, settings);
+        this.tcpAttrRply = new TCPAttrRplyPerformer(tcpConnector, settings);
         if (settings != null) setSettings(settings);
     }
 
@@ -318,7 +324,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     {
         // Convert bootTime in seconds, as required by the DAAdvert message
         int bootTime = ((Long)TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())).intValue();
-        setAttributes(attributes.merge(Attributes.from("(" + DirectoryAgentInfo.TCP_PORT_TAG + "=" + port + ")")));
+        setAttributes(attributes.union(Attributes.from("(" + DirectoryAgentInfo.TCP_PORT_TAG + "=" + port + ")")));
         for (int i = 0; i < addresses.length; ++i)
             addresses[i] = NetUtils.convertWildcardAddress(NetUtils.getByName(addresses[i])).getHostAddress();
         for (String address : addresses)
@@ -416,7 +422,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
                 return;
             }
 
-            List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getScopes(), srvRqst.getFilter(), srvRqst.getLanguage());
+            List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
             if (logger.isLoggable(Level.FINE))
                 logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
             udpSrvRply.perform(localAddress, remoteAddress, srvRqst, matchingServices);
@@ -443,7 +449,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
             return;
         }
 
-        List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getScopes(), srvRqst.getFilter(), srvRqst.getLanguage());
+        List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
         tcpSrvRply.perform(socket, srvRqst, matchingServices);
         if (logger.isLoggable(Level.FINE))
             logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
@@ -458,10 +464,10 @@ public class StandardDirectoryAgentServer extends AbstractServer
      * @param language    the language to match or null to match any language
      * @return a list of matching services
      */
-    protected List<ServiceInfo> matchServices(ServiceType serviceType, Scopes scopes, String filter, String language)
+    protected List<ServiceInfo> matchServices(ServiceType serviceType, String language, Scopes scopes, String filter)
     {
         if (logger.isLoggable(Level.FINEST))
-            logger.finest("DirectoryAgent " + this + " matching ServiceType " + serviceType + ", scopes " + scopes + ", filter " + filter + ", language " + language);
+            logger.finest("DirectoryAgent " + this + " matching ServiceType " + serviceType + ", language " + language + ", scopes " + scopes + ", filter " + filter);
         return services.match(serviceType, language, scopes, new FilterParser().parse(filter));
     }
 
@@ -485,7 +491,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getSLPError().getCode());
         }
     }
 
@@ -508,7 +514,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getError().getCode());
+            tcpSrvAck.perform(socket, srvReg, x.getSLPError().getCode());
         }
     }
 
@@ -532,7 +538,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getSLPError().getCode());
         }
     }
 
@@ -555,8 +561,57 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getError().getCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError().getCode());
         }
+    }
+
+    /**
+     * Handles a unicast TCP AttrRqst message arrived to this directory agent.
+     * <br />
+     * This directory agent will reply with an AttrRply containing the result of the attribute request.
+     *
+     * @param attrRqst the AttrRqst message to handle
+     * @param socket   the socket connected to the client where to write the reply
+     */
+    protected void handleTCPAttrRqst(AttrRqst attrRqst, Socket socket)
+    {
+        // Match scopes
+        if (!scopes.weakMatch(attrRqst.getScopes()))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("DirectoryAgent " + this + " dropping message " + attrRqst + ": no scopes match among DA scopes " + scopes + " and message scopes " + attrRqst.getScopes());
+            return;
+        }
+
+        boolean isForServiceType = attrRqst.isForServiceType();
+        ServiceURL serviceURL = null;
+        ServiceType serviceType = null;
+        if (isForServiceType)
+        {
+            serviceURL = null;
+            serviceType = new ServiceType(attrRqst.getURL());
+        }
+        else
+        {
+            serviceURL = new ServiceURL(attrRqst.getURL());
+            serviceType = serviceURL.getServiceType();
+        }
+        List<ServiceInfo> services = matchServices(serviceType, attrRqst.getLanguage(), attrRqst.getScopes(), null);
+
+        Attributes attributes = Attributes.NONE;
+        for (ServiceInfo service : services)
+        {
+            if (isForServiceType)
+                attributes = attributes.merge(service.getAttributes());
+            else if (service.getServiceURL().equals(serviceURL))
+                attributes = attributes.merge(service.getAttributes());
+        }
+        Attributes tags = attrRqst.getTags();
+        if (!tags.isEmpty()) attributes = attributes.intersect(attrRqst.getTags());
+
+        tcpAttrRply.perform(socket, attrRqst, attributes);
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " returning attributes for service " + attrRqst.getURL() + ": " + attributes.asString());
     }
 
     /**
@@ -573,7 +628,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not register service " + service + ", DirectoryAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not register service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not register service " + service, SLPError.SCOPE_NOT_SUPPORTED);
         }
 
         if (update)
@@ -611,7 +666,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Could not deregister service " + service + ", DirectoryAgent scopes " + scopes + " do not match with service scopes " + service.getScopes());
-            throw new ServiceLocationException("Could not deregister service " + service, ServiceLocationException.Error.SCOPE_NOT_SUPPORTED);
+            throw new ServiceLocationException("Could not deregister service " + service, SLPError.SCOPE_NOT_SUPPORTED);
         }
 
         if (update)
@@ -685,6 +740,9 @@ public class StandardDirectoryAgentServer extends AbstractServer
                     break;
                 case Message.SRV_DEREG_TYPE:
                     handleTCPSrvDeReg((SrvDeReg)message, socket);
+                    break;
+                case Message.ATTR_RQST_TYPE:
+                    handleTCPAttrRqst((AttrRqst)message, socket);
                     break;
                 default:
                     if (logger.isLoggable(Level.FINE))

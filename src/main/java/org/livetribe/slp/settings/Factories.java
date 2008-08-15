@@ -15,6 +15,7 @@
  */
 package org.livetribe.slp.settings;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -78,7 +79,7 @@ public class Factories
         }
         catch (ClassNotFoundException x)
         {
-            throw new ServiceLocationException("Could not instantiate " + className, ServiceLocationException.Error.INTERNAL_SYSTEM_ERROR);
+            throw new ServiceLocationException("Could not instantiate " + className, SLPError.INTERNAL_SYSTEM_ERROR);
         }
     }
 
@@ -90,7 +91,7 @@ public class Factories
         }
         catch (Exception x)
         {
-            throw new ServiceLocationException("Could not instantiate " + klass, ServiceLocationException.Error.INTERNAL_SYSTEM_ERROR);
+            throw new ServiceLocationException("Could not instantiate " + klass, SLPError.INTERNAL_SYSTEM_ERROR);
         }
     }
 

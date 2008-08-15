@@ -23,6 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -101,12 +102,12 @@ public class ServiceInfoCache<T extends ServiceInfo>
         // RFC 2608, 7.0
         if (service.getLanguage() == null)
         {
-            throw new ServiceLocationException("Could not register service " + service + ", missing language", ServiceLocationException.Error.INVALID_REGISTRATION);
+            throw new ServiceLocationException("Could not register service " + service + ", missing language", SLPError.INVALID_REGISTRATION);
         }
         int lifetime = service.getServiceURL().getLifetime();
         if (lifetime != ServiceURL.LIFETIME_PERMANENT && (lifetime <= ServiceURL.LIFETIME_NONE || lifetime > ServiceURL.LIFETIME_MAXIMUM))
         {
-            throw new ServiceLocationException("Could not register service " + service + ", invalid lifetime " + lifetime, ServiceLocationException.Error.INVALID_REGISTRATION);
+            throw new ServiceLocationException("Could not register service " + service + ", invalid lifetime " + lifetime, SLPError.INVALID_REGISTRATION);
         }
     }
 
@@ -130,7 +131,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
             if (existingServiceType != null && !existingServiceType.equals(serviceType))
                 throw new ServiceLocationException("Invalid registration of service " + service.getKey() +
                         ": already registered under service type " + existingServiceType +
-                        ", cannot be registered also under service type " + serviceType, ServiceLocationException.Error.INVALID_REGISTRATION);
+                        ", cannot be registered also under service type " + serviceType, SLPError.INVALID_REGISTRATION);
             keysToServiceTypes.put(service.getKey(), serviceType);
             previous = keysToServiceInfos.put(service.getKey(), service);
             service.setRegistered(true);
@@ -193,7 +194,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
             previous = get(key);
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
             if (previous == null)
-                throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.Error.INVALID_UPDATE);
+                throw new ServiceLocationException("Could not find service to update " + key, SLPError.INVALID_UPDATE);
 
             current = (T)previous.addAttributes(attributes);
             keysToServiceInfos.put(current.getKey(), current);
@@ -227,7 +228,7 @@ public class ServiceInfoCache<T extends ServiceInfo>
             previous = get(key);
             // Updating a service that does not exist must fail (RFC 2608, 9.3)
             if (previous == null)
-                throw new ServiceLocationException("Could not find service to update " + key, ServiceLocationException.Error.INVALID_UPDATE);
+                throw new ServiceLocationException("Could not find service to update " + key, SLPError.INVALID_UPDATE);
 
             current = (T)previous.removeAttributes(attributes);
             keysToServiceInfos.put(current.getKey(), current);

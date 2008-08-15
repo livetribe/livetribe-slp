@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -39,7 +40,7 @@ public class ExpressionFilter implements Filter
         this.rhs = rhs;
         // Check if wildcard comparison is done properly (RFC 2608, 8.1)
         if (!EQ.equals(operator) && rhs.indexOf(ANY) >= 0)
-            throw new ServiceLocationException("Invalid filter " + this + ": wildcard matching is only allowed with operator " + EQ, ServiceLocationException.Error.PARSE_ERROR);
+            throw new ServiceLocationException("Invalid filter " + this + ": wildcard matching is only allowed with operator " + EQ, SLPError.PARSE_ERROR);
     }
 
     public boolean matches(Attributes attributes)

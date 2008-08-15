@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -87,7 +88,7 @@ public class StandardServiceAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.SCOPE_NOT_SUPPORTED;
+                assert x.getSLPError() == SLPError.SCOPE_NOT_SUPPORTED;
             }
         }
         finally
@@ -113,7 +114,7 @@ public class StandardServiceAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+                assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
             }
         }
         finally
@@ -139,7 +140,7 @@ public class StandardServiceAgentServerTest
             }
             catch (ServiceLocationException x)
             {
-                assert x.getError() == ServiceLocationException.Error.INVALID_REGISTRATION;
+                assert x.getSLPError() == SLPError.INVALID_REGISTRATION;
             }
         }
         finally

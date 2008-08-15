@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.net;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.*;
@@ -72,7 +73,7 @@ public class BroadcastSocketUDPConnector extends SocketUDPConnector
         }
         catch (SocketException x)
         {
-            throw new ServiceLocationException(x, ServiceLocationException.Error.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
         }
     }
 }
