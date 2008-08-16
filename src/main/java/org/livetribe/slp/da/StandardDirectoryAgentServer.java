@@ -344,7 +344,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
 
         // Directory agent send a DAAdvert on boot (RFC 2608, 12.1)
         if (logger.isLoggable(Level.FINEST))
-            logger.finest("DirectoryAgent " + StandardDirectoryAgentServer.this + " sending boot up DAAdvert");
+            logger.finest("DirectoryAgent " + StandardDirectoryAgentServer.this + " sending boot up DAAdverts: " + directoryAgents);
         multicastDAAdvert.perform(directoryAgents.values(), false);
 
         // Directory agents send unsolicited DAAdverts every advertisementPeriod seconds (RFC 2608, 12.2)
