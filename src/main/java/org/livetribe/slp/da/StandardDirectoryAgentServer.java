@@ -343,6 +343,8 @@ public class StandardDirectoryAgentServer extends AbstractServer
             scheduledExecutorService.scheduleWithFixedDelay(new ServicesPurger(), expiredServicesPurgePeriod, expiredServicesPurgePeriod, TimeUnit.SECONDS);
 
         // Directory agent send a DAAdvert on boot (RFC 2608, 12.1)
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("DirectoryAgent " + StandardDirectoryAgentServer.this + " sending boot up DAAdvert");
         multicastDAAdvert.perform(directoryAgents.values(), false);
 
         // Directory agents send unsolicited DAAdverts every advertisementPeriod seconds (RFC 2608, 12.2)
@@ -357,6 +359,8 @@ public class StandardDirectoryAgentServer extends AbstractServer
         scheduledExecutorService.shutdownNow();
 
         // Directory agents send a DAAdvert on shutdown (RFC 2608, 12.1)
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("DirectoryAgent " + StandardDirectoryAgentServer.this + " sending shut down DAAdvert");
         multicastDAAdvert.perform(directoryAgents.values(), true);
 
         tcpConnectorServer.removeMessageListener(tcpListener);
