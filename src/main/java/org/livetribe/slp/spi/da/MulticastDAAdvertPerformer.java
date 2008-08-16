@@ -41,8 +41,11 @@ public class MulticastDAAdvertPerformer
         {
             String address = directoryAgent.getHostAddress();
 
-            // Skip advertisement on the loopback interface
-            if (NetUtils.getLoopbackAddress().getHostAddress().equals(address)) continue;
+            if (NetUtils.getLoopbackAddress().getHostAddress().equals(address))
+            {
+                // Skip advertisement on the loopback interface if there are other interfaces
+                if (directoryAgents.size() > 1) continue;
+            }
 
             DAAdvert daAdvert = newDAAdvert(directoryAgent, shutdown);
             byte[] bytes = daAdvert.serialize();

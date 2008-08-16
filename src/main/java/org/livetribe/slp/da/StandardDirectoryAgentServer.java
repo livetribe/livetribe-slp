@@ -793,7 +793,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
         @Override
         public void run()
         {
-            StandardDirectoryAgentServer.this.stop();
+            if (StandardDirectoryAgentServer.this.isRunning()) StandardDirectoryAgentServer.this.stop();
         }
     }
 }
