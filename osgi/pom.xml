@@ -43,29 +43,15 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.0.0</version>
+                <version>1.4.3</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
                         <Export-Package>
-                            org.livetribe.slp.osgi,
-                            org.livetribe.slp,
-                            org.livetribe.slp.da,
-                            org.livetribe.slp.sa,
-                            org.livetribe.slp.settings,
-                            org.livetribe.slp.spi,
-                            org.livetribe.slp.spi.da,
-                            org.livetribe.slp.spi.filter,
-                            org.livetribe.slp.spi.msg,
-                            org.livetribe.slp.spi.net,
-                            org.livetribe.slp.spi.sa,
-                            org.livetribe.slp.spi.ua,
-                            org.livetribe.slp.ua,
-                            org.livetribe.slp.util,
-                            org.livetribe.slp.util.logging,
+                            org.livetribe.slp.*
                         </Export-Package>
-                        <Bundle-Classpath>.,lib/slp.jar</Bundle-Classpath>
-                        <Bundle-RequiredExecutionEnvironment>J2SE-1.5, JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
+                        <Bundle-ClassPath>.,lib/slp.jar</Bundle-ClassPath>
+                        <Bundle-RequiredExecutionEnvironment>J2SE-1.5,JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
                     </instructions>
                 </configuration>
             </plugin>

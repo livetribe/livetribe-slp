@@ -51,12 +51,6 @@
     <dependencyManagement>
         <dependencies>
 
-            <!-- dependency>
-                <groupId>org.livetribe.slp</groupId>
-                <artifactId>livetribe-slp</artifactId>
-                <version>${slpVersion}</version>
-            </dependency -->
-
             <dependency>
                 <groupId>org.osgi</groupId>
                 <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
