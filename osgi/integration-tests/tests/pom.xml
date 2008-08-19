@@ -2,15 +2,15 @@
 
     <parent>
         <groupId>org.livetribe.slp</groupId>
-        <artifactId>livetribe-slp-root</artifactId>
+        <artifactId>livetribe-slp-tests-root</artifactId>
         <version>2.1.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>livetribe-slp-osgi</artifactId>
-    <name>LiveTribe :: SLP OSGi</name>
-    <description>LiveTribe SLP OSGi wrapper</description>
-    <packaging>bundle</packaging>
+    <artifactId>livetribe-slp-osgi-tests</artifactId>
+    <name>LiveTribe :: SLP OSGi :: Tests :: Tests</name>
+    <description>LiveTribe SLP OSGi Tests</description>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
@@ -39,22 +39,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.3</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Export-Package>
-                            org.livetribe.slp.*
-                        </Export-Package>
-                        <Bundle-Activator>org.livetribe.slp.osgi.SlpBundleActivator</Bundle-Activator>
-                        <Bundle-ClassPath>.,lib/slp.jar</Bundle-ClassPath>
-                        <Bundle-RequiredExecutionEnvironment>J2SE-1.5,JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
-                    </instructions>
-                </configuration>
             </plugin>
         </plugins>
     </build>
