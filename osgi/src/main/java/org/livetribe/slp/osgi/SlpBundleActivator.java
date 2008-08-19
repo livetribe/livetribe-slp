@@ -29,7 +29,7 @@ public class SlpBundleActivator implements BundleActivator
 
     public void start(BundleContext bundleContext) throws Exception
     {
-        this.bundleContext = bundleContext;
+        System.err.println("symbolic name START " + bundleContext.getBundle().getSymbolicName());
     }
 
     public void stop(BundleContext bundleContext) throws Exception

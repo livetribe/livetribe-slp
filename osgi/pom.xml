@@ -50,6 +50,7 @@
                         <Export-Package>
                             org.livetribe.slp.*
                         </Export-Package>
+                        <Bundle-Activator>org.livetribe.slp.osgi.SlpBundleActivator</Bundle-Activator>
                         <Bundle-ClassPath>.,lib/slp.jar</Bundle-ClassPath>
                         <Bundle-RequiredExecutionEnvironment>J2SE-1.5,JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
                     </instructions>
@@ -61,15 +62,45 @@
     <dependencies>
 
         <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.osgi</groupId>
+            <artifactId>org.eclipse.osgi</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <classifier>jdk15</classifier>
-            <scope>test</scope>
+            <groupId>org.springframework.osgi</groupId>
+            <artifactId>spring-osgi-annotation</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.osgi</groupId>
+            <artifactId>spring-osgi-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.osgi</groupId>
+            <artifactId>spring-osgi-extender</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.osgi</groupId>
+            <artifactId>spring-osgi-io</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.osgi</groupId>
+            <artifactId>spring-osgi-test</artifactId>
         </dependency>
 
     </dependencies>
