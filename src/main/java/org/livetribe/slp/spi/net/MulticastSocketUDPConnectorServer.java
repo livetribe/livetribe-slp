@@ -74,7 +74,7 @@ public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_INIT_FAILED);
         }
     }
 

@@ -131,7 +131,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_INIT_FAILED);
         }
     }
 

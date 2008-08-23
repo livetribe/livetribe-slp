@@ -73,7 +73,7 @@ public class BroadcastSocketUDPConnector extends SocketUDPConnector
         }
         catch (SocketException x)
         {
-            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_INIT_FAILED);
         }
     }
 }

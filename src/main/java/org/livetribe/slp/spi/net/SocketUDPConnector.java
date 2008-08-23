@@ -115,7 +115,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (SocketException x)
         {
-            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_INIT_FAILED);
         }
     }
 

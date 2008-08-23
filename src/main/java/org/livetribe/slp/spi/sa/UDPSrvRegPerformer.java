@@ -46,7 +46,7 @@ public class UDPSrvRegPerformer extends SrvRegPerformer
 
         DatagramPacket packet = udpConnector.sendAndReceive(remoteAddress, requestBytes);
         if (packet == null)
-            throw new ServiceLocationException("Unable to contact " + remoteAddress, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException("Unable to contact " + remoteAddress, SLPError.NETWORK_TIMED_OUT);
 
         byte[] replyBytes = new byte[packet.getLength()];
         System.arraycopy(packet.getData(), packet.getOffset(), replyBytes, 0, replyBytes.length);
