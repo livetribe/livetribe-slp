@@ -351,9 +351,9 @@ public abstract class Message extends BytesBlock
             case DA_ADVERT_TYPE:
                 return new DAAdvert();
             case SRV_TYPE_RQST_TYPE:
-                break;
+                return new SrvTypeRqst();
             case SRV_TYPE_RPLY_TYPE:
-                break;
+                return new SrvTypeRply();
             case SA_ADVERT_TYPE:
                 return new SAAdvert();
         }
@@ -364,6 +364,14 @@ public abstract class Message extends BytesBlock
     {
         if (serviceType == null) return EMPTY_BYTES;
         return writeString(serviceType.asString(), true);
+    }
+
+    protected static byte[] serviceTypesToBytes(ServiceType[] serviceTypes)
+    {
+        if (serviceTypes == null) return EMPTY_BYTES;
+        String[] serviceTypeStrings = new String[serviceTypes.length];
+        for (int i = 0; i < serviceTypes.length; ++i) serviceTypeStrings[i] = serviceTypes[i].asString();
+        return writeStringArray(serviceTypeStrings, true);
     }
 
     protected static byte[] scopesToBytes(Scopes scopes)

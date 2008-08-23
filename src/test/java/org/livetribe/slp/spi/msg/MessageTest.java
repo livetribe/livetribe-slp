@@ -279,4 +279,50 @@ public class MessageTest
         // TODO: test auth blocks
 //        assert Arrays.equals(original.getAuthenticationBlocks(), deserialized.getAuthenticationBlocks());
     }
+
+    @Test
+    public void testSrvTypeRqstSerializeDeserialize()
+    {
+        SrvTypeRqst original = new SrvTypeRqst();
+        original.setNamingAuthority("foo");
+        original.setScopes(Scopes.from("scope1", "scope2"));
+
+        byte[] serialized = original.serialize();
+        SrvTypeRqst deserialized = (SrvTypeRqst)Message.deserialize(serialized);
+
+        assert deserialized.getNamingAuthority().equals(original.getNamingAuthority());
+        assert deserialized.getScopes().equals(original.getScopes());
+
+        original = new SrvTypeRqst();
+        original.setNamingAuthority("*");
+        original.setScopes(Scopes.from("scope1", "scope2"));
+
+        serialized = original.serialize();
+        deserialized = (SrvTypeRqst)Message.deserialize(serialized);
+
+        assert deserialized.getNamingAuthority().equals(original.getNamingAuthority());
+        assert deserialized.getScopes().equals(original.getScopes());
+    }
+
+    @Test
+    public void testSrvTypeRplySerializeDeserialize()
+    {
+        SrvTypeRply original = new SrvTypeRply();
+        original.setSLPError(SLPError.INTERNAL_ERROR);
+
+        byte[] serialized = original.serialize();
+        SrvTypeRply deserialized = (SrvTypeRply)Message.deserialize(serialized);
+
+        assert original.getSLPError() == deserialized.getSLPError();
+
+        original = new SrvTypeRply();
+        original.setSLPError(SLPError.TYPE_ERROR);
+        original.setServiceTypes(new ServiceType("service:foo:bar"), new ServiceType("service:http"));
+
+        serialized = original.serialize();
+        deserialized = (SrvTypeRply)Message.deserialize(serialized);
+
+        assert original.getSLPError() == deserialized.getSLPError();
+        assert Arrays.equals(original.getServiceTypes(), deserialized.getServiceTypes());
+    }
 }
