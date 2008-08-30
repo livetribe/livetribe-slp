@@ -366,14 +366,6 @@ public abstract class Message extends BytesBlock
         return writeString(serviceType.asString(), true);
     }
 
-    protected static byte[] serviceTypesToBytes(ServiceType[] serviceTypes)
-    {
-        if (serviceTypes == null) return EMPTY_BYTES;
-        String[] serviceTypeStrings = new String[serviceTypes.length];
-        for (int i = 0; i < serviceTypes.length; ++i) serviceTypeStrings[i] = serviceTypes[i].asString();
-        return writeStringArray(serviceTypeStrings, true);
-    }
-
     protected static byte[] scopesToBytes(Scopes scopes)
     {
         if (scopes == null) return EMPTY_BYTES;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,46 @@ package org.livetribe.slp.spi.sa;
 import java.net.InetSocketAddress;
 
 import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.settings.Defaults;
+import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvDeRegPerformer extends SrvDeRegPerformer
+public class UnicastSrvDeRegPerformer extends SrvDeRegPerformer
 {
+    private final UDPConnector udpConnector;
     private final TCPConnector tcpConnector;
+    private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
 
-    public TCPSrvDeRegPerformer(TCPConnector tcpConnector, Settings settings)
+    public UnicastSrvDeRegPerformer(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
+        this.udpConnector = udpConnector;
         this.tcpConnector = tcpConnector;
+        if (settings != null) setSettings(settings);
     }
 
-    public SrvAck perform(InetSocketAddress remoteAddress, ServiceInfo service, boolean update)
+    private void setSettings(Settings settings)
+    {
+        if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
+            this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
+    }
+
+    public SrvAck perform(InetSocketAddress remoteAddress, boolean preferTCP, ServiceInfo service, boolean update)
     {
         SrvDeReg srvDeReg = newSrvDeReg(service, update);
         byte[] requestBytes = srvDeReg.serialize();
-        byte[] replyBytes = tcpConnector.writeAndRead(remoteAddress, requestBytes);
+        byte[] replyBytes = null;
+        if (preferTCP || requestBytes.length > maxTransmissionUnit)
+            replyBytes = tcpConnector.writeAndRead(remoteAddress, requestBytes);
+        else
+            replyBytes = udpConnector.sendAndReceive(remoteAddress, requestBytes);
         return (SrvAck)Message.deserialize(replyBytes);
     }
 }

@@ -74,7 +74,9 @@ public class StandardUserAgentTest
             ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
             sa.register(service);
 
-            StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+            Settings uaSettings = newSettings();
+            uaSettings.put(UA_UNICAST_PREFER_TCP, true);
+            StandardUserAgent ua = StandardUserAgent.newInstance(uaSettings);
             ua.start();
             try
             {

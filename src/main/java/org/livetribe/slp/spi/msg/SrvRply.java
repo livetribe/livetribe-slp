@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.msg;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -41,8 +42,8 @@ public class SrvRply extends Rply
     private static final int ERROR_CODE_BYTES_LENGTH = 2;
     private static final int URL_ENTRIES_COUNT_BYTES_LENGTH = 2;
 
-    private int errorCode;
-    private List<URLEntry> urlEntries = new ArrayList<URLEntry>();
+    private final List<URLEntry> urlEntries = new ArrayList<URLEntry>();
+    private SLPError error = SLPError.NO_ERROR;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
@@ -60,7 +61,7 @@ public class SrvRply extends Rply
         byte[] result = new byte[ERROR_CODE_BYTES_LENGTH + URL_ENTRIES_COUNT_BYTES_LENGTH + urlEntriesBytesSum];
 
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
+        writeInt(getSLPError().getCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
 
         offset += ERROR_CODE_BYTES_LENGTH;
         writeInt(urlEntriesCount, result, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
@@ -80,10 +81,10 @@ public class SrvRply extends Rply
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
+        setSLPError(SLPError.from(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH)));
 
         // The message may be truncated if an error occurred (RFC 2608, Chapter 7)
-        if (getErrorCode() != 0 && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
+        if (getSLPError() != SLPError.NO_ERROR && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
 
         offset += ERROR_CODE_BYTES_LENGTH;
         int urlEntryCount = readInt(bytes, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
@@ -102,14 +103,14 @@ public class SrvRply extends Rply
         return SRV_RPLY_TYPE;
     }
 
-    public int getErrorCode()
+    public SLPError getSLPError()
     {
-        return errorCode;
+        return error;
     }
 
-    public void setErrorCode(int errorCode)
+    public void setSLPError(SLPError error)
     {
-        this.errorCode = errorCode;
+        this.error = error;
     }
 
     public List<URLEntry> getURLEntries()

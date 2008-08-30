@@ -33,6 +33,7 @@ import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.testng.annotations.Test;
 
@@ -77,7 +78,8 @@ public class StandardUserAgentClientTest
             try
             {
                 Settings uaSettings = newSettings();
-                uaSettings.put(DA_ADDRESSES_KEY, new String[]{"127.0.0.1"});
+                uaSettings.put(DA_ADDRESSES_KEY, new String[]{NetUtils.getLoopbackAddress().getHostAddress()});
+                uaSettings.put(UA_UNICAST_PREFER_TCP, true);
                 StandardUserAgentClient ua = StandardUserAgentClient.newInstance(uaSettings);
                 ua.init();
 
@@ -162,6 +164,4 @@ public class StandardUserAgentClientTest
             da.stop();
         }
     }
-
-
 }

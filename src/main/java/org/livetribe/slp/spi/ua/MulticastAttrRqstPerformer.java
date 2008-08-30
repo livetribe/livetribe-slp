@@ -40,6 +40,7 @@ public class MulticastAttrRqstPerformer extends AttrRqstPerformer
     public List<AttrRply> perform(String url, String language, Scopes scopes, Attributes tags)
     {
         AttrRqst attrRqst = newAttrRqst(url, language, scopes, tags);
+        attrRqst.setMulticast(true);
         return converger.converge(attrRqst);
     }
 }

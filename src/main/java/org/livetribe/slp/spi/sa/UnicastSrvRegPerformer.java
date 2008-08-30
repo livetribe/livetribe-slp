@@ -15,41 +15,49 @@
  */
 package org.livetribe.slp.spi.sa;
 
-import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 
-import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.settings.Defaults;
+import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvReg;
+import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class UDPSrvRegPerformer extends SrvRegPerformer
+public class UnicastSrvRegPerformer extends SrvRegPerformer
 {
     private final UDPConnector udpConnector;
+    private final TCPConnector tcpConnector;
+    private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
 
-    public UDPSrvRegPerformer(UDPConnector udpConnector, Settings settings)
+    public UnicastSrvRegPerformer(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
+        this.tcpConnector = tcpConnector;
+        if (settings != null) setSettings(settings);
     }
 
-    public SrvAck perform(InetSocketAddress remoteAddress, ServiceInfo service, boolean update)
+    private void setSettings(Settings settings)
+    {
+        if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
+            this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
+    }
+
+    public SrvAck perform(InetSocketAddress remoteAddress, boolean preferTCP, ServiceInfo service, boolean update)
     {
         SrvReg srvReg = newSrvReg(service, update);
         byte[] requestBytes = srvReg.serialize();
-
-        DatagramPacket packet = udpConnector.sendAndReceive(remoteAddress, requestBytes);
-        if (packet == null)
-            throw new ServiceLocationException("Unable to contact " + remoteAddress, SLPError.NETWORK_TIMED_OUT);
-
-        byte[] replyBytes = new byte[packet.getLength()];
-        System.arraycopy(packet.getData(), packet.getOffset(), replyBytes, 0, replyBytes.length);
+        byte[] replyBytes = null;
+        if (preferTCP || requestBytes.length > maxTransmissionUnit)
+            replyBytes = tcpConnector.writeAndRead(remoteAddress, requestBytes);
+        else
+            replyBytes = udpConnector.sendAndReceive(remoteAddress, requestBytes);
         return (SrvAck)Message.deserialize(replyBytes);
     }
 }

@@ -96,7 +96,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         for (int i = 0; i < size; ++i)
         {
             InetSocketAddress bindAddress = new InetSocketAddress(addresses[i], port);
-            serverSockets[i] = createServerSocket(bindAddress);
+            serverSockets[i] = newServerSocket(bindAddress);
             if (logger.isLoggable(Level.FINE)) logger.fine("Bound server socket to " + bindAddress);
             acceptors[i] = new Acceptor(serverSockets[i]);
             accept(acceptors[i]);
@@ -113,11 +113,11 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_INIT_FAILED);
         }
     }
 
-    private ServerSocket createServerSocket(InetSocketAddress address)
+    protected ServerSocket newServerSocket(InetSocketAddress address)
     {
         try
         {
@@ -128,7 +128,7 @@ public class SocketTCPConnectorServer extends AbstractConnectorServer implements
         }
         catch (IOException x)
         {
-            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_INIT_FAILED);
         }
     }
 

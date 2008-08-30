@@ -15,33 +15,46 @@
  */
 package org.livetribe.slp.spi.ua;
 
-import java.util.List;
+import java.net.InetSocketAddress;
 
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.spi.Converger;
 import org.livetribe.slp.spi.filter.Filter;
+import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class MulticastSrvRqstPerformer extends SrvRqstPerformer
+public class UnicastSrvRqstPerformer extends SrvRqstPerformer
 {
-    private final Converger<SrvRply> converger;
+    private final UDPConnector udpConnector;
+    private final TCPConnector tcpConnector;
 
-    public MulticastSrvRqstPerformer(UDPConnector udpConnector, Settings settings)
+    public UnicastSrvRqstPerformer(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
-        converger = new Converger<SrvRply>(udpConnector, settings);
+        this.udpConnector = udpConnector;
+        this.tcpConnector = tcpConnector;
+        if (settings != null) setSettings(settings);
     }
 
-    public List<SrvRply> perform(ServiceType serviceType, String language, Scopes scopes, Filter filter)
+    private void setSettings(Settings settings)
+    {
+    }
+
+    public SrvRply perform(InetSocketAddress address, boolean preferTCP, ServiceType serviceType, String language, Scopes scopes, Filter filter)
     {
         SrvRqst srvRqst = newSrvRqst(serviceType, language, scopes, filter);
-        srvRqst.setMulticast(true);
-        return converger.converge(srvRqst);
+        byte[] srvRqstBytes = srvRqst.serialize();
+        byte[] srvRplyBytes = null;
+        if (preferTCP)
+            srvRplyBytes = tcpConnector.writeAndRead(address, srvRqstBytes);
+        else
+            srvRplyBytes = udpConnector.sendAndReceive(address, srvRqstBytes);
+        return (SrvRply)Message.deserialize(srvRplyBytes);
     }
 }

@@ -203,17 +203,19 @@ public class DirectoryAgentInfo
     }
 
     /**
-     * Returns the TCP port this DirectoryAgent is listening on, if this information is available in the Attributes
-     * via the {@link #TCP_PORT_TAG dedicated tag}.
+     * Returns the unicast port this DirectoryAgent is listening on, if this information is available in the Attributes
+     * via the dedicated tags.
      * <br />
-     * If the TCP port information is not available in the Attributes, returns the given port.
+     * If the unicast port information is not available in the Attributes, returns the given port.
      *
-     * @param defaultPort the port to return if no information on the TCP port is available in the Attributes
-     * @return the TCP port this DirectoryAgent is listening on, or the given port
+     * @param tcp         whether the unicast port to return must be a TCP port or not
+     * @param defaultPort the port to return if no information on the unicast port is available in the Attributes
+     * @return the unicast port this DirectoryAgent is listening on, or the given port
      */
-    public int getTCPPort(int defaultPort)
+    public int getUnicastPort(boolean tcp, int defaultPort)
     {
-        return attributes.containsTag(TCP_PORT_TAG) ? (Integer)attributes.valueFor(TCP_PORT_TAG).getValue() : defaultPort;
+        if (tcp && attributes.containsTag(TCP_PORT_TAG)) return (Integer)attributes.valueFor(TCP_PORT_TAG).getValue();
+        return defaultPort;
     }
 
     @Override

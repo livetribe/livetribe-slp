@@ -18,7 +18,9 @@ package org.livetribe.slp.spi.da;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceInfo;
+import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.Message;
@@ -31,16 +33,30 @@ import org.livetribe.slp.spi.net.UDPConnector;
 public class UDPSrvRplyPerformer extends SrvRplyPerformer
 {
     private final UDPConnector udpConnector;
+    private int maxTransmissionUnit;
 
     public UDPSrvRplyPerformer(UDPConnector udpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
+        if (settings != null) setSettings(settings);
+    }
+
+    private void setSettings(Settings settings)
+    {
+        if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
+            this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
     }
 
     public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, List<? extends ServiceInfo> services)
     {
-        // TODO: must be sure to fit the MTU in case of many services
-        SrvRply srvRply = newSrvRply(message, services);
+        SrvRply srvRply = newSrvRply(message, services, maxTransmissionUnit);
+        byte[] bytes = srvRply.serialize();
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
+    }
+
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, SLPError error)
+    {
+        SrvRply srvRply = newSrvRply(message, error);
         byte[] bytes = srvRply.serialize();
         udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }

@@ -70,9 +70,9 @@ public interface UDPConnector
      *
      * @param remoteAddress the remote address to send the bytes to
      * @param bytes         the bytes to send
-     * @return the DatagramPacket received
+     * @return the bytes received
      */
-    public DatagramPacket sendAndReceive(InetSocketAddress remoteAddress, byte[] bytes);
+    public byte[] sendAndReceive(InetSocketAddress remoteAddress, byte[] bytes);
 
     /**
      * Sends the given bytes to the SLP multicast (or broadcast) address and SLP notification port from the given local address.

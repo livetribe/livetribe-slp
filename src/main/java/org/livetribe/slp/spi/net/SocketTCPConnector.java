@@ -87,6 +87,10 @@ public class SocketTCPConnector implements TCPConnector
             write(socket, bytes);
             return read(socket);
         }
+        catch (SocketTimeoutException x)
+        {
+            throw new ServiceLocationException(x, SLPError.NETWORK_TIMED_OUT);
+        }
         catch (IOException x)
         {
             throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);

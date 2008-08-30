@@ -75,15 +75,15 @@ public class MessageTest
     public void testSrvRplySerializedDeserialize() throws Exception
     {
         SrvRply original = new SrvRply();
-        original.setErrorCode(1);
+        original.setSLPError(SLPError.BUSY_NOW);
 
         byte[] serialized = original.serialize();
         SrvRply deserialized = (SrvRply)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
 
         original = new SrvRply();
-        original.setErrorCode(0);
+        original.setSLPError(SLPError.NOT_IMPLEMENTED);
         URLEntry entry1 = new URLEntry();
         entry1.setURL("url1=");
         entry1.setLifetime(123);
@@ -96,7 +96,7 @@ public class MessageTest
         serialized = original.serialize();
         deserialized = (SrvRply)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
         assert original.getURLEntries().equals(deserialized.getURLEntries());
     }
 
@@ -104,15 +104,15 @@ public class MessageTest
     public void testDAAdvertSerializeDeserialize() throws Exception
     {
         DAAdvert original = new DAAdvert();
-        original.setErrorCode(1);
+        original.setSLPError(SLPError.BUSY_NOW);
 
         byte[] serialized = original.serialize();
         DAAdvert deserialized = (DAAdvert)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
 
         original = new DAAdvert();
-        original.setErrorCode(1);
+        original.setSLPError(SLPError.INTERNAL_SYSTEM_ERROR);
         Long bootTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
         original.setBootTime(bootTime.intValue());
         original.setURL("service:directory-agent://test");
@@ -126,7 +126,7 @@ public class MessageTest
         serialized = original.serialize();
         deserialized = (DAAdvert)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
         assert original.getBootTime() == deserialized.getBootTime();
         assert original.getURL().equals(deserialized.getURL());
         assert original.getScopes().equals(deserialized.getScopes());
@@ -140,11 +140,11 @@ public class MessageTest
     public void testSrvAckSerializeDeserialize() throws Exception
     {
         SrvAck original = new SrvAck();
-        original.setErrorCode(1);
+        original.setSLPError(SLPError.TYPE_ERROR);
         byte[] serialized = original.serialize();
         SrvAck deserialized = (SrvAck)Message.deserialize(serialized);
 
-        assert original.getErrorCode() == deserialized.getErrorCode();
+        assert original.getSLPError() == deserialized.getSLPError();
     }
 
     @Test
@@ -317,12 +317,13 @@ public class MessageTest
 
         original = new SrvTypeRply();
         original.setSLPError(SLPError.TYPE_ERROR);
-        original.setServiceTypes(new ServiceType("service:foo:bar"), new ServiceType("service:http"));
+        original.addServiceType(new ServiceType("service:foo:bar"));
+        original.addServiceType(new ServiceType("service:http"));
 
         serialized = original.serialize();
         deserialized = (SrvTypeRply)Message.deserialize(serialized);
 
         assert original.getSLPError() == deserialized.getSLPError();
-        assert Arrays.equals(original.getServiceTypes(), deserialized.getServiceTypes());
+        assert original.getServiceTypes().equals(deserialized.getServiceTypes());
     }
 }

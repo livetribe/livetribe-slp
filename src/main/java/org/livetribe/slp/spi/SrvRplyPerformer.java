@@ -17,6 +17,7 @@ package org.livetribe.slp.spi;
 
 import java.util.List;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.spi.msg.AttributeListExtension;
@@ -33,10 +34,14 @@ public class SrvRplyPerformer
 {
     protected SrvRply newSrvRply(Message message, List<? extends ServiceInfo> services)
     {
-        SrvRply srvRply = new SrvRply();
-        // Replies must have the same language and XID as the request (RFC 2608, 8.0)
-        srvRply.setLanguage(message.getLanguage());
-        srvRply.setXID(message.getXID());
+        return newSrvRply(message, services, Integer.MAX_VALUE);
+    }
+
+    protected SrvRply newSrvRply(Message message, List<? extends ServiceInfo> services, int maxLength)
+    {
+        SrvRply srvRply = newSrvRply(message, SLPError.NO_ERROR);
+
+        SrvRply result = (SrvRply)Message.deserialize(srvRply.serialize());
 
         for (ServiceInfo service : services)
         {
@@ -56,6 +61,15 @@ public class SrvRplyPerformer
                 srvRply.addExtension(languageExtension);
             }
 
+            // Add scopes only if they were requested
+            if (ScopeListExtension.findFirst(message.getExtensions()) != null)
+            {
+                ScopeListExtension scopesExt = new ScopeListExtension();
+                scopesExt.setURL(serviceURL.getURL());
+                scopesExt.setScopes(service.getScopes());
+                srvRply.addExtension(scopesExt);
+            }
+
             // Add attributes only if they were requested
             if (AttributeListExtension.findFirst(message.getExtensions()) != null)
             {
@@ -65,16 +79,26 @@ public class SrvRplyPerformer
                 srvRply.addExtension(attributesExt);
             }
 
-            // Add scopes only if they were requested
-            if (ScopeListExtension.findFirst(message.getExtensions()) != null)
+            byte[] srvRplyBytes = srvRply.serialize();
+            if (srvRplyBytes.length > maxLength)
             {
-                ScopeListExtension scopesExt = new ScopeListExtension();
-                scopesExt.setURL(serviceURL.getURL());
-                scopesExt.setScopes(service.getScopes());
-                srvRply.addExtension(scopesExt);
+                result.setOverflow(true);
+                break;
             }
+
+            result = (SrvRply)Message.deserialize(srvRplyBytes);
         }
 
+        return result;
+    }
+
+    protected SrvRply newSrvRply(Message message, SLPError error)
+    {
+        SrvRply srvRply = new SrvRply();
+        // Replies must have the same language and XID as the request (RFC 2608, 8.0)
+        srvRply.setLanguage(message.getLanguage());
+        srvRply.setXID(message.getXID());
+        srvRply.setSLPError(error);
         return srvRply;
     }
 }

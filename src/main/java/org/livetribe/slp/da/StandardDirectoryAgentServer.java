@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,10 @@ import org.livetribe.slp.spi.Server;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.TCPAttrRplyPerformer;
 import org.livetribe.slp.spi.TCPSrvAckPerformer;
+import org.livetribe.slp.spi.TCPSrvTypeRplyPerformer;
+import org.livetribe.slp.spi.UDPAttrRplyPerformer;
 import org.livetribe.slp.spi.UDPSrvAckPerformer;
+import org.livetribe.slp.spi.UDPSrvTypeRplyPerformer;
 import org.livetribe.slp.spi.da.MulticastDAAdvertPerformer;
 import org.livetribe.slp.spi.da.TCPSrvRplyPerformer;
 import org.livetribe.slp.spi.da.UDPDAAdvertPerformer;
@@ -53,10 +57,10 @@ import org.livetribe.slp.spi.da.UDPSrvRplyPerformer;
 import org.livetribe.slp.spi.filter.FilterParser;
 import org.livetribe.slp.spi.msg.AttrRqst;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.msg.SrvTypeRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.NetUtils;
@@ -122,7 +126,10 @@ public class StandardDirectoryAgentServer extends AbstractServer
     private final TCPSrvRplyPerformer tcpSrvRply;
     private final UDPSrvAckPerformer udpSrvAck;
     private final TCPSrvAckPerformer tcpSrvAck;
+    private final UDPAttrRplyPerformer udpAttrRply;
     private final TCPAttrRplyPerformer tcpAttrRply;
+    private final UDPSrvTypeRplyPerformer udpSrvTypeRply;
+    private final TCPSrvTypeRplyPerformer tcpSrvTypeRply;
     private String[] addresses = Defaults.get(ADDRESSES_KEY);
     private int port = Defaults.get(PORT_KEY);
     private Scopes scopes = Scopes.from(Defaults.get(SCOPES_KEY));
@@ -167,7 +174,10 @@ public class StandardDirectoryAgentServer extends AbstractServer
         this.tcpSrvRply = new TCPSrvRplyPerformer(tcpConnector, settings);
         this.udpSrvAck = new UDPSrvAckPerformer(udpConnector, settings);
         this.tcpSrvAck = new TCPSrvAckPerformer(tcpConnector, settings);
+        this.udpAttrRply = new UDPAttrRplyPerformer(udpConnector, settings);
         this.tcpAttrRply = new TCPAttrRplyPerformer(tcpConnector, settings);
+        this.udpSrvTypeRply = new UDPSrvTypeRplyPerformer(udpConnector, settings);
+        this.tcpSrvTypeRply = new TCPSrvTypeRplyPerformer(tcpConnector, settings);
         if (settings != null) setSettings(settings);
     }
 
@@ -371,20 +381,20 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Handles a UDP SrvRqst message arrived to this directory agent.
+     * Handles a multicast UDP SrvRqst message arrived to this directory agent.
      * <br />
-     * If the SrvRqst messages has the {@link DirectoryAgentInfo#SERVICE_TYPE directory agent service type}, then
-     * the reply is a DAAdvert message, otherwise it is a SrvRply message.
+     * The SrvRqst messages is expected to have the {@link DirectoryAgentInfo#SERVICE_TYPE directory agent service type}
+     * and the reply is a DAAdvert message
      *
      * @param srvRqst       the SrvRqst message to handle
      * @param localAddress  the address on this server on which the message arrived
      * @param remoteAddress the address on the remote client from which the message was sent
+     * @see #handleUDPSrvRqst(SrvRqst, InetSocketAddress, InetSocketAddress)
      * @see #handleTCPSrvRqst(SrvRqst, Socket)
-     * @see #matchServices(ServiceType, Scopes, String, String)
      */
-    protected void handleUDPSrvRqst(SrvRqst srvRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
+    protected void handleMulticastSrvRqst(SrvRqst srvRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
     {
-        // Match previous responders in case of multicast request
+        // Match previous responders
         String responder = remoteAddress.getAddress().getHostAddress();
         if (srvRqst.containsResponder(responder))
         {
@@ -393,7 +403,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
             return;
         }
 
-        // Match scopes
+        // Match scopes: RFC 2608, 11.1
         if (!scopes.weakMatch(srvRqst.getScopes()))
         {
             if (logger.isLoggable(Level.FINE))
@@ -402,35 +412,53 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
 
         ServiceType serviceType = srvRqst.getServiceType();
-        if (DirectoryAgentInfo.SERVICE_TYPE.equals(serviceType))
+        if (!DirectoryAgentInfo.SERVICE_TYPE.equals(serviceType))
         {
-            String address = NetUtils.convertWildcardAddress(localAddress.getAddress()).getHostAddress();
-            DirectoryAgentInfo directoryAgent = directoryAgents.get(address);
-            if (directoryAgent == null)
-            {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("DirectoryAgent " + this + " dropping message " + srvRqst + ": arrived to unknown address " + address);
-                return;
-            }
-
             if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " sending UDP unicast reply to " + remoteAddress);
-            udpDAAdvert.perform(localAddress, remoteAddress, directoryAgent, srvRqst);
+                logger.fine("DirectoryAgent " + this + " dropping message " + srvRqst + ": SrvRqst for service type " + serviceType + " must be unicast");
+            return;
         }
-        else
+
+        String address = NetUtils.convertWildcardAddress(localAddress.getAddress()).getHostAddress();
+        DirectoryAgentInfo directoryAgent = directoryAgents.get(address);
+        if (directoryAgent == null)
         {
-            if (srvRqst.isMulticast())
-            {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("DirectoryAgent " + this + " dropping message " + srvRqst + ": SrvRqst for service type " + srvRqst.getServiceType() + " must be unicast");
-                return;
-            }
-
-            List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
             if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
-            udpSrvRply.perform(localAddress, remoteAddress, srvRqst, matchingServices);
+                logger.fine("DirectoryAgent " + this + " dropping message " + srvRqst + ": arrived to unknown address " + address);
+            return;
         }
+
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " sending UDP unicast reply to " + remoteAddress);
+        udpDAAdvert.perform(localAddress, remoteAddress, directoryAgent, srvRqst);
+    }
+
+    /**
+     * Handles a unicast UDP SrvRqst message arrived to this directory agent.
+     * <br />
+     * This directory agent will reply with a list of matching services.
+     *
+     * @param srvRqst       the SrvRqst message to handle
+     * @param localAddress  the address on this server on which the message arrived
+     * @param remoteAddress the address on the remote client from which the message was sent
+     * @see #handleMulticastSrvRqst(SrvRqst, InetSocketAddress, InetSocketAddress)
+     * @see #handleTCPSrvRqst(SrvRqst, Socket)
+     * @see #matchServices(ServiceType, String, Scopes, String)
+     */
+    protected void handleUDPSrvRqst(SrvRqst srvRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
+    {
+        // Match scopes, RFC 2608, 11.1
+        if (!scopes.weakMatch(srvRqst.getScopes()))
+        {
+            udpSrvRply.perform(localAddress, remoteAddress, srvRqst, SLPError.SCOPE_NOT_SUPPORTED);
+            return;
+        }
+
+        ServiceType serviceType = srvRqst.getServiceType();
+        List<ServiceInfo> matchingServices = matchServices(serviceType, srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + serviceType);
+        udpSrvRply.perform(localAddress, remoteAddress, srvRqst, matchingServices);
     }
 
     /**
@@ -441,22 +469,22 @@ public class StandardDirectoryAgentServer extends AbstractServer
      * @param srvRqst the SrvRqst message to handle
      * @param socket  the socket connected to th client where to write the reply
      * @see #handleUDPSrvRqst(SrvRqst, InetSocketAddress, InetSocketAddress)
-     * @see #matchServices(ServiceType, Scopes, String, String)
+     * @see #matchServices(ServiceType, String, Scopes, String)
      */
     protected void handleTCPSrvRqst(SrvRqst srvRqst, Socket socket)
     {
-        // Match scopes
+        // Match scopes, RFC 2608, 11.1
         if (!scopes.weakMatch(srvRqst.getScopes()))
         {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " dropping message " + srvRqst + ": no scopes match among DA scopes " + scopes + " and message scopes " + srvRqst.getScopes());
+            tcpSrvRply.perform(socket, srvRqst, SLPError.SCOPE_NOT_SUPPORTED);
             return;
         }
 
-        List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
+        ServiceType serviceType = srvRqst.getServiceType();
+        List<ServiceInfo> matchingServices = matchServices(serviceType, srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
         tcpSrvRply.perform(socket, srvRqst, matchingServices);
         if (logger.isLoggable(Level.FINE))
-            logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
+            logger.fine("DirectoryAgent " + this + " returning " + matchingServices.size() + " services of type " + serviceType);
     }
 
     /**
@@ -476,7 +504,7 @@ public class StandardDirectoryAgentServer extends AbstractServer
     }
 
     /**
-     * Handles unicast or multicast UDP SrvReg message arrived to this directory agent.
+     * Handles unicast UDP SrvReg message arrived to this directory agent.
      * <br />
      * This directory agent will reply with an acknowledge containing the result of the registration.
      *
@@ -491,11 +519,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
             boolean update = srvReg.isUpdating();
             ServiceInfo service = ServiceInfo.from(srvReg);
             cacheService(service, update);
-            udpSrvAck.perform(localAddress, remoteAddress, srvReg, SrvAck.SUCCESS);
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getSLPError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getSLPError());
         }
     }
 
@@ -514,16 +542,16 @@ public class StandardDirectoryAgentServer extends AbstractServer
             boolean update = srvReg.isUpdating();
             ServiceInfo service = ServiceInfo.from(srvReg);
             cacheService(service, update);
-            tcpSrvAck.perform(socket, srvReg, SrvAck.SUCCESS);
+            tcpSrvAck.perform(socket, srvReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getSLPError().getCode());
+            tcpSrvAck.perform(socket, srvReg, x.getSLPError());
         }
     }
 
     /**
-     * Handles unicast or multicast UDP SrvDeReg message arrived to this directory agent.
+     * Handles unicast UDP SrvDeReg message arrived to this directory agent.
      * <br />
      * This directory agent will reply with an acknowledge containing the result of the deregistration.
      *
@@ -538,11 +566,11 @@ public class StandardDirectoryAgentServer extends AbstractServer
             boolean update = srvDeReg.isUpdating();
             ServiceInfo service = ServiceInfo.from(srvDeReg);
             uncacheService(service, update);
-            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, SrvAck.SUCCESS);
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getSLPError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getSLPError());
         }
     }
 
@@ -561,12 +589,37 @@ public class StandardDirectoryAgentServer extends AbstractServer
             boolean update = srvDeReg.isUpdating();
             ServiceInfo service = ServiceInfo.from(srvDeReg);
             uncacheService(service, update);
-            tcpSrvAck.perform(socket, srvDeReg, SrvAck.SUCCESS);
+            tcpSrvAck.perform(socket, srvDeReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError().getCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError());
         }
+    }
+
+    /**
+     * Handles unicast UDP AttrRqst message arrived to this directory agent.
+     * <br />
+     * This directory agent will reply with a list of attributes of matching services.
+     *
+     * @param attrRqst      the AttrRqst message to handle
+     * @param localAddress  the socket address the message arrived to
+     * @param remoteAddress the socket address the message was sent from
+     */
+    protected void handleUDPAttrRqst(AttrRqst attrRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
+    {
+        // Match scopes, RFC 2608, 11.1
+        if (!scopes.weakMatch(attrRqst.getScopes()))
+        {
+            udpAttrRply.perform(localAddress, remoteAddress, attrRqst, SLPError.SCOPE_NOT_SUPPORTED);
+            return;
+        }
+
+        Attributes attributes = matchAttributes(attrRqst);
+
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " returning attributes for service " + attrRqst.getURL() + ": " + attributes.asString());
+        udpAttrRply.perform(localAddress, remoteAddress, attrRqst, attributes);
     }
 
     /**
@@ -579,14 +632,22 @@ public class StandardDirectoryAgentServer extends AbstractServer
      */
     protected void handleTCPAttrRqst(AttrRqst attrRqst, Socket socket)
     {
-        // Match scopes
+        // Match scopes, RFC 2608, 11.1
         if (!scopes.weakMatch(attrRqst.getScopes()))
         {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + this + " dropping message " + attrRqst + ": no scopes match among DA scopes " + scopes + " and message scopes " + attrRqst.getScopes());
+            tcpAttrRply.perform(socket, attrRqst, SLPError.SCOPE_NOT_SUPPORTED);
             return;
         }
 
+        Attributes attributes = matchAttributes(attrRqst);
+
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " returning attributes for service " + attrRqst.getURL() + ": " + attributes.asString());
+        tcpAttrRply.perform(socket, attrRqst, attributes);
+    }
+
+    protected Attributes matchAttributes(AttrRqst attrRqst)
+    {
         boolean isForServiceType = attrRqst.isForServiceType();
         ServiceURL serviceURL = null;
         ServiceType serviceType = null;
@@ -612,10 +673,73 @@ public class StandardDirectoryAgentServer extends AbstractServer
         }
         Attributes tags = attrRqst.getTags();
         if (!tags.isEmpty()) attributes = attributes.intersect(attrRqst.getTags());
+        return attributes;
+    }
 
-        tcpAttrRply.perform(socket, attrRqst, attributes);
+    /**
+     * Handles a unicast UDP SrvTypeRqst message arrived to this directory agent.
+     * <br />
+     * This directory agent will reply with an SrvTypeRply containing the service types.
+     *
+     * @param srvTypeRqst   the SrvTypeRqst message to handle
+     * @param localAddress  the socket address the message arrived to
+     * @param remoteAddress the socket address the message was sent from
+     */
+    protected void handleUDPSrvTypeRqst(SrvTypeRqst srvTypeRqst, InetSocketAddress localAddress, InetSocketAddress remoteAddress)
+    {
+        // Match scopes, RFC 2608, 11.1
+        if (!scopes.weakMatch(srvTypeRqst.getScopes()))
+        {
+            udpSrvTypeRply.perform(localAddress, remoteAddress, srvTypeRqst, SLPError.SCOPE_NOT_SUPPORTED);
+            return;
+        }
+
+        List<ServiceType> serviceTypes = matchServiceTypes(srvTypeRqst);
+
         if (logger.isLoggable(Level.FINE))
-            logger.fine("DirectoryAgent " + this + " returning attributes for service " + attrRqst.getURL() + ": " + attributes.asString());
+            logger.fine("DirectoryAgent " + this + " returning service types " + serviceTypes);
+        udpSrvTypeRply.perform(localAddress, remoteAddress, srvTypeRqst, serviceTypes);
+    }
+
+    /**
+     * Handles a unicast TCP SrvTypeRqst message arrived to this directory agent.
+     * <br />
+     * This directory agent will reply with an SrvTypeRply containing the service types.
+     *
+     * @param srvTypeRqst the SrvTypeRqst message to handle
+     * @param socket      the socket connected to the client where to write the reply
+     */
+    protected void handleTCPSrvTypeRqst(SrvTypeRqst srvTypeRqst, Socket socket)
+    {
+        // Match scopes, RFC 2608, 11.1
+        if (!scopes.weakMatch(srvTypeRqst.getScopes()))
+        {
+            tcpSrvTypeRply.perform(socket, srvTypeRqst, SLPError.SCOPE_NOT_SUPPORTED);
+            return;
+        }
+
+        List<ServiceType> serviceTypes = matchServiceTypes(srvTypeRqst);
+
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("DirectoryAgent " + this + " returning service types " + serviceTypes);
+        tcpSrvTypeRply.perform(socket, srvTypeRqst, serviceTypes);
+    }
+
+    protected List<ServiceType> matchServiceTypes(SrvTypeRqst srvTypeRqst)
+    {
+        List<ServiceType> result = new ArrayList<ServiceType>();
+        List<ServiceInfo> serviceInfos = services.getServiceInfos();
+        for (ServiceInfo serviceInfo : serviceInfos)
+        {
+            ServiceType serviceType = serviceInfo.resolveServiceType();
+            if (srvTypeRqst.isAnyNamingAuthority())
+                result.add(serviceType);
+            else if (srvTypeRqst.isDefaultNamingAuthority() && serviceType.isDefaultNamingAuthority())
+                result.add(serviceType);
+            else if (srvTypeRqst.getNamingAuthority().equals(serviceType.getNamingAuthority()))
+                result.add(serviceType);
+        }
+        return result;
     }
 
     /**
@@ -707,8 +831,8 @@ public class StandardDirectoryAgentServer extends AbstractServer
             if (logger.isLoggable(Level.FINEST))
                 logger.finest("DirectoryAgent " + StandardDirectoryAgentServer.this + " purging expired services");
             List<ServiceInfo> result = purgeExpiredServices();
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("DirectoryAgent " + StandardDirectoryAgentServer.this + " purged " + result.size() + " expired services: " + result);
+            if (logger.isLoggable(Level.FINEST))
+                logger.finest("DirectoryAgent " + StandardDirectoryAgentServer.this + " purged " + result.size() + " expired services: " + result);
         }
     }
 
@@ -748,6 +872,9 @@ public class StandardDirectoryAgentServer extends AbstractServer
                 case Message.ATTR_RQST_TYPE:
                     handleTCPAttrRqst((AttrRqst)message, socket);
                     break;
+                case Message.SRV_TYPE_RQST_TYPE:
+                    handleTCPSrvTypeRqst((SrvTypeRqst)message, socket);
+                    break;
                 default:
                     if (logger.isLoggable(Level.FINE))
                         logger.fine("DirectoryAgent " + StandardDirectoryAgentServer.this + " dropping tcp message " + message + ": not handled by DirectoryAgents");
@@ -769,21 +896,44 @@ public class StandardDirectoryAgentServer extends AbstractServer
 
             InetSocketAddress localAddress = event.getLocalSocketAddress();
             InetSocketAddress remoteAddress = event.getRemoteSocketAddress();
-            switch (message.getMessageType())
+
+            if (message.isMulticast())
             {
-                case Message.SRV_RQST_TYPE:
-                    handleUDPSrvRqst((SrvRqst)message, localAddress, remoteAddress);
-                    break;
-                case Message.SRV_REG_TYPE:
-                    handleUDPSrvReg((SrvReg)message, localAddress, remoteAddress);
-                    break;
-                case Message.SRV_DEREG_TYPE:
-                    handleUDPSrvDeReg((SrvDeReg)message, localAddress, remoteAddress);
-                    break;
-                default:
-                    if (logger.isLoggable(Level.FINE))
-                        logger.fine("DirectoryAgent " + StandardDirectoryAgentServer.this + " dropping udp message " + message + ": not handled by DirectoryAgents");
-                    break;
+                switch (message.getMessageType())
+                {
+                    case Message.SRV_RQST_TYPE:
+                        handleMulticastSrvRqst((SrvRqst)message, localAddress, remoteAddress);
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("DirectoryAgent " + StandardDirectoryAgentServer.this + " dropping multicast message " + message + ": not handled by DirectoryAgents");
+                        break;
+                }
+            }
+            else
+            {
+                switch (message.getMessageType())
+                {
+                    case Message.SRV_RQST_TYPE:
+                        handleUDPSrvRqst((SrvRqst)message, localAddress, remoteAddress);
+                        break;
+                    case Message.SRV_REG_TYPE:
+                        handleUDPSrvReg((SrvReg)message, localAddress, remoteAddress);
+                        break;
+                    case Message.SRV_DEREG_TYPE:
+                        handleUDPSrvDeReg((SrvDeReg)message, localAddress, remoteAddress);
+                        break;
+                    case Message.ATTR_RQST_TYPE:
+                        handleUDPAttrRqst((AttrRqst)message, localAddress, remoteAddress);
+                        break;
+                    case Message.SRV_TYPE_RQST_TYPE:
+                        handleUDPSrvTypeRqst((SrvTypeRqst)message, localAddress, remoteAddress);
+                        break;
+                    default:
+                        if (logger.isLoggable(Level.FINE))
+                            logger.fine("DirectoryAgent " + StandardDirectoryAgentServer.this + " dropping udp message " + message + ": not handled by DirectoryAgents");
+                        break;
+                }
             }
         }
     }

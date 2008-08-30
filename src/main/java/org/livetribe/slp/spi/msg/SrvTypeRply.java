@@ -15,6 +15,9 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
@@ -40,12 +43,19 @@ public class SrvTypeRply extends Rply
     private static final int ERROR_CODE_BYTES_LENGTH = 2;
     private static final int SERVICE_TYPES_LENGTH_BYTES_LENGTH = 2;
 
-    private SLPError error;
-    private ServiceType[] serviceTypes;
+    private final List<ServiceType> serviceTypes = new ArrayList<ServiceType>();
+    private SLPError error = SLPError.NO_ERROR;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        byte[] serviceTypesBytes = serviceTypesToBytes(getServiceTypes());
+        byte[] serviceTypesBytes = EMPTY_BYTES;
+        List<ServiceType> types = getServiceTypes();
+        if (types != null)
+        {
+            String[] serviceTypeStrings = new String[types.size()];
+            for (int i = 0; i < types.size(); ++i) serviceTypeStrings[i] = types.get(i).asString();
+            serviceTypesBytes = writeStringArray(serviceTypeStrings, true);
+        }
         int serviceTypesLength = serviceTypesBytes.length;
 
         int bodyLength = ERROR_CODE_BYTES_LENGTH + SERVICE_TYPES_LENGTH_BYTES_LENGTH + serviceTypesLength;
@@ -76,13 +86,7 @@ public class SrvTypeRply extends Rply
 
         offset += SERVICE_TYPES_LENGTH_BYTES_LENGTH;
         String[] serviceTypeStrings = readStringArray(bytes, offset, serviceTypesBytes, true);
-        ServiceType[] serviceTypes = new ServiceType[serviceTypeStrings.length];
-        for (int i = 0; i < serviceTypeStrings.length; ++i)
-        {
-            String serviceTypeString = serviceTypeStrings[i];
-            serviceTypes[i] = new ServiceType(serviceTypeString);
-        }
-        setServiceTypes(serviceTypes);
+        for (String serviceTypeString : serviceTypeStrings) addServiceType(new ServiceType(serviceTypeString));
     }
 
     public byte getMessageType()
@@ -100,13 +104,13 @@ public class SrvTypeRply extends Rply
         this.error = error;
     }
 
-    public ServiceType[] getServiceTypes()
+    public List<ServiceType> getServiceTypes()
     {
         return serviceTypes;
     }
 
-    public void setServiceTypes(ServiceType... serviceTypes)
+    public void addServiceType(ServiceType serviceType)
     {
-        this.serviceTypes = serviceTypes;
+        serviceTypes.add(serviceType);
     }
 }

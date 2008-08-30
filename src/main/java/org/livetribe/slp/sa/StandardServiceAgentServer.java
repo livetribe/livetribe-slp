@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
@@ -32,7 +33,6 @@ import org.livetribe.slp.spi.Server;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.TCPSrvAckPerformer;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.net.MessageEvent;
@@ -165,11 +165,11 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
             ServiceInfo givenService = ServiceInfo.from(srvReg);
             ServiceInfoCache.Result<ServiceInfo> result = cacheService(givenService, update);
             forwardRegistration(givenService, result.getPrevious(), result.getCurrent(), update);
-            tcpSrvAck.perform(socket, srvReg, SrvAck.SUCCESS);
+            tcpSrvAck.perform(socket, srvReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getSLPError().getCode());
+            tcpSrvAck.perform(socket, srvReg, x.getSLPError());
         }
     }
 
@@ -189,11 +189,11 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
             ServiceInfo givenService = ServiceInfo.from(srvDeReg);
             ServiceInfoCache.Result<ServiceInfo> result = uncacheService(givenService, update);
             forwardDeregistration(givenService, result.getPrevious(), result.getCurrent(), update);
-            tcpSrvAck.perform(socket, srvDeReg, SrvAck.SUCCESS);
+            tcpSrvAck.perform(socket, srvDeReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError().getCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError());
         }
     }
 

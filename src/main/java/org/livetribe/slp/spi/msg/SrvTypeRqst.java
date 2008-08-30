@@ -45,9 +45,9 @@ public class SrvTypeRqst extends Rqst
     private static final int RESPONDERS_LENGTH_BYTES_LENGTH = 2;
     private static final int NAMING_AUTHORITY_LENGTH_BYTES_LENGTH = 2;
     private static final int SCOPES_LENGTH_BYTES_LENGTH = 2;
-    private static final String WILDCARD_NAMING_AUTHORITY = "*";
-    private static final int WILDCARD_NAMING_AUTHORITY_LENGTH = 0xFFFF;
+    private static final int ANY_NAMING_AUTHORITY_LENGTH = 0xFFFF;
 
+    private boolean anyNamingAuthority;
     private String namingAuthority;
     private Scopes scopes;
 
@@ -60,10 +60,10 @@ public class SrvTypeRqst extends Rqst
         int namingAuthorityLength;
         int bodyLength;
 
-        if (WILDCARD_NAMING_AUTHORITY.equals(getNamingAuthority()))
+        if (isAnyNamingAuthority())
         {
             namingAuthorityBytes = EMPTY_BYTES;
-            namingAuthorityLength = WILDCARD_NAMING_AUTHORITY_LENGTH;
+            namingAuthorityLength = ANY_NAMING_AUTHORITY_LENGTH;
             bodyLength = RESPONDERS_LENGTH_BYTES_LENGTH + previousRespondersLength + NAMING_AUTHORITY_LENGTH_BYTES_LENGTH;
         }
         else
@@ -90,7 +90,7 @@ public class SrvTypeRqst extends Rqst
 
         offset += NAMING_AUTHORITY_LENGTH_BYTES_LENGTH;
 
-        if (!WILDCARD_NAMING_AUTHORITY.equals(getNamingAuthority()))
+        if (!isAnyNamingAuthority())
         {
             System.arraycopy(namingAuthorityBytes, 0, result, offset, namingAuthorityLength);
             offset += namingAuthorityLength;
@@ -117,9 +117,9 @@ public class SrvTypeRqst extends Rqst
 
         offset += NAMING_AUTHORITY_LENGTH_BYTES_LENGTH;
 
-        if (namingAuthorityLength == WILDCARD_NAMING_AUTHORITY_LENGTH)
+        if (namingAuthorityLength == ANY_NAMING_AUTHORITY_LENGTH)
         {
-            setNamingAuthority(WILDCARD_NAMING_AUTHORITY);
+            setAnyNamingAuthority(true);
         }
         else
         {
@@ -136,6 +136,16 @@ public class SrvTypeRqst extends Rqst
     public byte getMessageType()
     {
         return SRV_TYPE_RQST_TYPE;
+    }
+
+    public boolean isAnyNamingAuthority()
+    {
+        return anyNamingAuthority;
+    }
+
+    public void setAnyNamingAuthority(boolean anyNamingAuthority)
+    {
+        this.anyNamingAuthority = anyNamingAuthority;
     }
 
     public String getNamingAuthority()
@@ -156,5 +166,10 @@ public class SrvTypeRqst extends Rqst
     public void setScopes(Scopes scopes)
     {
         this.scopes = scopes;
+    }
+
+    public boolean isDefaultNamingAuthority()
+    {
+        return !isAnyNamingAuthority() && getNamingAuthority().length() == 0;
     }
 }

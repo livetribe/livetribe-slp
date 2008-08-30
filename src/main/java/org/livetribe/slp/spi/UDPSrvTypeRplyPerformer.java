@@ -16,29 +16,43 @@
 package org.livetribe.slp.spi;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 import org.livetribe.slp.SLPError;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvTypeRply;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class UDPSrvAckPerformer extends SrvAckPerformer
+public class UDPSrvTypeRplyPerformer extends SrvTypeRplyPerformer
 {
     private final UDPConnector udpConnector;
 
-    public UDPSrvAckPerformer(UDPConnector udpConnector, Settings settings)
+    public UDPSrvTypeRplyPerformer(UDPConnector udpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
     }
 
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, List<ServiceType> serviceTypes)
+    {
+        SrvTypeRply srvTypeRply = newSrvTypeRply(message, serviceTypes);
+        byte[] srvTypeRplyBytes = srvTypeRply.serialize();
+        send(localAddress, remoteAddress, srvTypeRplyBytes);
+    }
+
     public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, SLPError error)
     {
-        SrvAck srvAck = newSrvAck(message, error);
-        byte[] bytes = srvAck.serialize();
-        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
+        SrvTypeRply srvTypeRply = newSrvTypeRply(message, error);
+        byte[] srvTypeRplyBytes = srvTypeRply.serialize();
+        send(localAddress, remoteAddress, srvTypeRplyBytes);
+    }
+
+    protected void send(InetSocketAddress localAddress, InetSocketAddress remoteAddress, byte[] srvTypeRplyBytes)
+    {
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, srvTypeRplyBytes);
     }
 }

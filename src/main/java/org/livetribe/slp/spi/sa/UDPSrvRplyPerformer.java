@@ -19,6 +19,8 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.settings.Defaults;
+import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
@@ -32,22 +34,37 @@ import org.livetribe.slp.spi.net.UDPConnector;
 public class UDPSrvRplyPerformer extends SrvRplyPerformer
 {
     private final UDPConnector udpConnector;
+    private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
 
     public UDPSrvRplyPerformer(UDPConnector udpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
+        if (settings != null) setSettings(settings);
+    }
+
+    private void setSettings(Settings settings)
+    {
+        if (settings.containsKey(MAX_TRANSMISSION_UNIT_KEY))
+            this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
     }
 
     public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, ServiceAgentInfo serviceAgent, Message message, List<? extends ServiceInfo> services)
     {
-        // TODO: must be sure to fit the MTU in case of many services
-        SrvRply srvRply = newSrvRply(message, services);
+        IdentifierExtension identifierExtension = null;
         if (serviceAgent.getIdentifier() != null)
-        {
-            IdentifierExtension identifierExtension = new IdentifierExtension(serviceAgent.getHostAddress(), serviceAgent.getIdentifier());
-            srvRply.addExtension(identifierExtension);
-        }
+            identifierExtension = new IdentifierExtension(serviceAgent.getHostAddress(), serviceAgent.getIdentifier());
+
+        int maxLength = maxTransmissionUnit - (identifierExtension != null ? identifierExtension.serialize().length : 0);
+
+        SrvRply srvRply = newSrvRply(message, services, maxLength);
+        if (identifierExtension != null) srvRply.addExtension(identifierExtension);
+
         byte[] bytes = srvRply.serialize();
+        send(localAddress, remoteAddress, bytes);
+    }
+
+    protected void send(InetSocketAddress localAddress, InetSocketAddress remoteAddress, byte[] bytes)
+    {
         udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }
 }

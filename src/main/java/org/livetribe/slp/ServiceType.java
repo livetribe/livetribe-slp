@@ -42,6 +42,9 @@ package org.livetribe.slp;
  */
 public class ServiceType implements Comparable<ServiceType>
 {
+    public static final String ANY_NAMING_AUTHORITY = "*";
+    public static final String DEFAULT_NAMING_AUTHORITY = "";
+
     private static final String SERVICE = "service:";
 
     private final String type;
@@ -82,9 +85,9 @@ public class ServiceType implements Comparable<ServiceType>
     /**
      * @return whether this service type does not specify a naming authority.
      */
-    public boolean isNADefault()
+    public boolean isDefaultNamingAuthority()
     {
-        return namingAuthority.length() == 0;
+        return DEFAULT_NAMING_AUTHORITY.equals(namingAuthority);
     }
 
     /**

@@ -15,39 +15,43 @@
  */
 package org.livetribe.slp.spi;
 
-import java.net.Socket;
+import java.net.InetSocketAddress;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPAttrRplyPerformer extends AttrRplyPerformer
+public class UDPAttrRplyPerformer extends AttrRplyPerformer
 {
-    private final TCPConnector tcpConnector;
+    private final UDPConnector udpConnector;
 
-    public TCPAttrRplyPerformer(TCPConnector tcpConnector, Settings settings)
+    public UDPAttrRplyPerformer(UDPConnector udpConnector, Settings settings)
     {
-        this.tcpConnector = tcpConnector;
+        this.udpConnector = udpConnector;
     }
 
-    public void perform(Socket socket, Message message, Attributes attributes)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, Attributes attributes)
     {
         AttrRply attrRply = newAttrRply(message, attributes);
         byte[] attrRplyBytes = attrRply.serialize();
-        tcpConnector.write(socket, attrRplyBytes);
+        send(localAddress, remoteAddress, attrRplyBytes);
     }
 
-    public void perform(Socket socket, Message message, SLPError error)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, SLPError error)
     {
         AttrRply attrRply = newAttrRply(message, error);
         byte[] attrRplyBytes = attrRply.serialize();
-        tcpConnector.write(socket, attrRplyBytes);
+        send(localAddress, remoteAddress, attrRplyBytes);
     }
 
+    protected void send(InetSocketAddress localAddress, InetSocketAddress remoteAddress, byte[] attrRplyBytes)
+    {
+        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, attrRplyBytes);
+    }
 }

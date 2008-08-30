@@ -85,7 +85,9 @@ public class StandardServiceAgentTest
 
         try
         {
-            StandardServiceAgent sa = StandardServiceAgent.newInstance(newSettings());
+            Settings saSettings = newSettings();
+            saSettings.put(SA_UNICAST_PREFER_TCP, true);
+            StandardServiceAgent sa = StandardServiceAgent.newInstance(saSettings);
             ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/rmi:///ssat1");
             ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.from("(a=1,2),(b=true),(c=long string),(d=\\FF\\00),e"));
             sa.register(service);
@@ -141,7 +143,9 @@ public class StandardServiceAgentTest
         da.start();
         try
         {
-            StandardServiceAgent sa = StandardServiceAgent.newInstance(newSettings());
+            Settings saSettings = newSettings();
+            saSettings.put(SA_UNICAST_PREFER_TCP, true);
+            StandardServiceAgent sa = StandardServiceAgent.newInstance(saSettings);
             sa.start();
             try
             {
@@ -180,7 +184,9 @@ public class StandardServiceAgentTest
         da.start();
         try
         {
-            StandardServiceAgent sa = StandardServiceAgent.newInstance(newSettings());
+            Settings saSettings = newSettings();
+            saSettings.put(SA_UNICAST_PREFER_TCP, true);
+            StandardServiceAgent sa = StandardServiceAgent.newInstance(saSettings);
             sa.start();
             try
             {
@@ -250,7 +256,9 @@ public class StandardServiceAgentTest
         da.start();
         try
         {
-            StandardServiceAgent sa = StandardServiceAgent.newInstance(newSettings());
+            Settings saSettings = newSettings();
+            saSettings.put(SA_UNICAST_PREFER_TCP, true);
+            StandardServiceAgent sa = StandardServiceAgent.newInstance(saSettings);
             sa.start();
             try
             {
@@ -347,7 +355,9 @@ public class StandardServiceAgentTest
         da.start();
         try
         {
-            StandardServiceAgent sa = StandardServiceAgent.newInstance(newSettings());
+            Settings saSettings = newSettings();
+            saSettings.put(SA_UNICAST_PREFER_TCP, true);
+            StandardServiceAgent sa = StandardServiceAgent.newInstance(saSettings);
             sa.start();
             try
             {

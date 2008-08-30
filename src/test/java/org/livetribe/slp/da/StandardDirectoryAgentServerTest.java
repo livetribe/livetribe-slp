@@ -85,7 +85,7 @@ public class StandardDirectoryAgentServerTest
 
                     daAdvertCount.incrementAndGet();
                     DAAdvert daAdvert = (DAAdvert)message;
-                    assert daAdvert.getErrorCode() == 0;
+                    assert daAdvert.getSLPError() == SLPError.NO_ERROR;
                     assert daAdvert.isMulticast();
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert !directoryAgent.isShuttingDown();
@@ -145,7 +145,7 @@ public class StandardDirectoryAgentServerTest
 
                     daAdvertCount.incrementAndGet();
                     DAAdvert daAdvert = (DAAdvert)message;
-                    assert daAdvert.getErrorCode() == 0;
+                    assert daAdvert.getSLPError() == SLPError.NO_ERROR;
                     assert daAdvert.isMulticast();
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert directoryAgent.isShuttingDown();
@@ -222,7 +222,7 @@ public class StandardDirectoryAgentServerTest
 
                     daAdvertCount.incrementAndGet();
                     DAAdvert daAdvert = (DAAdvert)message;
-                    assert daAdvert.getErrorCode() == 0;
+                    assert daAdvert.getSLPError() == SLPError.NO_ERROR;
                     assert daAdvert.isMulticast();
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert !directoryAgent.isShuttingDown();
@@ -381,7 +381,7 @@ public class StandardDirectoryAgentServerTest
     public void testTCPServiceRegistration() throws Exception
     {
         Settings settings = newSettings();
-        settings.put(SA_CLIENT_USE_TCP, true);
+        settings.put(SA_UNICAST_PREFER_TCP, true);
         testServiceRegistration(settings);
     }
 
@@ -459,7 +459,7 @@ public class StandardDirectoryAgentServerTest
     public void testTCPServiceUpdate() throws Exception
     {
         Settings settings = newSettings();
-        settings.put(SA_CLIENT_USE_TCP, true);
+        settings.put(SA_UNICAST_PREFER_TCP, true);
         testServiceUpdate(settings);
     }
 
@@ -549,7 +549,7 @@ public class StandardDirectoryAgentServerTest
     public void testTCPServiceDeregistration() throws Exception
     {
         Settings settings = newSettings();
-        settings.put(SA_CLIENT_USE_TCP, true);
+        settings.put(SA_UNICAST_PREFER_TCP, true);
         testServiceDeregistration(settings);
     }
 
