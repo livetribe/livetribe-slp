@@ -33,7 +33,7 @@
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>src/main/resources/lib</outputDirectory>
-                                    <destFileName>slp.jar</destFileName>
+                                    <destFileName>slp-${slpVersion}.jar</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -51,7 +51,7 @@
                             org.livetribe.slp.*
                         </Export-Package>
                         <Bundle-Activator>org.livetribe.slp.osgi.SlpBundleActivator</Bundle-Activator>
-                        <Bundle-ClassPath>.,lib/slp.jar</Bundle-ClassPath>
+                        <Bundle-ClassPath>.,lib/slp-${slpVersion}.jar</Bundle-ClassPath>
                         <Bundle-RequiredExecutionEnvironment>J2SE-1.5,JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
                     </instructions>
                 </configuration>
@@ -62,8 +62,21 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.livetribe.slp</groupId>
+            <artifactId>livetribe-slp</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>OSGi_R4_v4.1_cmpn_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>

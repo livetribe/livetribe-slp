@@ -12,8 +12,6 @@
     <description>LiveTribe Service Location Protocol</description>
     <packaging>jar</packaging>
 
-    <build/>
-
     <dependencies>
         <dependency>
             <groupId>org.testng</groupId>
