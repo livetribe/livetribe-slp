@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
         <groupId>org.livetribe.slp</groupId>
@@ -15,28 +17,14 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <groupId>org.apache.servicemix.tooling</groupId>
+                <artifactId>depends-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
+                        <id>generate-depends-file</id>
                         <goals>
-                            <goal>copy</goal>
+                            <goal>generate-depends-file</goal>
                         </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.livetribe.slp</groupId>
-                                    <artifactId>livetribe-slp</artifactId>
-                                    <version>${slpVersion}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>src/main/resources/lib</outputDirectory>
-                                    <destFileName>slp.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -46,45 +34,39 @@
     <dependencies>
 
         <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi</artifactId>
+            <groupId>org.livetribe.slp</groupId>
+            <artifactId>livetribe-slp-osgi</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-annotation</artifactId>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-junit</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-core</artifactId>
+            <groupId>org.ops4j.pax.url</groupId>
+            <artifactId>pax-url-mvn</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-extender</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-io</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.osgi</groupId>
-            <artifactId>spring-osgi-test</artifactId>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-container-default</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

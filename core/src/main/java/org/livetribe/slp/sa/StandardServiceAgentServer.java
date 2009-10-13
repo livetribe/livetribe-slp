@@ -122,6 +122,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         if (settings != null) setSettings(settings);
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     private void setSettings(Settings settings)
     {
     }
