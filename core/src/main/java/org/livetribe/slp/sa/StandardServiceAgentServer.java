@@ -125,6 +125,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     {
     }
 
+    @Override
     protected void doStart()
     {
         setAttributes(getAttributes().union(Attributes.from("(" + ServiceAgentInfo.TCP_PORT_TAG + "=" + getPort() + ")")));
@@ -142,6 +143,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         return ServiceAgentInfo.from(null, address, scopes, attributes, language);
     }
 
+    @Override
     protected void doStop()
     {
         super.doStop();
