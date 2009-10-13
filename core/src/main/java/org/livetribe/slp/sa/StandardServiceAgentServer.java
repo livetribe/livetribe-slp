@@ -86,6 +86,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, settings);
     }
 
+    private final Shutdown shutdownHook = new Shutdown();
     private final MessageListener tcpListener = new TCPMessageListener();
     private final TCPConnectorServer tcpConnectorServer;
     private final TCPSrvAckPerformer tcpSrvAck;
@@ -135,7 +136,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         tcpConnectorServer.addMessageListener(tcpListener);
         tcpConnectorServer.start();
 
-        Runtime.getRuntime().addShutdownHook(new Shutdown());
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
     protected ServiceAgentInfo newServiceAgentInfo(String address, Scopes scopes, Attributes attributes, String language)
@@ -149,6 +150,15 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         super.doStop();
         tcpConnectorServer.removeMessageListener(tcpListener);
         tcpConnectorServer.stop();
+
+        try
+        {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        }
+        catch (Exception ignore)
+        {
+            // We could already be shutting down
+        }
     }
 
     /**
