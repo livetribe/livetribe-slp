@@ -69,6 +69,18 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.papoose.osgi</groupId>
+            <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.osgi</groupId>
+            <artifactId>OSGi_R4_v4.2_cmpn_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
 </project>
