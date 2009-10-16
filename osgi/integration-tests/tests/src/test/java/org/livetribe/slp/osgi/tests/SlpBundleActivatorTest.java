@@ -18,12 +18,10 @@ package org.livetribe.slp.osgi.tests;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import org.junit.Assert;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.ops4j.pax.exam.CoreOptions.equinox;
-import static org.ops4j.pax.exam.CoreOptions.felix;
-import static org.ops4j.pax.exam.CoreOptions.knopflerfish;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.provision;
@@ -37,6 +35,15 @@ import org.ops4j.pax.exam.junit.JUnit4TestRunner;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceRegistration;
+
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLP;
+import org.livetribe.slp.Scopes;
+import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.osgi.ByServiceInfoServiceTracker;
+import org.livetribe.slp.sa.ServiceAgent;
 
 
 /**
@@ -52,18 +59,18 @@ public class SlpBundleActivatorTest
     public static Option[] configure()
     {
         return options(
-                equinox(),
-                felix(),
-                knopflerfish(),
+                //                equinox(),
+                //                felix(),
+                //                knopflerfish(),
                 provision(
                         mavenBundle().groupId("org.livetribe.slp").artifactId("livetribe-slp-osgi").version(asInProject())
                 )
-            // vmOption( "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5006" ),
-            // this is necessary to let junit runner not timout the remote process before attaching debugger
-            // setting timeout to 0 means wait as long as the remote service comes available.
-            // starting with version 0.5.0 of PAx Exam this is no longer required as by default the framework tests
-            // will not be triggered till the framework is not started
-            // waitForFrameworkStartup()
+                // vmOption("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"),
+                // this is necessary to let junit runner not timout the remote process before attaching debugger
+                // setting timeout to 0 means wait as long as the remote service comes available.
+                // starting with version 0.5.0 of PAx Exam this is no longer required as by default the framework tests
+                // will not be triggered till the framework is not started
+                // waitForFrameworkStartup()
         );
     }
 
@@ -79,6 +86,42 @@ public class SlpBundleActivatorTest
         for (Bundle b : bundleContext.getBundles())
         {
             System.out.println(b.getSymbolicName() + " " + b.getBundleId());
+        }
+    }
+
+    @Test
+    public void testTracker() throws Exception
+    {
+        ClassLoader saved = Thread.currentThread().getContextClassLoader();
+
+        try
+        {
+            Thread.currentThread().setContextClassLoader(SLP.class.getClassLoader());
+
+            assertThat(bundleContext, is(notNullValue()));
+
+            ServiceAgent serviceAgenet = SLP.newServiceAgent(null);
+            ByServiceInfoServiceTracker tracker = new ByServiceInfoServiceTracker(bundleContext, serviceAgenet);
+            tracker.open();
+
+            ServiceRegistration serviceRegistration = bundleContext.registerService(ServiceInfo.class.getName(),
+                                                                                    new ServiceInfo(new ServiceURL("service:printer:lpr://myprinter/myqueue"),
+                                                                                                    "en",
+                                                                                                    Scopes.DEFAULT,
+                                                                                                    Attributes.from("(printer-compression-supported=deflate, gzip)")),
+                                                                                    null);
+
+            Assert.assertEquals(1, tracker.size());
+
+            serviceRegistration.unregister();
+
+            Assert.assertEquals(0, tracker.size());
+
+            tracker.close();
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(saved);
         }
     }
 }

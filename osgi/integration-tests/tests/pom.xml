@@ -41,6 +41,12 @@
 
         <dependency>
             <groupId>org.livetribe.slp</groupId>
+            <artifactId>livetribe-slp</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.livetribe.slp</groupId>
             <artifactId>livetribe-slp-osgi</artifactId>
             <scope>test</scope>
         </dependency>

@@ -31,11 +31,6 @@ import org.livetribe.slp.sa.ServiceAgent;
  */
 public class ByServiceInfoServiceTracker extends ServiceTracker
 {
-    public final static String SLP_SERVICE_TYPE = "slp.service.type";
-    public final static String SLP_URL = "slp.url";
-    public final static String SLP_URL_LIFETIME = "slp.url.lifetime";
-    public final static String SLP_LANGUAGE = "slp.language";
-    public final static String SLP_SCOPES = "slp.scopes";
     private final static String CLASS_NAME = ByServiceInfoServiceTracker.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final ServiceAgent serviceAgent;
