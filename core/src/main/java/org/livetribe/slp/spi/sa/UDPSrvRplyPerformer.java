@@ -17,8 +17,11 @@ package org.livetribe.slp.spi.sa;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
@@ -31,16 +34,29 @@ import org.livetribe.slp.spi.net.UDPConnector;
  */
 public class UDPSrvRplyPerformer extends SrvRplyPerformer
 {
+    protected final Logger logger = Logger.getLogger(getClass().getName());
+    private int maxTransmissionUnit = Defaults.get(Keys.MAX_TRANSMISSION_UNIT_KEY);
     private final UDPConnector udpConnector;
 
     public UDPSrvRplyPerformer(UDPConnector udpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
+        if (settings != null) setSettings(settings);
+    }
+
+    private void setSettings(Settings settings)
+    {
+        if (settings.containsKey(Keys.MAX_TRANSMISSION_UNIT_KEY))
+            setMaxTransmissionUnit(settings.get(Keys.MAX_TRANSMISSION_UNIT_KEY));
+    }
+
+    public void setMaxTransmissionUnit(int maxTransmissionUnit)
+    {
+        this.maxTransmissionUnit = maxTransmissionUnit;
     }
 
     public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, ServiceAgentInfo serviceAgent, Message message, List<? extends ServiceInfo> services)
     {
-        // TODO: must be sure to fit the MTU in case of many services
         SrvRply srvRply = newSrvRply(message, services);
         if (serviceAgent.getIdentifier() != null)
         {
@@ -48,6 +64,13 @@ public class UDPSrvRplyPerformer extends SrvRplyPerformer
             srvRply.addExtension(identifierExtension);
         }
         byte[] bytes = srvRply.serialize();
-        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
+        if (bytes.length <= maxTransmissionUnit)
+        {
+            udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
+        }
+        else
+        {
+            logger.finer("Reply not sent, message bigger than maxTransmissionUnit");
+        }
     }
 }
