@@ -15,42 +15,15 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.livetribe.slp</groupId>
-                                    <artifactId>livetribe-slp</artifactId>
-                                    <version>${slpVersion}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>src/main/resources/lib</outputDirectory>
-                                    <destFileName>slp-${slpVersion}.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Export-Package>
-                            org.livetribe.slp.*
-                        </Export-Package>
+                        <Embed-Dependency>livetribe-slp</Embed-Dependency>
+                        <_exportcontents>org.livetribe.slp.*</_exportcontents>
+                        <Export-Package>org.livetribe.slp.osgi</Export-Package>
                         <Bundle-Activator>org.livetribe.slp.osgi.SlpBundleActivator</Bundle-Activator>
-                        <Bundle-ClassPath>.,lib/slp-${slpVersion}.jar</Bundle-ClassPath>
                         <Bundle-RequiredExecutionEnvironment>J2SE-1.5,JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
                     </instructions>
                 </configuration>
