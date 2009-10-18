@@ -34,6 +34,7 @@ import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
  * @version $Revision$ $Date$
  */
@@ -65,14 +66,17 @@ public class UDPSrvRplyPerformer
         SrvRply srvRply = newSrvRply(serviceAgent, message, services);
         byte[] bytes = srvRply.serialize();
 
-        if (bytes.length <= maxTransmissionUnit)
+        if (bytes.length > maxTransmissionUnit)
         {
-            udpConnector.unicastSend(serviceAgent.getHost(), remoteAddress, bytes);
+            logger.finer("Message bigger than maxTransmissionUnit, truncating and setting overflow bit");
+
+            byte[] truncated = new byte[maxTransmissionUnit];
+            System.arraycopy(bytes, 0, truncated, 0, truncated.length);
+            truncated[5] |= 0x80;
+            bytes = truncated;
         }
-        else
-        {
-            logger.finer("Reply not sent, message bigger than maxTransmissionUnit");
-        }
+
+        udpConnector.unicastSend(serviceAgent.getHost(), remoteAddress, bytes);
     }
 
     private SrvRply newSrvRply(ServiceAgentInfo serviceAgent, Message message, List<? extends ServiceInfo> services)
