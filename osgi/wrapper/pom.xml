@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.livetribe.slp</groupId>
+        <artifactId>livetribe-slp-osgi-root</artifactId>
+        <version>2.1.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>livetribe-slp-osgi</artifactId>
+    <name>LiveTribe :: SLP :: OSGi :: Wrapper</name>
+    <description>LiveTribe SLP OSGi Wrapper</description>
+    <packaging>bundle</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Embed-Dependency>livetribe-slp</Embed-Dependency>
+                        <_exportcontents>org.livetribe.slp;org.livetribe.slp.da;org.livetribe.slp.sa;org.livetribe.slp.settings;org.livetribe.slp.spi;org.livetribe.slp.spi.da;org.livetribe.slp.spi.filter;org.livetribe.slp.spi.msg;org.livetribe.slp.spi.net;org.livetribe.slp.spi.sa;org.livetribe.slp.spi.ua;org.livetribe.slp.ua;org.livetribe.slp.osgi</_exportcontents>
+                        <Export-Package>org.livetribe.slp.osgi</Export-Package>
+                        <Private-Package>org.livetribe.slp.util;org.livetribe.slp.osgi.util</Private-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.livetribe.slp</groupId>
+            <artifactId>livetribe-slp</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.osgi</groupId>
+            <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.osgi</groupId>
+            <artifactId>OSGi_R4_v4.2_cmpn_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

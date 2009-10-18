@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
@@ -8,28 +9,27 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.livetribe</groupId>
-    <artifactId>livetribe-slp</artifactId>
+    <groupId>org.livetribe.slp</groupId>
+    <artifactId>livetribe-slp-root</artifactId>
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <version>2.1.0-SNAPSHOT</version>
+
+    <modules>
+        <module>core</module>
+        <module>osgi</module>
+    </modules>
+
+
+    <properties>
+        <slpVersion>2.1.0-SNAPSHOT</slpVersion>
+        <paxExamVersion>1.1.0</paxExamVersion>
+    </properties>
 
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <properties>
-                        <property>
-                            <name>listener</name>
-                            <value>org.livetribe.slp.TestNGListener</value>
-                        </property>
-                    </properties>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -51,13 +51,75 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>5.8</version>
-            <classifier>jdk15</classifier>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.5</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.livetribe.slp</groupId>
+                <artifactId>livetribe-slp</artifactId>
+                <version>${slpVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.livetribe.slp</groupId>
+                <artifactId>livetribe-slp-osgi</artifactId>
+                <version>${slpVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam</artifactId>
+                <version>${paxExamVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-junit</artifactId>
+                <version>${paxExamVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-container-default</artifactId>
+                <version>${paxExamVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.ops4j.pax.url</groupId>
+                <artifactId>pax-url-mvn</artifactId>
+                <version>${paxExamVersion}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.osgi</groupId>
+                <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
+                <version>4.2.0.200908310645</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.osgi</groupId>
+                <artifactId>OSGi_R4_v4.2_cmpn_spec</artifactId>
+                <version>4.2.0.200908310645</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>5.8</version>
+                <classifier>jdk15</classifier>
+                <scope>test</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
 </project>
+
