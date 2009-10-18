@@ -13,7 +13,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>bundles</module>
         <module>tests</module>
     </modules>
 
