@@ -24,25 +24,36 @@ import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.AttrRqst;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.net.TCPConnector;
+import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPAttrRqstPerformer extends AttrRqstPerformer
+public class UnicastAttrRqstPerformer extends AttrRqstPerformer
 {
+    private final UDPConnector udpConnector;
     private final TCPConnector tcpConnector;
 
-    public TCPAttrRqstPerformer(TCPConnector tcpConnector, Settings settings)
+    public UnicastAttrRqstPerformer(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
+        this.udpConnector = udpConnector;
         this.tcpConnector = tcpConnector;
+        if (settings != null) setSettings(settings);
     }
 
-    public AttrRply perform(InetSocketAddress address, String url, String language, Scopes scopes, Attributes tags)
+    private void setSettings(Settings settings)
+    {
+    }
+
+    public AttrRply perform(InetSocketAddress address, boolean preferTCP, String url, String language, Scopes scopes, Attributes tags)
     {
         AttrRqst attrRqst = newAttrRqst(url, language, scopes, tags);
         byte[] attrRqstBytes = attrRqst.serialize();
-        byte[] attrRplyBytes = tcpConnector.writeAndRead(address, attrRqstBytes);
+        byte[] attrRplyBytes = null;
+        if (preferTCP)
+            attrRplyBytes = tcpConnector.writeAndRead(address, attrRqstBytes);
+        else
+            attrRplyBytes = udpConnector.sendAndReceive(address, attrRqstBytes);
         return (AttrRply)Message.deserialize(attrRplyBytes);
     }
-
 }

@@ -21,18 +21,21 @@ import java.net.Socket;
 import java.util.logging.Level;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.Server;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.TCPSrvAckPerformer;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.net.MessageEvent;
@@ -86,7 +89,6 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         return new StandardServiceAgentServer(udpConnector, tcpConnector, udpConnectorServer, tcpConnectorServer, settings);
     }
 
-    private final Shutdown shutdownHook = new Shutdown();
     private final MessageListener tcpListener = new TCPMessageListener();
     private final TCPConnectorServer tcpConnectorServer;
     private final TCPSrvAckPerformer tcpSrvAck;
@@ -122,12 +124,10 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         if (settings != null) setSettings(settings);
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
     private void setSettings(Settings settings)
     {
     }
 
-    @Override
     protected void doStart()
     {
         setAttributes(getAttributes().union(Attributes.from("(" + ServiceAgentInfo.TCP_PORT_TAG + "=" + getPort() + ")")));
@@ -137,7 +137,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         tcpConnectorServer.addMessageListener(tcpListener);
         tcpConnectorServer.start();
 
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
+        Runtime.getRuntime().addShutdownHook(new Shutdown());
     }
 
     protected ServiceAgentInfo newServiceAgentInfo(String address, Scopes scopes, Attributes attributes, String language)
@@ -145,21 +145,11 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         return ServiceAgentInfo.from(null, address, scopes, attributes, language);
     }
 
-    @Override
     protected void doStop()
     {
         super.doStop();
         tcpConnectorServer.removeMessageListener(tcpListener);
         tcpConnectorServer.stop();
-
-        try
-        {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        }
-        catch (Exception ignore)
-        {
-            // We could already be shutting down
-        }
     }
 
     /**
@@ -178,11 +168,11 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
             ServiceInfo givenService = ServiceInfo.from(srvReg);
             ServiceInfoCache.Result<ServiceInfo> result = cacheService(givenService, update);
             forwardRegistration(givenService, result.getPrevious(), result.getCurrent(), update);
-            tcpSrvAck.perform(socket, srvReg, SrvAck.SUCCESS);
+            tcpSrvAck.perform(socket, srvReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvReg, x.getSLPError().getCode());
+            tcpSrvAck.perform(socket, srvReg, x.getSLPError());
         }
     }
 
@@ -202,11 +192,11 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
             ServiceInfo givenService = ServiceInfo.from(srvDeReg);
             ServiceInfoCache.Result<ServiceInfo> result = uncacheService(givenService, update);
             forwardDeregistration(givenService, result.getPrevious(), result.getCurrent(), update);
-            tcpSrvAck.perform(socket, srvDeReg, SrvAck.SUCCESS);
+            tcpSrvAck.perform(socket, srvDeReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError().getCode());
+            tcpSrvAck.perform(socket, srvDeReg, x.getSLPError());
         }
     }
 

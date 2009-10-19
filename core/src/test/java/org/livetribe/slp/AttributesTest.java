@@ -16,8 +16,6 @@
 package org.livetribe.slp;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.testng.annotations.Test;
 
@@ -26,29 +24,6 @@ import org.testng.annotations.Test;
  */
 public class AttributesTest
 {
-    @Test
-    public void testFromMap()
-    {
-        byte[] bytes = new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, (byte)0x07};
-        Map<String, String> map = new HashMap<String, String>();
-
-        map.put("one", Attributes.escapeValue(","));
-        map.put("two", Attributes.escapeValue("a!(),<=>\\~"));
-        map.put(Attributes.escapeTag("a!(),<=>\\~\t\n\r_*"), "success");
-        map.put("three", "true");
-        map.put("four", "1234");
-        map.put("five", "\\FF\\CA\\FE\\BA\\BE\\07");
-
-        Attributes attributes = Attributes.from(map);
-
-        assert ",".equals(attributes.valueFor("one").getValue());
-        assert "a!(),<=>\\~".equals(attributes.valueFor("two").getValue());
-        assert "success".equals(attributes.valueFor("a!(),<=>\\~\t\n\r_*").getValue());
-        assert Boolean.TRUE.equals(attributes.valueFor("three").getValue());
-        assert Integer.valueOf("1234").equals(attributes.valueFor("four").getValue());
-        assert Arrays.equals(bytes, (byte[]) attributes.valueFor("five").getValue());
-    }
-
     @Test
     public void testParseAttributeList()
     {

@@ -27,22 +27,25 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_CLIENT_CONNECT_ADDRESS;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
-import org.livetribe.slp.spi.sa.TCPSrvDeRegPerformer;
-import org.livetribe.slp.spi.sa.TCPSrvRegPerformer;
-import org.livetribe.slp.spi.sa.UDPSrvDeRegPerformer;
-import org.livetribe.slp.spi.sa.UDPSrvRegPerformer;
+import org.livetribe.slp.spi.sa.UnicastSrvDeRegPerformer;
+import org.livetribe.slp.spi.sa.UnicastSrvRegPerformer;
 
 /**
  * @version $Revision$ $Date$
  */
 public class StandardServiceAgentClient implements ServiceAgentClient
 {
+
     public static StandardServiceAgentClient newInstance(Settings settings)
     {
         UDPConnector.Factory udpFactory = Factories.newInstance(settings, UDP_CONNECTOR_FACTORY_KEY);
@@ -51,13 +54,11 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private final UDPSrvRegPerformer udpSrvReg;
-    private final TCPSrvRegPerformer tcpSrvReg;
-    private final UDPSrvDeRegPerformer udpSrvDeReg;
-    private final TCPSrvDeRegPerformer tcpSrvDeReg;
+    private final UnicastSrvRegPerformer unicastSrvReg;
+    private final UnicastSrvDeRegPerformer unicastSrvDeReg;
     private int port = Defaults.get(PORT_KEY);
     private String connectAddress = Defaults.get(SA_CLIENT_CONNECT_ADDRESS);
-    private boolean useTCP = Defaults.get(SA_CLIENT_USE_TCP);
+    private boolean preferTCP = Defaults.get(SA_UNICAST_PREFER_TCP);
 
     public StandardServiceAgentClient(UDPConnector udpConnector, TCPConnector tcpConnector)
     {
@@ -66,10 +67,8 @@ public class StandardServiceAgentClient implements ServiceAgentClient
 
     public StandardServiceAgentClient(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
-        this.udpSrvReg = new UDPSrvRegPerformer(udpConnector, settings);
-        this.tcpSrvReg = new TCPSrvRegPerformer(tcpConnector, settings);
-        this.udpSrvDeReg = new UDPSrvDeRegPerformer(udpConnector, settings);
-        this.tcpSrvDeReg = new TCPSrvDeRegPerformer(tcpConnector, settings);
+        this.unicastSrvReg = new UnicastSrvRegPerformer(udpConnector, tcpConnector, settings);
+        this.unicastSrvDeReg = new UnicastSrvDeRegPerformer(udpConnector, tcpConnector, settings);
         if (settings != null) setSettings(settings);
     }
 
@@ -78,7 +77,7 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         if (settings.containsKey(PORT_KEY)) this.port = settings.get(PORT_KEY);
         if (settings.containsKey(SA_CLIENT_CONNECT_ADDRESS))
             this.connectAddress = settings.get(SA_CLIENT_CONNECT_ADDRESS);
-        if (settings.containsKey(SA_CLIENT_USE_TCP)) this.useTCP = settings.get(SA_CLIENT_USE_TCP);
+        if (settings.containsKey(SA_UNICAST_PREFER_TCP)) this.preferTCP = settings.get(SA_UNICAST_PREFER_TCP);
     }
 
     public int getPort()
@@ -111,14 +110,14 @@ public class StandardServiceAgentClient implements ServiceAgentClient
         this.connectAddress = connectAddress;
     }
 
-    public boolean isUseTCP()
+    public boolean isUnicastPreferTCP()
     {
-        return useTCP;
+        return preferTCP;
     }
 
-    public void setUseTCP(boolean useTCP)
+    public void setUnicastPreferTCP(boolean preferTCP)
     {
-        this.useTCP = useTCP;
+        this.preferTCP = preferTCP;
     }
 
     public void register(ServiceInfo service) throws ServiceLocationException
@@ -136,11 +135,11 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     {
         InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getByName(connectAddress), port);
 
-        SrvAck ack = useTCP ? tcpSrvReg.perform(remoteAddress, service, update) : udpSrvReg.perform(remoteAddress, service, update);
+        SrvAck srvAck = unicastSrvReg.perform(remoteAddress, preferTCP, service, update);
 
-        int errorCode = ack.getErrorCode();
-        if (errorCode != 0)
-            throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", SLPError.from(errorCode));
+        SLPError error = srvAck.getSLPError();
+        if (error != SLPError.NO_ERROR)
+            throw new ServiceLocationException("Could not register service " + service + " to ServiceAgent server", error);
 
         if (logger.isLoggable(Level.FINE))
             logger.fine("Registered service " + service + " to ServiceAgent server");
@@ -162,11 +161,11 @@ public class StandardServiceAgentClient implements ServiceAgentClient
     {
         InetSocketAddress remoteAddress = new InetSocketAddress(NetUtils.getByName(connectAddress), port);
 
-        SrvAck ack = useTCP ? tcpSrvDeReg.perform(remoteAddress, service, update) : udpSrvDeReg.perform(remoteAddress, service, update);
+        SrvAck srvAck = unicastSrvDeReg.perform(remoteAddress, preferTCP, service, update);
 
-        int errorCode = ack.getErrorCode();
-        if (errorCode != 0)
-            throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", SLPError.from(errorCode));
+        SLPError error = srvAck.getSLPError();
+        if (error != SLPError.NO_ERROR)
+            throw new ServiceLocationException("Could not deregister service " + service + " from ServiceAgent server", error);
 
         if (logger.isLoggable(Level.FINE))
             logger.fine("Deregistered service " + service + " from ServiceAgent server");

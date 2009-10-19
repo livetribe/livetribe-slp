@@ -17,6 +17,7 @@ package org.livetribe.slp.spi.da;
 
 import java.util.Collection;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.DAAdvert;
@@ -64,7 +65,7 @@ public class MulticastDAAdvertPerformer
         // RFC 2608, 8.0
         daAdvert.setXID(0);
         // RFC 2608, 8.5
-        daAdvert.setErrorCode(0);
+        daAdvert.setSLPError(SLPError.NO_ERROR);
         daAdvert.setMulticast(true);
         return daAdvert;
     }

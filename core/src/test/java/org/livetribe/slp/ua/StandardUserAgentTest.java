@@ -31,7 +31,8 @@ import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.testng.annotations.Test;
@@ -74,7 +75,9 @@ public class StandardUserAgentTest
             ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
             sa.register(service);
 
-            StandardUserAgent ua = StandardUserAgent.newInstance(newSettings());
+            Settings uaSettings = newSettings();
+            uaSettings.put(UA_UNICAST_PREFER_TCP, true);
+            StandardUserAgent ua = StandardUserAgent.newInstance(uaSettings);
             ua.start();
             try
             {

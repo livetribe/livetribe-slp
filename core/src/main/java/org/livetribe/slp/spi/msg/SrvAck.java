@@ -15,6 +15,7 @@
  */
 package org.livetribe.slp.spi.msg;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
 /**
@@ -33,23 +34,22 @@ import org.livetribe.slp.ServiceLocationException;
  */
 public class SrvAck extends Message
 {
-    public static final int SUCCESS = 0;
     private static final int ERROR_CODE_BYTES_LENGTH = 2;
 
-    private int errorCode;
+    private SLPError error = SLPError.NO_ERROR;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
         byte[] result = new byte[ERROR_CODE_BYTES_LENGTH];
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
+        writeInt(getSLPError().getCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
         return result;
     }
 
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
+        setSLPError(SLPError.from(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH)));
     }
 
     public byte getMessageType()
@@ -57,13 +57,13 @@ public class SrvAck extends Message
         return SRV_ACK_TYPE;
     }
 
-    public int getErrorCode()
+    public SLPError getSLPError()
     {
-        return errorCode;
+        return error;
     }
 
-    public void setErrorCode(int errorCode)
+    public void setSLPError(SLPError error)
     {
-        this.errorCode = errorCode;
+        this.error = error;
     }
 }

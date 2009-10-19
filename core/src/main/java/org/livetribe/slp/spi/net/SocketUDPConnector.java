@@ -27,7 +27,11 @@ import java.util.logging.Logger;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
+import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
+import static org.livetribe.slp.settings.Keys.NOTIFICATION_PORT_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.UNICAST_TIMEOUTS_KEY;
 import org.livetribe.slp.settings.Settings;
 
 /**
@@ -115,7 +119,7 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
         catch (SocketException x)
         {
-            throw new ServiceLocationException(x, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException(x, SLPError.NETWORK_INIT_FAILED);
         }
     }
 
@@ -194,22 +198,27 @@ public abstract class SocketUDPConnector implements UDPConnector
         }
     }
 
-    public DatagramPacket sendAndReceive(InetSocketAddress remoteAddress, byte[] bytes)
+    public byte[] sendAndReceive(InetSocketAddress remoteAddress, byte[] bytes)
     {
         DatagramSocket socket = newDatagramSocket();
         try
         {
-            DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
-            packet.setSocketAddress(remoteAddress);
+            DatagramPacket outgoing = new DatagramPacket(bytes, bytes.length);
+            outgoing.setSocketAddress(remoteAddress);
 
             for (int timeout : unicastTimeouts)
             {
-                send(socket, packet);
-                DatagramPacket result = receive(socket, timeout);
-                if (result != null) return result;
+                send(socket, outgoing);
+                DatagramPacket incoming = receive(socket, timeout);
+                if (incoming != null)
+                {
+                    byte[] result = new byte[incoming.getLength()];
+                    System.arraycopy(incoming.getData(), incoming.getOffset(), result, 0, result.length);
+                    return result;
+                }
             }
 
-            return null;
+            throw new ServiceLocationException("Timeout trying to receive from " + remoteAddress, SLPError.NETWORK_TIMED_OUT);
         }
         finally
         {

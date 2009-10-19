@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,60 +20,55 @@ import java.util.List;
 
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
 
 /**
- * The RFC 2608 SrvRply message body is the following:
+ * The RFC 2608 SrvTypeRply message body is the following:
  * <pre>
  *  0                   1                   2                   3
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |        Service Location header (function = SrvRply = 2)       |
+ * |       Service Location header (function = SrvTypeRply = 10)   |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |        Error Code             |        URL Entry count        |
+ * |         Error Code            |   length of [srvtype-list]    |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |       [URL Entry 1]          ...       [URL Entry N]          \
+ * |                         [srvtype-list]                        |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
  *
- * @version $Rev$ $Date$
+ * @version $Revision$ $Date$
  */
-public class SrvRply extends Rply
+public class SrvTypeRply extends Rply
 {
     private static final int ERROR_CODE_BYTES_LENGTH = 2;
-    private static final int URL_ENTRIES_COUNT_BYTES_LENGTH = 2;
+    private static final int SERVICE_TYPES_LENGTH_BYTES_LENGTH = 2;
 
-    private final List<URLEntry> urlEntries = new ArrayList<URLEntry>();
+    private final List<ServiceType> serviceTypes = new ArrayList<ServiceType>();
     private SLPError error = SLPError.NO_ERROR;
 
     protected byte[] serializeBody() throws ServiceLocationException
     {
-        List urls = getURLEntries();
-        int urlEntriesCount = urls == null ? 0 : urls.size();
-        byte[][] urlEntriesBytes = new byte[urlEntriesCount][];
-        int urlEntriesBytesSum = 0;
-        for (int i = 0; i < urlEntriesCount; ++i)
+        byte[] serviceTypesBytes = EMPTY_BYTES;
+        List<ServiceType> types = getServiceTypes();
+        if (types != null)
         {
-            byte[] bytes = ((URLEntry)urls.get(i)).serialize();
-            urlEntriesBytes[i] = bytes;
-            urlEntriesBytesSum += bytes.length;
+            String[] serviceTypeStrings = new String[types.size()];
+            for (int i = 0; i < types.size(); ++i) serviceTypeStrings[i] = types.get(i).asString();
+            serviceTypesBytes = writeStringArray(serviceTypeStrings, true);
         }
+        int serviceTypesLength = serviceTypesBytes.length;
 
-        byte[] result = new byte[ERROR_CODE_BYTES_LENGTH + URL_ENTRIES_COUNT_BYTES_LENGTH + urlEntriesBytesSum];
+        int bodyLength = ERROR_CODE_BYTES_LENGTH + SERVICE_TYPES_LENGTH_BYTES_LENGTH + serviceTypesLength;
+        byte[] result = new byte[bodyLength];
 
         int offset = 0;
         writeInt(getSLPError().getCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
 
         offset += ERROR_CODE_BYTES_LENGTH;
-        writeInt(urlEntriesCount, result, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
+        writeInt(serviceTypesLength, result, offset, SERVICE_TYPES_LENGTH_BYTES_LENGTH);
 
-        offset += URL_ENTRIES_COUNT_BYTES_LENGTH;
-        for (int i = 0; i < urlEntriesCount; ++i)
-        {
-            byte[] bytes = urlEntriesBytes[i];
-            int length = bytes.length;
-            System.arraycopy(bytes, 0, result, offset, length);
-            offset += length;
-        }
+        offset += SERVICE_TYPES_LENGTH_BYTES_LENGTH;
+        System.arraycopy(serviceTypesBytes, 0, result, offset, serviceTypesLength);
 
         return result;
     }
@@ -87,20 +82,16 @@ public class SrvRply extends Rply
         if (getSLPError() != SLPError.NO_ERROR && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
 
         offset += ERROR_CODE_BYTES_LENGTH;
-        int urlEntryCount = readInt(bytes, offset, URL_ENTRIES_COUNT_BYTES_LENGTH);
+        int serviceTypesBytes = readInt(bytes, offset, SERVICE_TYPES_LENGTH_BYTES_LENGTH);
 
-        offset += URL_ENTRIES_COUNT_BYTES_LENGTH;
-        for (int i = 0; i < urlEntryCount; ++i)
-        {
-            URLEntry urlEntry = new URLEntry();
-            offset += urlEntry.deserialize(bytes, offset);
-            addURLEntry(urlEntry);
-        }
+        offset += SERVICE_TYPES_LENGTH_BYTES_LENGTH;
+        String[] serviceTypeStrings = readStringArray(bytes, offset, serviceTypesBytes, true);
+        for (String serviceTypeString : serviceTypeStrings) addServiceType(new ServiceType(serviceTypeString));
     }
 
     public byte getMessageType()
     {
-        return SRV_RPLY_TYPE;
+        return SRV_TYPE_RPLY_TYPE;
     }
 
     public SLPError getSLPError()
@@ -113,13 +104,13 @@ public class SrvRply extends Rply
         this.error = error;
     }
 
-    public List<URLEntry> getURLEntries()
+    public List<ServiceType> getServiceTypes()
     {
-        return urlEntries;
+        return serviceTypes;
     }
 
-    public void addURLEntry(URLEntry urlEntry)
+    public void addServiceType(ServiceType serviceType)
     {
-        urlEntries.add(urlEntry);
+        serviceTypes.add(serviceType);
     }
 }

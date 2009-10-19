@@ -351,9 +351,9 @@ public abstract class Message extends BytesBlock
             case DA_ADVERT_TYPE:
                 return new DAAdvert();
             case SRV_TYPE_RQST_TYPE:
-                break;
+                return new SrvTypeRqst();
             case SRV_TYPE_RPLY_TYPE:
-                break;
+                return new SrvTypeRply();
             case SA_ADVERT_TYPE:
                 return new SAAdvert();
         }

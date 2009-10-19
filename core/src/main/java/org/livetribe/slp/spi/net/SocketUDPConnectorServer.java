@@ -30,7 +30,12 @@ import java.util.logging.Level;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
+import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
+import static org.livetribe.slp.settings.Keys.MULTICAST_TIME_TO_LIVE_KEY;
+import static org.livetribe.slp.settings.Keys.NOTIFICATION_PORT_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 
@@ -131,7 +136,7 @@ public abstract class SocketUDPConnectorServer extends AbstractConnectorServer i
         catch (InterruptedException x)
         {
             Thread.currentThread().interrupt();
-            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_ERROR);
+            throw new ServiceLocationException("Could not start TCPConnectorServer " + this, SLPError.NETWORK_INIT_FAILED);
         }
     }
 

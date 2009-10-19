@@ -166,11 +166,6 @@ public class Keys
     public static final Key<String> SA_CLIENT_FACTORY_KEY = Key.from("livetribe.slp.sa.client.factory", String.class);
 
     /**
-     * The key to specify whether the ServiceAgentClient should use TCP to contact the ServiceAgentServer.
-     */
-    public static final Key<Boolean> SA_CLIENT_USE_TCP = Key.from("livetribe.slp.sa.client.use.tcp", Boolean.class);
-
-    /**
      * The key to specify the full qualified name of the ServiceAgent factory class.
      */
     public static final Key<String> SA_FACTORY_KEY = Key.from("livetribe.slp.sa.factory", String.class);
@@ -180,6 +175,14 @@ public class Keys
      * Default value is true.
      */
     public static final Key<Boolean> SA_SERVICE_RENEWAL_ENABLED_KEY = Key.from("livetribe.slp.sa.service.renewal.enabled", Boolean.class);
+
+    /**
+     * The key to specify whether service agents should use TCP to contact remote agents.
+     * This property affects how a ServiceAgentClient connects to a ServiceAgentServer, and how a service agent
+     * connects to a directory agent.
+     * Default value is false, that is UDP is used.
+     */
+    public static final Key<Boolean> SA_UNICAST_PREFER_TCP = Key.from("livetribe.slp.sa.unicast.prefer.tcp", Boolean.class);
 
     /**
      * The key to specify the full qualified name of the TCPConnector factory class.
@@ -213,6 +216,11 @@ public class Keys
      * The key to specify the full qualified name of the UserAgent factory class.
      */
     public static final Key<String> UA_FACTORY_KEY = Key.from("livetribe.slp.ua.factory", String.class);
+
+    /**
+     * The key to specify whether the UserAgentClient should use TCP to contact the ServiceAgentServer.
+     */
+    public static final Key<Boolean> UA_UNICAST_PREFER_TCP = Key.from("livetribe.slp.ua.unicast.prefer.tcp", Boolean.class);
 
     /**
      * The key to specify the full qualified name of the UDPConnector factory class.

@@ -15,6 +15,7 @@
  */
 package org.livetribe.slp.spi.sa;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +34,13 @@ import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.LANGUAGE_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_ATTRIBUTES_KEY;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.SCOPES_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.AbstractServer;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
@@ -67,8 +74,8 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     private final UDPConnectorServer udpConnectorServer;
     private final MulticastDASrvRqstPerformer multicastDASrvRqst;
     private final UDPSrvAckPerformer udpSrvAck;
-    private final TCPSrvRegPerformer tcpSrvReg;
-    private final TCPSrvDeRegPerformer tcpSrvDeReg;
+    private final UnicastSrvRegPerformer unicastSrvReg;
+    private final UnicastSrvDeRegPerformer unicastSrvDeReg;
     private final NotifySrvRegPerformer notifySrvReg;
     private final NotifySrvDeRegPerformer notifySrvDeReg;
     private final UDPSAAdvertPerformer udpSAAdvert;
@@ -79,14 +86,15 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     private Scopes scopes = Scopes.from(Defaults.get(SCOPES_KEY));
     private Attributes attributes = Attributes.from(Defaults.get(SA_ATTRIBUTES_KEY));
     private String language = Defaults.get(LANGUAGE_KEY);
+    private boolean preferTCP = Defaults.get(SA_UNICAST_PREFER_TCP);
 
     protected AbstractServiceAgent(UDPConnector udpConnector, TCPConnector tcpConnector, UDPConnectorServer udpConnectorServer, Settings settings)
     {
         this.udpConnectorServer = udpConnectorServer;
         this.multicastDASrvRqst = new MulticastDASrvRqstPerformer(udpConnector, settings);
         this.udpSrvAck = new UDPSrvAckPerformer(udpConnector, settings);
-        this.tcpSrvReg = new TCPSrvRegPerformer(tcpConnector, settings);
-        this.tcpSrvDeReg = new TCPSrvDeRegPerformer(tcpConnector, settings);
+        this.unicastSrvReg = new UnicastSrvRegPerformer(udpConnector, tcpConnector, settings);
+        this.unicastSrvDeReg = new UnicastSrvDeRegPerformer(udpConnector, tcpConnector, settings);
         this.notifySrvReg = new NotifySrvRegPerformer(udpConnector, settings);
         this.notifySrvDeReg = new NotifySrvDeRegPerformer(udpConnector, settings);
         this.udpSAAdvert = new UDPSAAdvertPerformer(udpConnector, settings);
@@ -102,6 +110,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         if (settings.containsKey(SCOPES_KEY)) this.scopes = Scopes.from(settings.get(SCOPES_KEY));
         if (settings.containsKey(SA_ATTRIBUTES_KEY)) this.attributes = Attributes.from(settings.get(SA_ATTRIBUTES_KEY));
         if (settings.containsKey(LANGUAGE_KEY)) this.language = settings.get(LANGUAGE_KEY);
+        if (settings.containsKey(SA_UNICAST_PREFER_TCP)) this.preferTCP = settings.get(SA_UNICAST_PREFER_TCP);
     }
 
     public String[] getDirectoryAgentAddresses()
@@ -253,14 +262,14 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     protected void registerServiceWithDirectoryAgent(ServiceInfo service, ServiceInfo oldService, ServiceInfo currentService, DirectoryAgentInfo directoryAgent, boolean update)
     {
-        InetSocketAddress daAddress = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getTCPPort(port));
-        SrvAck srvAck = tcpSrvReg.perform(daAddress, service, update);
-        int errorCode = srvAck.getErrorCode();
-        if (errorCode != SrvAck.SUCCESS)
+        InetSocketAddress daAddress = resolveDirectoryAgentAddress(directoryAgent);
+        SrvAck srvAck = unicastSrvReg.perform(daAddress, preferTCP, service, update);
+        SLPError error = srvAck.getSLPError();
+        if (error != SLPError.NO_ERROR)
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("Could not register service " + service + " to DirectoryAgent " + directoryAgent + ": error " + errorCode);
-            throw new ServiceLocationException("Could not register service " + service, SLPError.from(errorCode));
+                logger.fine("Could not register service " + service + " to DirectoryAgent " + directoryAgent + ": error " + error);
+            throw new ServiceLocationException("Could not register service " + service, error);
         }
         else
         {
@@ -272,11 +281,13 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
     protected void notifyServiceRegistration(ServiceInfo service, ServiceInfo oldService, ServiceInfo currentService, boolean update)
     {
         notifySrvReg.perform(serviceAgents.values(), service, update);
+        if (logger.isLoggable(Level.FINE)) logger.fine("Sent notification for registration of service " + service);
     }
 
     protected void notifyServiceDeregistration(ServiceInfo service, ServiceInfo oldService, ServiceInfo currentService, boolean update)
     {
         notifySrvDeReg.perform(serviceAgents.values(), service, update);
+        if (logger.isLoggable(Level.FINE)) logger.fine("Sent notification for deregistration of service " + service);
     }
 
     protected void forwardRegistrations()
@@ -314,20 +325,27 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
 
     protected void deregisterServiceWithDirectoryAgent(ServiceInfo service, ServiceInfo oldService, ServiceInfo currentService, DirectoryAgentInfo directoryAgent, boolean update)
     {
-        InetSocketAddress address = new InetSocketAddress(NetUtils.getByName(directoryAgent.getHostAddress()), directoryAgent.getTCPPort(port));
-        SrvAck srvAck = tcpSrvDeReg.perform(address, service, update);
-        int errorCode = srvAck.getErrorCode();
-        if (errorCode != SrvAck.SUCCESS)
+        InetSocketAddress daAddress = resolveDirectoryAgentAddress(directoryAgent);
+        SrvAck srvAck = unicastSrvDeReg.perform(daAddress, preferTCP, service, update);
+        SLPError error = srvAck.getSLPError();
+        if (error != SLPError.NO_ERROR)
         {
             if (logger.isLoggable(Level.FINE))
-                logger.fine("Could not deregister service " + service + " from DirectoryAgent " + directoryAgent + ": error " + errorCode);
-            throw new ServiceLocationException("Could not deregister service " + service, SLPError.from(errorCode));
+                logger.fine("Could not deregister service " + service + " from DirectoryAgent " + directoryAgent + ": error " + error);
+            throw new ServiceLocationException("Could not deregister service " + service, error);
         }
         else
         {
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Deregistered service " + service + " from DirectoryAgent " + directoryAgent);
         }
+    }
+
+    protected InetSocketAddress resolveDirectoryAgentAddress(DirectoryAgentInfo directoryAgent)
+    {
+        InetAddress daAddress = NetUtils.getByName(directoryAgent.getHostAddress());
+        int daPort = directoryAgent.getUnicastPort(preferTCP, port);
+        return new InetSocketAddress(daAddress, daPort);
     }
 
     protected void handleMulticastDAAdvert(DAAdvert daAdvert)
@@ -402,12 +420,14 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
             boolean update = srvReg.isUpdating();
             ServiceInfo givenService = ServiceInfo.from(srvReg);
             ServiceInfoCache.Result<ServiceInfo> result = cacheService(givenService, update);
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent " + this + " registered service " + givenService);
             forwardRegistration(givenService, result.getPrevious(), result.getCurrent(), update);
-            udpSrvAck.perform(localAddress, remoteAddress, srvReg, SrvAck.SUCCESS);
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getSLPError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvReg, x.getSLPError());
         }
     }
 
@@ -419,11 +439,11 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
             ServiceInfo givenService = ServiceInfo.from(srvDeReg);
             ServiceInfoCache.Result<ServiceInfo> result = uncacheService(givenService, update);
             forwardDeregistration(givenService, result.getPrevious(), result.getCurrent(), update);
-            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, SrvAck.SUCCESS);
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, SLPError.NO_ERROR);
         }
         catch (ServiceLocationException x)
         {
-            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getSLPError().getCode());
+            udpSrvAck.perform(localAddress, remoteAddress, srvDeReg, x.getSLPError());
         }
     }
 

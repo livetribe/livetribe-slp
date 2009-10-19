@@ -17,6 +17,7 @@ package org.livetribe.slp.spi;
 
 import java.net.InetSocketAddress;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
@@ -34,9 +35,9 @@ public class UDPSrvAckPerformer extends SrvAckPerformer
         this.udpConnector = udpConnector;
     }
 
-    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, int errorCode)
+    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, SLPError error)
     {
-        SrvAck srvAck = newSrvAck(message, errorCode);
+        SrvAck srvAck = newSrvAck(message, error);
         byte[] bytes = srvAck.serialize();
         udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
     }

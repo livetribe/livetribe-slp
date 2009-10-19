@@ -15,39 +15,41 @@
  */
 package org.livetribe.slp.spi;
 
-import java.net.Socket;
-
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
-import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPAttrRplyPerformer extends AttrRplyPerformer
+public class AttrRplyPerformer
 {
-    private final TCPConnector tcpConnector;
-
-    public TCPAttrRplyPerformer(TCPConnector tcpConnector, Settings settings)
+    protected AttrRply newAttrRply(Message message, Attributes attributes)
     {
-        this.tcpConnector = tcpConnector;
+        return newAttrRply(message, attributes, Integer.MAX_VALUE);
     }
 
-    public void perform(Socket socket, Message message, Attributes attributes)
+    protected AttrRply newAttrRply(Message message, Attributes attributes, int maxLength)
     {
-        AttrRply attrRply = newAttrRply(message, attributes);
+        AttrRply attrRply = newAttrRply(message, SLPError.NO_ERROR);
+        attrRply.setAttributes(attributes);
         byte[] attrRplyBytes = attrRply.serialize();
-        tcpConnector.write(socket, attrRplyBytes);
+        if (attrRplyBytes.length > maxLength)
+        {
+            attrRply.setAttributes(Attributes.NONE);
+            attrRply.setOverflow(true);
+        }
+        return attrRply;
     }
 
-    public void perform(Socket socket, Message message, SLPError error)
+    protected AttrRply newAttrRply(Message message, SLPError error)
     {
-        AttrRply attrRply = newAttrRply(message, error);
-        byte[] attrRplyBytes = attrRply.serialize();
-        tcpConnector.write(socket, attrRplyBytes);
+        AttrRply attrRply = new AttrRply();
+        // Replies must have the same language and XID as the request (RFC 2608, 8.0)
+        attrRply.setLanguage(message.getLanguage());
+        attrRply.setXID(message.getXID());
+        attrRply.setSLPError(error);
+        return attrRply;
     }
-
 }

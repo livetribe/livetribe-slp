@@ -29,7 +29,8 @@ import java.util.logging.Logger;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.TCP_MESSAGE_MAX_LENGTH_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_READ_TIMEOUT_KEY;
 import org.livetribe.slp.settings.Settings;
 
 /**
@@ -86,6 +87,10 @@ public class SocketTCPConnector implements TCPConnector
             socket = new Socket(address.getAddress(), address.getPort());
             write(socket, bytes);
             return read(socket);
+        }
+        catch (SocketTimeoutException x)
+        {
+            throw new ServiceLocationException(x, SLPError.NETWORK_TIMED_OUT);
         }
         catch (IOException x)
         {

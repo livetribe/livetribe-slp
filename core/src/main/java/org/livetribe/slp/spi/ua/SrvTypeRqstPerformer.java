@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,25 @@
  */
 package org.livetribe.slp.spi.ua;
 
-import java.util.List;
-
-import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
-import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvTypeRqst;
 
 /**
  * @version $Revision$ $Date$
  */
-public interface IUserAgent
+public abstract class SrvTypeRqstPerformer
 {
-    public List<ServiceInfo> findServices(ServiceType serviceType, String language, Scopes scopes, String filter);
-
-    public Attributes findAttributes(ServiceType serviceType, String language, Scopes scopes, Attributes tags);
-
-    public Attributes findAttributes(ServiceURL serviceURL, String language, Scopes scopes, Attributes tags);
-
-    public List<ServiceType> findServiceTypes(String namingAuthority, Scopes scopes);
+    protected SrvTypeRqst newSrvTypeRqst(String namingAuthority, Scopes scopes)
+    {
+        SrvTypeRqst srvTypeRqst = new SrvTypeRqst();
+        srvTypeRqst.setXID(Message.newXID());
+        srvTypeRqst.setScopes(scopes);
+        if (ServiceType.ANY_NAMING_AUTHORITY.equals(namingAuthority))
+            srvTypeRqst.setAnyNamingAuthority(true);
+        else
+            srvTypeRqst.setNamingAuthority(namingAuthority);
+        return srvTypeRqst;
+    }
 }

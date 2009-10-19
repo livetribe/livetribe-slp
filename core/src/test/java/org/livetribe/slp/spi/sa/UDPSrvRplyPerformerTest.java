@@ -1,12 +1,11 @@
-/**
- *
- * Copyright 2009 (C) The original author or authors
+/*
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,24 +18,22 @@ package org.livetribe.slp.spi.sa;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.api.Invocation;
-import org.jmock.lib.action.CustomAction;
-import org.testng.annotations.Test;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.mock.BitMatch;
-import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Keys;
+import org.livetribe.slp.spi.msg.AttributeListExtension;
+import org.livetribe.slp.spi.msg.LanguageExtension;
+import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.ScopeListExtension;
 import org.livetribe.slp.spi.msg.SrvRply;
-import org.livetribe.slp.spi.net.UDPConnector;
-
+import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.net.NetUtils;
+import org.testng.annotations.Test;
 
 /**
  * @version $Revision$ $Date$
@@ -44,41 +41,38 @@ import org.livetribe.slp.spi.net.UDPConnector;
 public class UDPSrvRplyPerformerTest
 {
     @Test
-    public void testOverflow() throws Exception
+    public void testOverflow()
     {
-        Mockery context = new Mockery();
-        final AtomicReference reference = new AtomicReference();
-        final UDPConnector connector = context.mock(UDPConnector.class);
+        final AtomicReference<SrvRply> srvRply = new AtomicReference<SrvRply>();
+        UDPSrvRplyPerformer performer = new UDPSrvRplyPerformer(null, null)
+        {
+            @Override
+            protected void send(InetSocketAddress localAddress, InetSocketAddress remoteAddress, byte[] bytes)
+            {
+                srvRply.set((SrvRply)Message.deserialize(bytes));
+            }
+        };
 
-        context.checking(new Expectations()
-        {{
-                oneOf(connector).send(with(aNonNull(String.class)), with(aNonNull(InetSocketAddress.class)), with(new BitMatch(5, (byte) 0x80)));
-                will(new CustomAction("Test")
-                {
-                    @SuppressWarnings({"unchecked"})
-                    public Object invoke(Invocation invocation) throws Throwable
-                    {
-                        reference.set(invocation.getParameter(2));
-                        return null;
-                    }
-                });
-            }});
+        String language = Locale.ENGLISH.getLanguage();
+        ServiceAgentInfo serviceAgent = ServiceAgentInfo.from(UUID.randomUUID().toString(), NetUtils.getLocalhost().getHostAddress(), Scopes.DEFAULT, Attributes.NONE, language);
+        SrvRqst srvRqst = new SrvRqst();
+        srvRqst.setXID(Message.newXID());
+        srvRqst.setLanguage(language);
+        srvRqst.addExtension(new LanguageExtension());
+        srvRqst.addExtension(new ScopeListExtension());
+        srvRqst.addExtension(new AttributeListExtension());
 
-        UDPSrvRplyPerformer usrp = new UDPSrvRplyPerformer(connector, null);
+        // Without extensions, 36 URLEntries fit the srvRply.
+        // With the extensions, 6 URLEntries with language, scopes and attributes.
+        ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/jmxrmi");
+        ServiceInfo service = new ServiceInfo(serviceURL, language, Scopes.DEFAULT, Attributes.from("(a=1,2),(b=true),(c=string),(d=\\FF\\00),e"));
+        List<ServiceInfo> services = new ArrayList<ServiceInfo>();
+        int count = 50;
+        for (int i = 0; i < count; ++i) services.add(service);
+        performer.perform(null, null, serviceAgent, srvRqst, services);
 
-        List<ServiceInfo> list = new ArrayList<ServiceInfo>();
-        for (int i = 0; i < 100; i++) list.add(new ServiceInfo(new ServiceURL("test://localhost:" + i), "en", Scopes.ANY, Attributes.NONE));
-
-        usrp.perform(new InetSocketAddress("localhost", 4207),
-                     new InetSocketAddress("localhost", 4207),
-                     ServiceAgentInfo.from("id", "localhost", Scopes.ANY, Attributes.NONE, "en"),
-                     new SrvRply(),
-                     list);
-
-        byte[] bytes = (byte[]) reference.get();
-
-        assert bytes.length == Defaults.get(Keys.MAX_TRANSMISSION_UNIT_KEY);
-
-        context.assertIsSatisfied();
+        assert srvRply.get() != null;
+        assert srvRply.get().isOverflow();
+        assert srvRply.get().getURLEntries().size() < count;
     }
 }

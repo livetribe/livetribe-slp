@@ -10,7 +10,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.livetribe.slp</groupId>
-    <artifactId>livetribe-slp-root</artifactId>
+    <artifactId>livetribe-slp-project</artifactId>
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
     <packaging>pom</packaging>
@@ -20,12 +20,6 @@
         <module>core</module>
         <module>osgi</module>
     </modules>
-
-
-    <properties>
-        <slpVersion>2.1.0-SNAPSHOT</slpVersion>
-        <paxExamVersion>1.1.0</paxExamVersion>
-    </properties>
 
     <build>
         <defaultGoal>install</defaultGoal>
@@ -50,77 +44,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencyManagement>
-        <dependencies>
-
-            <dependency>
-                <groupId>org.jmock</groupId>
-                <artifactId>jmock</artifactId>
-                <version>2.5.1</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.5</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.livetribe.slp</groupId>
-                <artifactId>livetribe-slp</artifactId>
-                <version>${slpVersion}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.ops4j.pax.exam</groupId>
-                <artifactId>pax-exam</artifactId>
-                <version>${paxExamVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.exam</groupId>
-                <artifactId>pax-exam-junit</artifactId>
-                <version>${paxExamVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ops4j.pax.exam</groupId>
-                <artifactId>pax-exam-container-default</artifactId>
-                <version>${paxExamVersion}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.ops4j.pax.url</groupId>
-                <artifactId>pax-url-mvn</artifactId>
-                <version>${paxExamVersion}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.papoose.osgi</groupId>
-                <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
-                <version>4.2.0.200908310645</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.papoose.osgi</groupId>
-                <artifactId>OSGi_R4_v4.2_cmpn_spec</artifactId>
-                <version>4.2.0.200908310645</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.testng</groupId>
-                <artifactId>testng</artifactId>
-                <version>5.8</version>
-                <classifier>jdk15</classifier>
-                <scope>test</scope>
-            </dependency>
-
-        </dependencies>
-    </dependencyManagement>
 
 </project>
 

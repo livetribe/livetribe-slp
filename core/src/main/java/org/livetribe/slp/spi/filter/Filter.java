@@ -18,19 +18,22 @@ package org.livetribe.slp.spi.filter;
 import org.livetribe.slp.Attributes;
 
 /**
+ * A LDAPv3 expression used to match {@link Attributes}.
+ * <br />
+ * Instances of this class are created via {@link FilterParser}.
+ *
  * @version $Rev$ $Date$
  */
 public interface Filter
 {
     /**
-     * Returns true if the given attributes matches the expression represented by this filter.
-     *
      * @param attributes The attributes to match against this filter.
+     * @return true if the given attributes matches the expression represented by this filter.
      */
     public boolean matches(Attributes attributes);
 
     /**
-     * @return A string representation of this filter
+     * @return a string representation of this filter
      * @see FilterParser#parse(String)
      */
     public String asString();

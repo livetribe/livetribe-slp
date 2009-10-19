@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2008-2008 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,30 +18,28 @@ package org.livetribe.slp.spi.ua;
 import java.util.List;
 
 import org.livetribe.slp.Scopes;
-import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.Converger;
-import org.livetribe.slp.spi.filter.Filter;
-import org.livetribe.slp.spi.msg.SrvRply;
-import org.livetribe.slp.spi.msg.SrvRqst;
+import org.livetribe.slp.spi.msg.SrvTypeRply;
+import org.livetribe.slp.spi.msg.SrvTypeRqst;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class MulticastSrvRqstPerformer extends SrvRqstPerformer
+public class MulticastSrvTypeRqstPerformer extends SrvTypeRqstPerformer
 {
-    private final Converger<SrvRply> converger;
+    private final Converger<SrvTypeRply> converger;
 
-    public MulticastSrvRqstPerformer(UDPConnector udpConnector, Settings settings)
+    public MulticastSrvTypeRqstPerformer(UDPConnector udpConnector, Settings settings)
     {
-        converger = new Converger<SrvRply>(udpConnector, settings);
+        this.converger = new Converger<SrvTypeRply>(udpConnector, settings);
     }
 
-    public List<SrvRply> perform(ServiceType serviceType, String language, Scopes scopes, Filter filter)
+    public List<SrvTypeRply> perform(String namingAuthority, Scopes scopes)
     {
-        SrvRqst srvRqst = newSrvRqst(serviceType, language, scopes, filter);
-        srvRqst.setMulticast(true);
-        return converger.converge(srvRqst);
+        SrvTypeRqst srvTypeRqst = newSrvTypeRqst(namingAuthority, scopes);
+        srvTypeRqst.setMulticast(true);
+        return converger.converge(srvTypeRqst);
     }
 }

@@ -16,38 +16,38 @@
 package org.livetribe.slp.spi;
 
 import java.net.Socket;
+import java.util.List;
 
-import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
+import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.Message;
+import org.livetribe.slp.spi.msg.SrvTypeRply;
 import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPAttrRplyPerformer extends AttrRplyPerformer
+public class TCPSrvTypeRplyPerformer extends SrvTypeRplyPerformer
 {
     private final TCPConnector tcpConnector;
 
-    public TCPAttrRplyPerformer(TCPConnector tcpConnector, Settings settings)
+    public TCPSrvTypeRplyPerformer(TCPConnector tcpConnector, Settings settings)
     {
         this.tcpConnector = tcpConnector;
     }
 
-    public void perform(Socket socket, Message message, Attributes attributes)
+    public void perform(Socket socket, Message message, List<ServiceType> serviceTypes)
     {
-        AttrRply attrRply = newAttrRply(message, attributes);
-        byte[] attrRplyBytes = attrRply.serialize();
-        tcpConnector.write(socket, attrRplyBytes);
+        SrvTypeRply srvTypeRply = newSrvTypeRply(message, serviceTypes);
+        byte[] srvTypeRplyBytes = srvTypeRply.serialize();
+        tcpConnector.write(socket, srvTypeRplyBytes);
     }
 
     public void perform(Socket socket, Message message, SLPError error)
     {
-        AttrRply attrRply = newAttrRply(message, error);
-        byte[] attrRplyBytes = attrRply.serialize();
-        tcpConnector.write(socket, attrRplyBytes);
+        SrvTypeRply srvTypeRply = newSrvTypeRply(message, error);
+        byte[] srvTypeRplyBytes = srvTypeRply.serialize();
+        tcpConnector.write(socket, srvTypeRplyBytes);
     }
-
 }

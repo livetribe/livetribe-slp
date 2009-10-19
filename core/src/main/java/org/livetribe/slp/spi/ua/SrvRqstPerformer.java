@@ -15,41 +15,21 @@
  */
 package org.livetribe.slp.spi.ua;
 
-import java.net.InetSocketAddress;
-
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.msg.AttributeListExtension;
 import org.livetribe.slp.spi.msg.LanguageExtension;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.ScopeListExtension;
-import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
-import org.livetribe.slp.spi.net.TCPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class TCPSrvRqstPerformer
+public class SrvRqstPerformer
 {
-    private final TCPConnector tcpConnector;
-
-    public TCPSrvRqstPerformer(TCPConnector tcpConnector, Settings settings)
-    {
-        this.tcpConnector = tcpConnector;
-    }
-
-    public SrvRply perform(InetSocketAddress address, ServiceType serviceType, String language, Scopes scopes, Filter filter)
-    {
-        SrvRqst srvRqst = newSrvRqst(serviceType, language, scopes, filter);
-        byte[] srvRqstBytes = srvRqst.serialize();
-        byte[] srvRplyBytes = tcpConnector.writeAndRead(address, srvRqstBytes);
-        return (SrvRply)Message.deserialize(srvRplyBytes);
-    }
-
-    private SrvRqst newSrvRqst(ServiceType serviceType, String language, Scopes scopes, Filter filter)
+    protected SrvRqst newSrvRqst(ServiceType serviceType, String language, Scopes scopes, Filter filter)
     {
         SrvRqst srvRqst = new SrvRqst();
         srvRqst.setLanguage(language);

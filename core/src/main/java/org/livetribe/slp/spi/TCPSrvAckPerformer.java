@@ -17,6 +17,7 @@ package org.livetribe.slp.spi;
 
 import java.net.Socket;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
@@ -34,9 +35,9 @@ public class TCPSrvAckPerformer extends SrvAckPerformer
         this.tcpConnector = tcpConnector;
     }
 
-    public void perform(Socket socket, Message message, int errorCode)
+    public void perform(Socket socket, Message message, SLPError error)
     {
-        SrvAck srvAck = newSrvAck(message, errorCode);
+        SrvAck srvAck = newSrvAck(message, error);
         byte[] bytes = srvAck.serialize();
         tcpConnector.write(socket, bytes);
     }

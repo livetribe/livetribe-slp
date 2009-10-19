@@ -45,7 +45,7 @@ public class ServiceTypeTest
         assert "http".equals(serviceType.getConcreteTypeName());
         assert "jmx".equals(serviceType.getPrincipleTypeName());
         assert "".equals(serviceType.getNamingAuthority());
-        assert serviceType.isNADefault();
+        assert serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -58,7 +58,7 @@ public class ServiceTypeTest
         assert "http".equals(serviceType.getConcreteTypeName());
         assert "jmx".equals(serviceType.getPrincipleTypeName());
         assert "na".equals(serviceType.getNamingAuthority());
-        assert !serviceType.isNADefault();
+        assert !serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ServiceTypeTest
         assert "".equals(serviceType.getConcreteTypeName());
         assert "jmx".equals(serviceType.getPrincipleTypeName());
         assert "".equals(serviceType.getNamingAuthority());
-        assert serviceType.isNADefault();
+        assert serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ServiceTypeTest
         assert "".equals(serviceType.getConcreteTypeName());
         assert "jmx".equals(serviceType.getPrincipleTypeName());
         assert "na".equals(serviceType.getNamingAuthority());
-        assert !serviceType.isNADefault();
+        assert !serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -97,7 +97,7 @@ public class ServiceTypeTest
         assert "http".equals(serviceType.getConcreteTypeName());
         assert "jmx".equals(serviceType.getPrincipleTypeName());
         assert "".equals(serviceType.getNamingAuthority());
-        assert serviceType.isNADefault();
+        assert serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -110,7 +110,7 @@ public class ServiceTypeTest
         assert "http".equals(serviceType.getConcreteTypeName());
         assert "jmx".equals(serviceType.getPrincipleTypeName());
         assert "na".equals(serviceType.getNamingAuthority());
-        assert !serviceType.isNADefault();
+        assert !serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -123,7 +123,7 @@ public class ServiceTypeTest
         assert "".equals(serviceType.getConcreteTypeName());
         assert "http".equals(serviceType.getPrincipleTypeName());
         assert "".equals(serviceType.getNamingAuthority());
-        assert serviceType.isNADefault();
+        assert serviceType.isDefaultNamingAuthority();
     }
 
     @Test
@@ -136,7 +136,7 @@ public class ServiceTypeTest
         assert "".equals(serviceType.getConcreteTypeName());
         assert "http".equals(serviceType.getPrincipleTypeName());
         assert "na".equals(serviceType.getNamingAuthority());
-        assert !serviceType.isNADefault();
+        assert !serviceType.isDefaultNamingAuthority();
     }
 
     @Test

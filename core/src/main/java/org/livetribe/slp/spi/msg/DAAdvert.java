@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
@@ -59,7 +60,7 @@ public class DAAdvert extends Rply
     private static final int SPI_LENGTH_BYTES_LENGTH = 2;
     private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
 
-    private int errorCode;
+    private SLPError error = SLPError.NO_ERROR;
     private int bootTime;
     private String url;
     private Scopes scopes;
@@ -98,7 +99,7 @@ public class DAAdvert extends Rply
         byte[] result = new byte[bodyLength];
 
         int offset = 0;
-        writeInt(getErrorCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
+        writeInt(getSLPError().getCode(), result, offset, ERROR_CODE_BYTES_LENGTH);
 
         offset += ERROR_CODE_BYTES_LENGTH;
         writeInt(getBootTime(), result, offset, BOOT_TIME_BYTES_LENGTH);
@@ -145,10 +146,10 @@ public class DAAdvert extends Rply
     protected void deserializeBody(byte[] bytes) throws ServiceLocationException
     {
         int offset = 0;
-        setErrorCode(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH));
+        setSLPError(SLPError.from(readInt(bytes, offset, ERROR_CODE_BYTES_LENGTH)));
 
         // The message may be truncated if an error occurred (RFC 2608, Chapter 7)
-        if (getErrorCode() != 0 && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
+        if (getSLPError() != SLPError.NO_ERROR && bytes.length == ERROR_CODE_BYTES_LENGTH) return;
 
         offset += ERROR_CODE_BYTES_LENGTH;
         setBootTime(readInt(bytes, offset, BOOT_TIME_BYTES_LENGTH));
@@ -193,14 +194,14 @@ public class DAAdvert extends Rply
         }
     }
 
-    public int getErrorCode()
+    public SLPError getSLPError()
     {
-        return errorCode;
+        return error;
     }
 
-    public void setErrorCode(int errorCode)
+    public void setSLPError(SLPError error)
     {
-        this.errorCode = errorCode;
+        this.error = error;
     }
 
     public int getBootTime()
@@ -270,7 +271,7 @@ public class DAAdvert extends Rply
         String responder = getResponder();
         if (responder != null) result.append(responder);
         result.append(")");
-        result.append(" ").append(getErrorCode());
+        result.append(" ").append(getSLPError());
         result.append(" ").append(new Date(TimeUnit.SECONDS.toMillis(getBootTime())));
         result.append(" ").append(getURL());
         result.append(" ").append(getScopes());

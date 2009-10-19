@@ -28,12 +28,17 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
+import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
@@ -77,7 +82,8 @@ public class StandardUserAgentClientTest
             try
             {
                 Settings uaSettings = newSettings();
-                uaSettings.put(DA_ADDRESSES_KEY, new String[]{"127.0.0.1"});
+                uaSettings.put(DA_ADDRESSES_KEY, new String[]{NetUtils.getLoopbackAddress().getHostAddress()});
+                uaSettings.put(UA_UNICAST_PREFER_TCP, true);
                 StandardUserAgentClient ua = StandardUserAgentClient.newInstance(uaSettings);
                 ua.init();
 
@@ -163,5 +169,46 @@ public class StandardUserAgentClientTest
         }
     }
 
+    @Test
+    public void testFindServiceTypes()
+    {
+        StandardDirectoryAgentServer da = StandardDirectoryAgentServer.newInstance(newSettings());
+        da.start();
+        try
+        {
+            ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
 
+            ServiceURL serviceURL1 = new ServiceURL("service:jmx:rmi.mx4j:///jndi/rmi");
+            Attributes attributes1 = Attributes.from("(a=1)");
+            ServiceInfo service1 = new ServiceInfo(serviceURL1, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes1);
+            sa.register(service1);
+
+            ServiceURL serviceURL2 = new ServiceURL("service:jmx:rmi.sun:///jndi/rmi");
+            Attributes attributes2 = Attributes.from("(a=2),(b=true)");
+            ServiceInfo service2 = new ServiceInfo(serviceURL2, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, attributes2);
+            sa.register(service2);
+
+            ServiceURL serviceURL3 = new ServiceURL("service:jmx:rmi:///jndi/rmi");
+            ServiceInfo service3 = new ServiceInfo(serviceURL3, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.NONE);
+            sa.register(service3);
+
+            StandardUserAgentClient ua = StandardUserAgentClient.newInstance(newSettings());
+            ua.init();
+
+            List<ServiceType> serviceTypes = ua.findServiceTypes("*", Scopes.DEFAULT);
+            Assert.assertEquals(serviceTypes.size(), 3);
+
+            serviceTypes = ua.findServiceTypes("", Scopes.DEFAULT);
+            assert serviceTypes.size() == 1;
+            assert serviceTypes.get(0).equals(serviceURL3.getServiceType());
+
+            serviceTypes = ua.findServiceTypes("mx4j", Scopes.DEFAULT);
+            assert serviceTypes.size() == 1;
+            assert serviceTypes.get(0).equals(serviceURL1.getServiceType());
+        }
+        finally
+        {
+            da.stop();
+        }
+    }
 }

@@ -13,32 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi.da;
+package org.livetribe.slp.spi.sa;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
-import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
 import org.livetribe.slp.settings.Settings;
-import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvRply;
+import org.livetribe.slp.spi.msg.SrvAck;
+import org.livetribe.slp.spi.msg.SrvDeReg;
+import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 
 /**
  * @version $Revision$ $Date$
  */
-public class UDPSrvRplyPerformer extends SrvRplyPerformer
+public class UnicastSrvDeRegPerformer extends SrvDeRegPerformer
 {
     private final UDPConnector udpConnector;
+    private final TCPConnector tcpConnector;
     private int maxTransmissionUnit = Defaults.get(MAX_TRANSMISSION_UNIT_KEY);
 
-    public UDPSrvRplyPerformer(UDPConnector udpConnector, Settings settings)
+    public UnicastSrvDeRegPerformer(UDPConnector udpConnector, TCPConnector tcpConnector, Settings settings)
     {
         this.udpConnector = udpConnector;
+        this.tcpConnector = tcpConnector;
         if (settings != null) setSettings(settings);
     }
 
@@ -48,17 +49,15 @@ public class UDPSrvRplyPerformer extends SrvRplyPerformer
             this.maxTransmissionUnit = settings.get(MAX_TRANSMISSION_UNIT_KEY);
     }
 
-    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, List<? extends ServiceInfo> services)
+    public SrvAck perform(InetSocketAddress remoteAddress, boolean preferTCP, ServiceInfo service, boolean update)
     {
-        SrvRply srvRply = newSrvRply(message, services, maxTransmissionUnit);
-        byte[] bytes = srvRply.serialize();
-        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
-    }
-
-    public void perform(InetSocketAddress localAddress, InetSocketAddress remoteAddress, Message message, SLPError error)
-    {
-        SrvRply srvRply = newSrvRply(message, error);
-        byte[] bytes = srvRply.serialize();
-        udpConnector.send(localAddress.getAddress().getHostAddress(), remoteAddress, bytes);
+        SrvDeReg srvDeReg = newSrvDeReg(service, update);
+        byte[] srvDeRegBytes = srvDeReg.serialize();
+        byte[] replyBytes = null;
+        if (preferTCP || srvDeRegBytes.length > maxTransmissionUnit)
+            replyBytes = tcpConnector.writeAndRead(remoteAddress, srvDeRegBytes);
+        else
+            replyBytes = udpConnector.sendAndReceive(remoteAddress, srvDeRegBytes);
+        return (SrvAck)Message.deserialize(replyBytes);
     }
 }

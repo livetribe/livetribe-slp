@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.da;
 import java.net.Socket;
 import java.util.List;
 
+import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.SrvRplyPerformer;
@@ -40,6 +41,13 @@ public class TCPSrvRplyPerformer extends SrvRplyPerformer
     public void perform(Socket socket, Message message, List<? extends ServiceInfo> services)
     {
         SrvRply srvRply = newSrvRply(message, services);
+        byte[] bytes = srvRply.serialize();
+        tcpConnector.write(socket, bytes);
+    }
+
+    public void perform(Socket socket, Message message, SLPError error)
+    {
+        SrvRply srvRply = newSrvRply(message, error);
         byte[] bytes = srvRply.serialize();
         tcpConnector.write(socket, bytes);
     }

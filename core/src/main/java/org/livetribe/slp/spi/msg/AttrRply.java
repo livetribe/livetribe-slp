@@ -43,7 +43,7 @@ public class AttrRply extends Rply
     private static final int ATTRIBUTES_LENGTH_BYTES_LENGTH = 2;
     private static final int AUTH_BLOCKS_COUNT_BYTES_LENGTH = 1;
 
-    private SLPError error;
+    private SLPError error = SLPError.NO_ERROR;
     private Attributes attributes;
     private AuthenticationBlock[] authenticationBlocks;
 

@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.livetribe.slp.spi;
+package org.livetribe.slp;
 
-import org.livetribe.slp.SLPError;
-import org.livetribe.slp.spi.msg.Message;
-import org.livetribe.slp.spi.msg.SrvAck;
+import org.testng.ITestResult;
+import org.testng.TestListenerAdapter;
 
 /**
  * @version $Revision$ $Date$
  */
-public class SrvAckPerformer
+public class TestNGListener extends TestListenerAdapter
 {
-    protected SrvAck newSrvAck(Message message, SLPError error)
+    private static final String EOL = System.getProperty("line.separator");
+
+    @Override
+    public void onTestStart(ITestResult testResult)
     {
-        SrvAck srvAck = new SrvAck();
-        srvAck.setXID(message.getXID());
-        srvAck.setLanguage(message.getLanguage());
-        srvAck.setSLPError(error);
-        return srvAck;
+        StringBuilder message = new StringBuilder(EOL);
+        message.append("TEST ").append(testResult.getTestClass().getName());
+        message.append(".").append(testResult.getName());
+        log(message.toString());
+    }
+
+    private void log(String message)
+    {
+        System.out.println(message);
     }
 }

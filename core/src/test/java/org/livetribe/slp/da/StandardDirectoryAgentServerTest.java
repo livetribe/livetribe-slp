@@ -32,7 +32,13 @@ import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.ServiceEvent;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.*;
+import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
+import static org.livetribe.slp.settings.Keys.DA_ADVERTISEMENT_PERIOD_KEY;
+import static org.livetribe.slp.settings.Keys.DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
@@ -85,7 +91,7 @@ public class StandardDirectoryAgentServerTest
 
                     daAdvertCount.incrementAndGet();
                     DAAdvert daAdvert = (DAAdvert)message;
-                    assert daAdvert.getErrorCode() == 0;
+                    assert daAdvert.getSLPError() == SLPError.NO_ERROR;
                     assert daAdvert.isMulticast();
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert !directoryAgent.isShuttingDown();
@@ -145,7 +151,7 @@ public class StandardDirectoryAgentServerTest
 
                     daAdvertCount.incrementAndGet();
                     DAAdvert daAdvert = (DAAdvert)message;
-                    assert daAdvert.getErrorCode() == 0;
+                    assert daAdvert.getSLPError() == SLPError.NO_ERROR;
                     assert daAdvert.isMulticast();
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert directoryAgent.isShuttingDown();
@@ -222,7 +228,7 @@ public class StandardDirectoryAgentServerTest
 
                     daAdvertCount.incrementAndGet();
                     DAAdvert daAdvert = (DAAdvert)message;
-                    assert daAdvert.getErrorCode() == 0;
+                    assert daAdvert.getSLPError() == SLPError.NO_ERROR;
                     assert daAdvert.isMulticast();
                     DirectoryAgentInfo directoryAgent = DirectoryAgentInfo.from(daAdvert);
                     assert !directoryAgent.isShuttingDown();
@@ -381,7 +387,7 @@ public class StandardDirectoryAgentServerTest
     public void testTCPServiceRegistration() throws Exception
     {
         Settings settings = newSettings();
-        settings.put(SA_CLIENT_USE_TCP, true);
+        settings.put(SA_UNICAST_PREFER_TCP, true);
         testServiceRegistration(settings);
     }
 
@@ -459,7 +465,7 @@ public class StandardDirectoryAgentServerTest
     public void testTCPServiceUpdate() throws Exception
     {
         Settings settings = newSettings();
-        settings.put(SA_CLIENT_USE_TCP, true);
+        settings.put(SA_UNICAST_PREFER_TCP, true);
         testServiceUpdate(settings);
     }
 
@@ -549,7 +555,7 @@ public class StandardDirectoryAgentServerTest
     public void testTCPServiceDeregistration() throws Exception
     {
         Settings settings = newSettings();
-        settings.put(SA_CLIENT_USE_TCP, true);
+        settings.put(SA_UNICAST_PREFER_TCP, true);
         testServiceDeregistration(settings);
     }
 
