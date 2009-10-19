@@ -102,130 +102,104 @@ public class SlpBundleActivatorTest
     @Test
     public void testByServicePropertiesServiceTracker() throws Exception
     {
-        ClassLoader saved = Thread.currentThread().getContextClassLoader();
+        ServiceAgent serviceAgent = SLP.newServiceAgent(newSettings());
+        UserAgent userAgent = SLP.newUserAgent(newSettings());
+        final AtomicInteger counter = new AtomicInteger();
 
-        try
+        userAgent.addServiceNotificationListener(new ServiceNotificationListener()
         {
-            Thread.currentThread().setContextClassLoader(SLP.class.getClassLoader());
-
-            assertThat(bundleContext, is(notNullValue()));
-
-            ServiceAgent serviceAgent = SLP.newServiceAgent(newSettings());
-            UserAgent userAgent = SLP.newUserAgent(newSettings());
-            final AtomicInteger counter = new AtomicInteger();
-
-            userAgent.addServiceNotificationListener(new ServiceNotificationListener()
+            public void serviceRegistered(ServiceNotificationEvent event)
             {
-                public void serviceRegistered(ServiceNotificationEvent event)
-                {
-                    if ("service:printer:lpr://myprinter:1234/myqueue".equals(event.getService().getServiceURL().getURL())) counter.incrementAndGet();
-                }
+                if ("service:printer:lpr://myprinter:1234/myqueue".equals(event.getService().getServiceURL().getURL())) counter.incrementAndGet();
+            }
 
-                public void serviceDeregistered(ServiceNotificationEvent event)
-                {
-                    if ("service:printer:lpr://myprinter:1234/myqueue".equals(event.getService().getServiceURL().getURL())) counter.decrementAndGet();
-                }
-            });
+            public void serviceDeregistered(ServiceNotificationEvent event)
+            {
+                if ("service:printer:lpr://myprinter:1234/myqueue".equals(event.getService().getServiceURL().getURL())) counter.decrementAndGet();
+            }
+        });
 
-            serviceAgent.start();
-            userAgent.start();
+        serviceAgent.start();
+        userAgent.start();
 
-            ByServicePropertiesServiceTracker tracker = new ByServicePropertiesServiceTracker(bundleContext, serviceAgent);
-            tracker.open();
+        ByServicePropertiesServiceTracker tracker = new ByServicePropertiesServiceTracker(bundleContext, serviceAgent);
+        tracker.open();
 
-            Dictionary<String, String> dictionary = new Hashtable<String, String>();
-            dictionary.put("slp.url", "service:printer:lpr://myprinter:${port}/myqueue");
-            dictionary.put("port", "1234");
+        Dictionary<String, String> dictionary = new Hashtable<String, String>();
+        dictionary.put("slp.url", "service:printer:lpr://myprinter:${port}/myqueue");
+        dictionary.put("port", "1234");
 
-            ServiceRegistration serviceRegistration = bundleContext.registerService(getClass().getName(),
-                                                                                    this,
-                                                                                    dictionary);
+        ServiceRegistration serviceRegistration = bundleContext.registerService(getClass().getName(),
+                                                                                this,
+                                                                                dictionary);
 
-            Thread.sleep(500);
+        Thread.sleep(500);
 
-            Assert.assertEquals(1, tracker.size());
-            Assert.assertEquals(1, counter.get());
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(1, counter.get());
 
-            serviceRegistration.unregister();
+        serviceRegistration.unregister();
 
-            Thread.sleep(500);
+        Thread.sleep(500);
 
-            Assert.assertEquals(0, tracker.size());
-            Assert.assertEquals(0, counter.get());
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
 
-            tracker.close();
+        tracker.close();
 
-            userAgent.stop();
-            serviceAgent.stop();
-        }
-        finally
-        {
-            Thread.currentThread().setContextClassLoader(saved);
-        }
+        userAgent.stop();
+        serviceAgent.stop();
     }
 
     @Test
     public void testByServiceInfoServiceTracker() throws Exception
     {
-        ClassLoader saved = Thread.currentThread().getContextClassLoader();
+        ServiceAgent serviceAgent = SLP.newServiceAgent(newSettings());
+        UserAgent userAgent = SLP.newUserAgent(newSettings());
+        final AtomicInteger counter = new AtomicInteger();
 
-        try
+        userAgent.addServiceNotificationListener(new ServiceNotificationListener()
         {
-            Thread.currentThread().setContextClassLoader(SLP.class.getClassLoader());
-
-            assertThat(bundleContext, is(notNullValue()));
-
-            ServiceAgent serviceAgent = SLP.newServiceAgent(newSettings());
-            UserAgent userAgent = SLP.newUserAgent(newSettings());
-            final AtomicInteger counter = new AtomicInteger();
-
-            userAgent.addServiceNotificationListener(new ServiceNotificationListener()
+            public void serviceRegistered(ServiceNotificationEvent event)
             {
-                public void serviceRegistered(ServiceNotificationEvent event)
-                {
-                    counter.incrementAndGet();
-                }
+                counter.incrementAndGet();
+            }
 
-                public void serviceDeregistered(ServiceNotificationEvent event)
-                {
-                    counter.decrementAndGet();
-                }
-            });
+            public void serviceDeregistered(ServiceNotificationEvent event)
+            {
+                counter.decrementAndGet();
+            }
+        });
 
-            serviceAgent.start();
-            userAgent.start();
+        serviceAgent.start();
+        userAgent.start();
 
-            ByServiceInfoServiceTracker tracker = new ByServiceInfoServiceTracker(bundleContext, serviceAgent);
-            tracker.open();
+        ByServiceInfoServiceTracker tracker = new ByServiceInfoServiceTracker(bundleContext, serviceAgent);
+        tracker.open();
 
-            ServiceRegistration serviceRegistration = bundleContext.registerService(ServiceInfo.class.getName(),
-                                                                                    new ServiceInfo(new ServiceURL("service:printer:lpr://myprinter/myqueue"),
-                                                                                                    Locale.ENGLISH.getLanguage(),
-                                                                                                    Scopes.DEFAULT,
-                                                                                                    Attributes.from("(printer-compression-supported=deflate, gzip)")),
-                                                                                    null);
+        ServiceRegistration serviceRegistration = bundleContext.registerService(ServiceInfo.class.getName(),
+                                                                                new ServiceInfo(new ServiceURL("service:printer:lpr://myprinter/myqueue"),
+                                                                                                Locale.ENGLISH.getLanguage(),
+                                                                                                Scopes.DEFAULT,
+                                                                                                Attributes.from("(printer-compression-supported=deflate, gzip)")),
+                                                                                null);
 
-            Thread.sleep(500);
+        Thread.sleep(500);
 
-            Assert.assertEquals(1, tracker.size());
-            Assert.assertEquals(1, counter.get());
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(1, counter.get());
 
-            serviceRegistration.unregister();
+        serviceRegistration.unregister();
 
-            Thread.sleep(500);
+        Thread.sleep(500);
 
-            Assert.assertEquals(0, tracker.size());
-            Assert.assertEquals(0, counter.get());
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
 
-            tracker.close();
+        tracker.close();
 
-            userAgent.stop();
-            serviceAgent.stop();
-        }
-        finally
-        {
-            Thread.currentThread().setContextClassLoader(saved);
-        }
+        userAgent.stop();
+        serviceAgent.stop();
     }
 
     private Settings newSettings()

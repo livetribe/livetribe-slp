@@ -33,7 +33,7 @@ public class Defaults
     {
         try
         {
-            defaults = PropertiesSettings.from("livetribe-slp.properties");
+            defaults = PropertiesSettings.from("org/livetribe/slp/livetribe-slp.properties");
         }
         catch (IOException x)
         {
