@@ -75,12 +75,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.livetribe.slp</groupId>
-                <artifactId>livetribe-slp-osgi</artifactId>
-                <version>${slpVersion}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.ops4j.pax.exam</groupId>
                 <artifactId>pax-exam</artifactId>
                 <version>${paxExamVersion}</version>
