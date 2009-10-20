@@ -99,7 +99,7 @@ public class SlpBundleActivatorTest
             System.out.println(b.getSymbolicName() + " " + b.getBundleId());
         }
     }
-
+/*
     @Test
     public void testByServicePropertiesServiceTracker() throws Exception
     {
@@ -350,7 +350,7 @@ public class SlpBundleActivatorTest
         directoryAgentServer.stop();
         userAgent.stop();
     }
-
+*/
     private Settings newSettings()
     {
         Settings settings = new MapSettings();
