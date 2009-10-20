@@ -26,27 +26,27 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-import org.livetribe.slp.da.DirectoryAgentListener;
-import org.livetribe.slp.spi.DirectoryAgentNotifier;
+import org.livetribe.slp.sa.ServiceNotificationListener;
+import org.livetribe.slp.ua.UserAgent;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class DirectoryAgentListenerServiceTracker
+public class ServiceNotificationListenerServiceTracker
 {
-    private final static String CLASS_NAME = DirectoryAgentListenerServiceTracker.class.getName();
+    private final static String CLASS_NAME = ServiceNotificationListenerServiceTracker.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final ServiceTracker tracker;
 
-    public DirectoryAgentListenerServiceTracker(final BundleContext context, final DirectoryAgentNotifier notifier) throws InvalidSyntaxException
+    public ServiceNotificationListenerServiceTracker(final BundleContext context, final UserAgent userAgent)
     {
         if (context == null) throw new IllegalArgumentException("Bundle context cannot be null");
-        if (notifier == null) throw new IllegalArgumentException("Directory agent notifier cannot be null");
+        if (userAgent == null) throw new IllegalArgumentException("Directory agent notifier cannot be null");
 
         try
         {
-            tracker = generateServiceTracker(context, context.createFilter("(objectClass=" + DirectoryAgentListener.class.getName() + ")"), notifier);
+            tracker = generateServiceTracker(context, context.createFilter("(objectClass=" + ServiceNotificationListener.class.getName() + ")"), userAgent);
         }
         catch (InvalidSyntaxException ise)
         {
@@ -56,26 +56,21 @@ public class DirectoryAgentListenerServiceTracker
 
     }
 
-    public DirectoryAgentListenerServiceTracker(final BundleContext context, Filter filter, final DirectoryAgentNotifier notifier)
+    public ServiceNotificationListenerServiceTracker(final BundleContext context, Filter filter, final UserAgent userAgent)
     {
         if (context == null) throw new IllegalArgumentException("Bundle context cannot be null");
         if (filter == null) throw new IllegalArgumentException("Bundle context cannot be null");
-        if (notifier == null) throw new IllegalArgumentException("Directory agent notifier cannot be null");
+        if (userAgent == null) throw new IllegalArgumentException("Directory agent notifier cannot be null");
 
         try
         {
-            tracker = generateServiceTracker(context, context.createFilter("(&(objectClass=" + DirectoryAgentListener.class.getName() + ")" + filter + ")"), notifier);
+            tracker = generateServiceTracker(context, context.createFilter("(&(objectClass=" + ServiceNotificationListener.class.getName() + ")" + filter + ")"), userAgent);
         }
         catch (InvalidSyntaxException ise)
         {
             LOGGER.log(Level.WARNING, "Oddly this caused an invalid syntax exception", ise);
             throw new IllegalStateException("Oddly this caused an invalid syntax exception");
         }
-    }
-
-    public int size()
-    {
-        return tracker.size();
     }
 
     public void open()
@@ -88,7 +83,7 @@ public class DirectoryAgentListenerServiceTracker
         tracker.close();
     }
 
-    private ServiceTracker generateServiceTracker(final BundleContext context, Filter filter, final DirectoryAgentNotifier notifier)
+    private ServiceTracker generateServiceTracker(final BundleContext context, Filter filter, final UserAgent userAgent)
     {
         return new ServiceTracker(context,
                                   filter,
@@ -98,9 +93,9 @@ public class DirectoryAgentListenerServiceTracker
                                       {
                                           LOGGER.entering(CLASS_NAME, "addingService", reference);
 
-                                          DirectoryAgentListener listener = (DirectoryAgentListener) context.getService(reference);
+                                          ServiceNotificationListener listener = (ServiceNotificationListener) context.getService(reference);
 
-                                          notifier.addDirectoryAgentListener(listener);
+                                          userAgent.addServiceNotificationListener(listener);
 
                                           LOGGER.exiting(CLASS_NAME, "addingService", listener);
 
@@ -116,7 +111,7 @@ public class DirectoryAgentListenerServiceTracker
                                           LOGGER.entering(CLASS_NAME, "removedService", new Object[]{reference, listener});
 
                                           context.ungetService(reference);
-                                          notifier.addDirectoryAgentListener((DirectoryAgentListener) listener);
+                                          userAgent.addServiceNotificationListener((ServiceNotificationListener) listener);
 
                                           LOGGER.exiting(CLASS_NAME, "removedService");
                                       }

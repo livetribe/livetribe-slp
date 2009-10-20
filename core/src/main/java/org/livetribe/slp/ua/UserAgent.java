@@ -15,13 +15,14 @@
  */
 package org.livetribe.slp.ua;
 
-import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceNotificationListener;
 import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
+import org.livetribe.slp.spi.DirectoryAgentNotifier;
 import org.livetribe.slp.spi.Server;
 import org.livetribe.slp.spi.ua.IUserAgent;
+
 
 /**
  * The interface of an SLP user agent non-standalone server that can be started multiple times on a single host.
@@ -42,7 +43,7 @@ import org.livetribe.slp.spi.ua.IUserAgent;
  *
  * @version $Revision$ $Date$
  */
-public interface UserAgent extends IUserAgent, Server
+public interface UserAgent extends IUserAgent, DirectoryAgentNotifier, Server
 {
     /**
      * Adds a listener that will be notified of service registrations and deregistration
@@ -60,22 +61,6 @@ public interface UserAgent extends IUserAgent, Server
      * @see #addServiceNotificationListener(ServiceNotificationListener)
      */
     public void removeServiceNotificationListener(ServiceNotificationListener listener);
-
-    /**
-     * Adds a listener that will be notified of DirectoryAgents birth and death.
-     *
-     * @param listener the DirectoryAgentListener to add
-     * @see #removeDirectoryAgentListener(DirectoryAgentListener)
-     */
-    public void addDirectoryAgentListener(DirectoryAgentListener listener);
-
-    /**
-     * Removes the given DirectoryAgentListener.
-     *
-     * @param listener the DirectoryAgentListener to remove
-     * @see #addDirectoryAgentListener(DirectoryAgentListener)
-     */
-    public void removeDirectoryAgentListener(DirectoryAgentListener listener);
 
     /**
      * The factory for UserAgents.

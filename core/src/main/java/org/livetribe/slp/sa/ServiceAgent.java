@@ -16,11 +16,12 @@
 package org.livetribe.slp.sa;
 
 import org.livetribe.slp.SLP;
-import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
+import org.livetribe.slp.spi.DirectoryAgentNotifier;
 import org.livetribe.slp.spi.Server;
+
 
 /**
  * The interface of an SLP service agent non-standalone server that can be started multiple times on a single host.
@@ -47,24 +48,8 @@ import org.livetribe.slp.spi.Server;
  * @see StandardServiceAgentServer
  * @see SLP
  */
-public interface ServiceAgent extends IServiceAgent, Server
+public interface ServiceAgent extends IServiceAgent, DirectoryAgentNotifier, Server
 {
-    /**
-     * Adds a listener that will be notified of DirectoryAgents birth and death.
-     *
-     * @param listener the DirectoryAgentListener to add
-     * @see #removeDirectoryAgentListener(DirectoryAgentListener)
-     */
-    public void addDirectoryAgentListener(DirectoryAgentListener listener);
-
-    /**
-     * Removes the given DirectoryAgentListener.
-     *
-     * @param listener the DirectoryAgentListener to remove
-     * @see #addDirectoryAgentListener(DirectoryAgentListener)
-     */
-    public void removeDirectoryAgentListener(DirectoryAgentListener listener);
-
     /**
      * The factory for ServiceAgents.
      * <br />

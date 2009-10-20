@@ -21,10 +21,7 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.Assert;
-import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
@@ -45,8 +42,12 @@ import org.livetribe.slp.SLP;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.da.DirectoryAgentEvent;
+import org.livetribe.slp.da.DirectoryAgentListener;
+import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.osgi.ByServiceInfoServiceTracker;
 import org.livetribe.slp.osgi.ByServicePropertiesServiceTracker;
+import org.livetribe.slp.osgi.DirectoryAgentListenerServiceTracker;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
@@ -87,7 +88,7 @@ public class SlpBundleActivatorTest
     @Test
     public void testOSGi() throws Exception
     {
-        assertThat(bundleContext, is(notNullValue()));
+        Assert.assertNotNull(bundleContext);
 
         Bundle bundle = bundleContext.getBundle();
         System.out.println("symbolic name " + bundle.getSymbolicName());
@@ -200,6 +201,154 @@ public class SlpBundleActivatorTest
 
         userAgent.stop();
         serviceAgent.stop();
+    }
+
+    @Test
+    public void testDirectoryAgentListenerServiceTracker() throws Exception
+    {
+        UserAgent userAgent = SLP.newUserAgent(newSettings());
+        StandardDirectoryAgentServer directoryAgentServer = StandardDirectoryAgentServer.newInstance(newSettings());
+        final AtomicInteger counter = new AtomicInteger();
+
+        userAgent.start();
+
+        DirectoryAgentListenerServiceTracker tracker = new DirectoryAgentListenerServiceTracker(bundleContext, userAgent);
+        tracker.open();
+
+        ServiceRegistration serviceRegistration = bundleContext.registerService(DirectoryAgentListener.class.getName(),
+                                                                                new DirectoryAgentListener()
+                                                                                {
+                                                                                    public void directoryAgentBorn(DirectoryAgentEvent event)
+                                                                                    {
+                                                                                        counter.incrementAndGet();
+                                                                                    }
+
+                                                                                    public void directoryAgentDied(DirectoryAgentEvent event)
+                                                                                    {
+                                                                                        counter.decrementAndGet();
+                                                                                    }
+                                                                                },
+                                                                                null);
+
+        directoryAgentServer.start();
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(1, counter.get());
+
+        directoryAgentServer.stop();
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceRegistration.unregister();
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        tracker.close();
+
+        directoryAgentServer.stop();
+        userAgent.stop();
+    }
+
+    @Test
+    public void testDirectoryAgentListenerWithFilterServiceTracker() throws Exception
+    {
+        UserAgent userAgent = SLP.newUserAgent(newSettings());
+        StandardDirectoryAgentServer directoryAgentServer = StandardDirectoryAgentServer.newInstance(newSettings());
+        final AtomicInteger counter = new AtomicInteger();
+
+        userAgent.start();
+
+        DirectoryAgentListenerServiceTracker tracker = new DirectoryAgentListenerServiceTracker(bundleContext, bundleContext.createFilter("(&(foo=bar)(car=cdr))"), userAgent);
+        tracker.open();
+
+        Dictionary<String, String> dictionary = new Hashtable<String, String>();
+        dictionary.put("foo", "bar");
+        dictionary.put("car", "cdr");
+        ServiceRegistration serviceRegistration = bundleContext.registerService(DirectoryAgentListener.class.getName(),
+                                                                                new DirectoryAgentListener()
+                                                                                {
+                                                                                    public void directoryAgentBorn(DirectoryAgentEvent event)
+                                                                                    {
+                                                                                        counter.incrementAndGet();
+                                                                                    }
+
+                                                                                    public void directoryAgentDied(DirectoryAgentEvent event)
+                                                                                    {
+                                                                                        counter.decrementAndGet();
+                                                                                    }
+                                                                                },
+                                                                                dictionary);
+
+        directoryAgentServer.start();
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(1, counter.get());
+
+        directoryAgentServer.stop();
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceRegistration.unregister();
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        dictionary.put("foo", "bad-value");
+        serviceRegistration = bundleContext.registerService(DirectoryAgentListener.class.getName(),
+                                                            new DirectoryAgentListener()
+                                                            {
+                                                                public void directoryAgentBorn(DirectoryAgentEvent event)
+                                                                {
+                                                                    counter.incrementAndGet();
+                                                                }
+
+                                                                public void directoryAgentDied(DirectoryAgentEvent event)
+                                                                {
+                                                                    counter.decrementAndGet();
+                                                                }
+                                                            },
+                                                            dictionary);
+
+        directoryAgentServer.start();
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        directoryAgentServer.stop();
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceRegistration.unregister();
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        tracker.close();
+
+        directoryAgentServer.stop();
+        userAgent.stop();
     }
 
     private Settings newSettings()

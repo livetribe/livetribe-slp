@@ -77,13 +77,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.ops4j.pax.url</groupId>
-            <artifactId>pax-url-mvn</artifactId>
-            <version>${paxExamVersion}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.ops4j.pax.exam</groupId>
             <artifactId>pax-exam-container-default</artifactId>
             <version>${paxExamVersion}</version>
