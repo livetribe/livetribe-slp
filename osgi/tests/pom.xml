@@ -10,7 +10,7 @@
     <artifactId>livetribe-slp-osgi-tests</artifactId>
     <name>LiveTribe :: SLP :: OSGi :: Tests</name>
     <description>LiveTribe SLP OSGi Wrapper</description>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
