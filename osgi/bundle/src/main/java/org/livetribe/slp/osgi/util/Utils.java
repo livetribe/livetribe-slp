@@ -26,6 +26,8 @@ import org.osgi.framework.ServiceReference;
 
 
 /**
+ * A handy utility class that should be private to this bundle.
+ *
  * @version $Revision$ $Date$
  */
 public class Utils
@@ -53,7 +55,7 @@ public class Utils
 
         while (matcher.find())
         {
-            String value = (String) dictionary.get(matcher.group(1));
+            String value = (String)dictionary.get(matcher.group(1));
 
             if (value == null) value = "";
 

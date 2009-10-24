@@ -17,6 +17,7 @@
 package org.livetribe.slp.osgi;
 
 import java.util.Dictionary;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleContext;
@@ -31,7 +32,16 @@ import org.livetribe.slp.sa.ServiceAgent;
 
 
 /**
+ * Instances of {@link ServiceAgent} can be created and configured using OSGi's
+ * Configuration Admin Service.
+ * <p/>
+ * A default {@link ServiceAgent} instance can be created at construction which
+ * can be replaced when the OSGi service's configuration is updated or no
+ * {@link ServiceAgent} instance until the service's configuration is updated.
+ *
  * @version $Revision$ $Date$
+ * @see ManagedService
+ * @see ServiceAgent
  */
 public class ServiceAgentManagedService implements ManagedService
 {
@@ -42,25 +52,55 @@ public class ServiceAgentManagedService implements ManagedService
     private ServiceAgent serviceAgent;
     private ServiceRegistration serviceRegistration;
 
-    public ServiceAgentManagedService(BundleContext bundleContext)
+    /**
+     * Create a <code>ServiceAgentManagedService</code> which will be used to
+     * manage and configure instances of {@link ServiceAgent} using OSGi's
+     * Configuration Admin Service.
+     *
+     * @param bundleContext The OSGi {@link BundleContext} used to register OSGi service instances.
+     * @param startDefault  Start a default instance of {@link ServiceAgent} if <code>true</code> or wait until the service's configuration is updated otherwise.
+     */
+    public ServiceAgentManagedService(BundleContext bundleContext, boolean startDefault)
     {
         if (bundleContext == null) throw new IllegalArgumentException("Bundle context cannot be null");
         this.bundleContext = bundleContext;
 
-        serviceAgent = SLP.newServiceAgent(null);
-        serviceAgent.start();
+        if (startDefault)
+        {
+            serviceAgent = SLP.newServiceAgent(null);
+            serviceAgent.start();
 
-        serviceRegistration = bundleContext.registerService(IServiceAgent.class.getName(), serviceAgent, null);
+            serviceRegistration = bundleContext.registerService(IServiceAgent.class.getName(), serviceAgent, null);
+        }
+
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("bundleContext: " + bundleContext);
+            LOGGER.config("startDefault: " + startDefault);
+        }
     }
 
+    /**
+     * Update the SLP service agent's configuration, unregistering from the
+     * OSGi service registry and stopping it if it had already started.  The
+     * new SLP service agent will be started with the new configuration and
+     * registered in the OSGi service registry using the configuration
+     * parameters as service properties.
+     *
+     * @param dictionary The dictionary used to configure the SLP service agent.
+     * @throws ConfigurationException Thrown if an error occurs during the SLP service agent's configuration.
+     */
     public void updated(Dictionary dictionary) throws ConfigurationException
     {
         LOGGER.entering(CLASS_NAME, "updated", dictionary);
 
         synchronized (lock)
         {
-            serviceRegistration.unregister();
-            serviceAgent.stop();
+            if (serviceAgent != null)
+            {
+                serviceRegistration.unregister();
+                serviceAgent.stop();
+            }
 
             serviceAgent = SLP.newServiceAgent(dictionary == null ? null : DictionarySettings.from(dictionary));
             serviceAgent.start();

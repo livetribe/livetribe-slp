@@ -31,7 +31,21 @@ import org.livetribe.slp.spi.DirectoryAgentNotifier;
 
 
 /**
+ * The <code>DirectoryAgentListenerServiceTracker</code> simplifies the
+ * managment of SLP directory agent notification listeners by leverging the
+ * OSGi service registry mechanism. This has the added benefit of automatic
+ * deregistration of the listeners should the bundle become unresolved.
+ * <p/>
+ * Bundles wishing to register an SLP directory agent notification listeners
+ * merely need to register an instance of {@link DirectoryAgentListener} in the
+ * OSGi service registry.
+ * <p/>
+ * A {@link Filter} can be passed to the constructor to narrow which instances
+ * of {@link DirectoryAgentListener} are registered.
+ *
  * @version $Revision$ $Date$
+ * @see DirectoryAgentNotifier
+ * @see DirectoryAgentListener
  */
 public class DirectoryAgentListenerServiceTracker
 {
@@ -39,7 +53,15 @@ public class DirectoryAgentListenerServiceTracker
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final ServiceTracker tracker;
 
-    public DirectoryAgentListenerServiceTracker(final BundleContext context, final DirectoryAgentNotifier notifier) throws InvalidSyntaxException
+    /**
+     * Create a <code>DirectoryAgentListenerServiceTracker</code> which will be
+     * used to automatically register instances of {@link DirectoryAgentListener}
+     * to a specific {@link DirectoryAgentNotifier}.
+     *
+     * @param context  The OSGi {@link BundleContext} used to obtain OSGi service instances.
+     * @param notifier The {@link DirectoryAgentNotifier} that directory agent notification listeners will be registered to.
+     */
+    public DirectoryAgentListenerServiceTracker(final BundleContext context, final DirectoryAgentNotifier notifier)
     {
         if (context == null) throw new IllegalArgumentException("Bundle context cannot be null");
         if (notifier == null) throw new IllegalArgumentException("Directory agent notifier cannot be null");
@@ -54,8 +76,22 @@ public class DirectoryAgentListenerServiceTracker
             throw new IllegalStateException("Oddly this caused an invalid syntax exception");
         }
 
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("context: " + context);
+            LOGGER.config("notifier: " + notifier);
+        }
     }
 
+    /**
+     * Create a <code>DirectoryAgentListenerServiceTracker</code> which will be
+     * used to automatically register instances of {@link DirectoryAgentListener}
+     * to a specific {@link DirectoryAgentNotifier}.
+     *
+     * @param context  The OSGi {@link BundleContext} used to obtain OSGi service instances.
+     * @param filter   The {@link Filter} used to narrow which instances of {@link DirectoryAgentListener} are registered.
+     * @param notifier The {@link DirectoryAgentNotifier} that directory agent notification listeners will be registered to.
+     */
     public DirectoryAgentListenerServiceTracker(final BundleContext context, Filter filter, final DirectoryAgentNotifier notifier)
     {
         if (context == null) throw new IllegalArgumentException("Bundle context cannot be null");
@@ -71,18 +107,39 @@ public class DirectoryAgentListenerServiceTracker
             LOGGER.log(Level.WARNING, "Oddly this caused an invalid syntax exception", ise);
             throw new IllegalStateException("Oddly this caused an invalid syntax exception");
         }
+
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("context: " + context);
+            LOGGER.config("filter: " + filter);
+            LOGGER.config("notifier: " + notifier);
+        }
     }
 
+    /**
+     * Return the number of {@link DirectoryAgentListener} instances being tracked by this <code>ServiceTracker</code>.
+     *
+     * @return The number of listeners being tracked.
+     */
     public int size()
     {
         return tracker.size();
     }
 
+    /**
+     * Open this <code>ServiceTracker</code> and begin tracking instances of {@link DirectoryAgentListener}.
+     */
     public void open()
     {
         tracker.open();
     }
 
+    /**
+     * Close this <code>ServiceTracker</code>.
+     * <p/>
+     * This method should be called when this <code>ServiceTracker</code> should
+     * end the tracking instances of {@link DirectoryAgentListener}.
+     */
     public void close()
     {
         tracker.close();
@@ -98,7 +155,7 @@ public class DirectoryAgentListenerServiceTracker
                                       {
                                           LOGGER.entering(CLASS_NAME, "addingService", reference);
 
-                                          DirectoryAgentListener listener = (DirectoryAgentListener) context.getService(reference);
+                                          DirectoryAgentListener listener = (DirectoryAgentListener)context.getService(reference);
 
                                           notifier.addDirectoryAgentListener(listener);
 
@@ -116,7 +173,7 @@ public class DirectoryAgentListenerServiceTracker
                                           LOGGER.entering(CLASS_NAME, "removedService", new Object[]{reference, listener});
 
                                           context.ungetService(reference);
-                                          notifier.addDirectoryAgentListener((DirectoryAgentListener) listener);
+                                          notifier.addDirectoryAgentListener((DirectoryAgentListener)listener);
 
                                           LOGGER.exiting(CLASS_NAME, "removedService");
                                       }

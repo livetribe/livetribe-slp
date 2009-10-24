@@ -24,6 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.ops4j.pax.exam.CoreOptions.equinox;
+import static org.ops4j.pax.exam.CoreOptions.felix;
+import static org.ops4j.pax.exam.CoreOptions.knopflerfish;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.provision;
@@ -48,6 +51,7 @@ import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.osgi.ByServiceInfoServiceTracker;
 import org.livetribe.slp.osgi.ByServicePropertiesServiceTracker;
 import org.livetribe.slp.osgi.DirectoryAgentListenerServiceTracker;
+import org.livetribe.slp.osgi.ServiceNotificationListenerServiceTracker;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
@@ -70,9 +74,9 @@ public class SlpBundleActivatorTest
     public static Option[] configure()
     {
         return options(
-                //                equinox(),
-                //                felix(),
-                //                knopflerfish(),
+                equinox(),
+                felix(),
+                knopflerfish(),
                 provision(
                         mavenBundle().groupId("org.livetribe.slp").artifactId("livetribe-slp-osgi").version(asInProject())
                 )
@@ -98,6 +102,30 @@ public class SlpBundleActivatorTest
         {
             System.out.println(b.getSymbolicName() + " " + b.getBundleId());
         }
+    }
+
+    @Test
+    public void testPrivatePackage() throws Exception
+    {
+        try
+        {
+            getClass().getClassLoader().loadClass("org.livetribe.slp.util.Listeners");
+            Assert.fail("Class should not have been loaded");
+        }
+        catch (ClassNotFoundException ignore)
+        {
+        }
+
+        try
+        {
+            getClass().getClassLoader().loadClass("org.livetribe.slp.osgi.util.DictionarySettings");
+            Assert.fail("Class should not have been loaded");
+        }
+        catch (ClassNotFoundException ignore)
+        {
+        }
+
+        getClass().getClassLoader().loadClass("org.livetribe.slp.spi.DirectoryAgentNotifier");
     }
 
     @Test
@@ -348,6 +376,181 @@ public class SlpBundleActivatorTest
         tracker.close();
 
         directoryAgentServer.stop();
+        userAgent.stop();
+    }
+
+    @Test
+    public void testServiceNotificationListenerServiceTracker() throws Exception
+    {
+        UserAgent userAgent = SLP.newUserAgent(newSettings());
+        ServiceAgent serviceAgent = SLP.newServiceAgent(newSettings());
+        final AtomicInteger counter = new AtomicInteger();
+
+        userAgent.start();
+
+        ServiceNotificationListenerServiceTracker tracker = new ServiceNotificationListenerServiceTracker(bundleContext, userAgent);
+        tracker.open();
+
+        ServiceRegistration serviceRegistration = bundleContext.registerService(ServiceNotificationListener.class.getName(),
+                                                                                new ServiceNotificationListener()
+                                                                                {
+                                                                                    public void serviceRegistered(ServiceNotificationEvent event)
+                                                                                    {
+                                                                                        if ("service:jmx:rmi:///jndi/jmxrmi".equals(event.getService().getServiceURL().getURL()))
+                                                                                        {
+                                                                                            counter.incrementAndGet();
+                                                                                        }
+                                                                                    }
+
+                                                                                    public void serviceDeregistered(ServiceNotificationEvent event)
+                                                                                    {
+                                                                                        if ("service:jmx:rmi:///jndi/jmxrmi".equals(event.getService().getServiceURL().getURL()))
+                                                                                        {
+                                                                                            counter.decrementAndGet();
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                null);
+
+        ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/jmxrmi");
+        ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.from("(a=1,2),(b=true),(c=string),(d=\\FF\\00),e"));
+
+        serviceAgent.start();
+        serviceAgent.register(service);
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(1, counter.get());
+
+        serviceAgent.deregister(service.getServiceURL(), service.getLanguage());
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceAgent.stop();
+        serviceRegistration.unregister();
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        tracker.close();
+
+        serviceAgent.stop();
+        userAgent.stop();
+    }
+
+    @Test
+    public void testServiceNotificationListenerWithFilterServiceTracker() throws Exception
+    {
+        UserAgent userAgent = SLP.newUserAgent(newSettings());
+        ServiceAgent serviceAgent = SLP.newServiceAgent(newSettings());
+        final AtomicInteger counter = new AtomicInteger();
+
+        userAgent.start();
+        serviceAgent.start();
+
+        ServiceNotificationListenerServiceTracker tracker = new ServiceNotificationListenerServiceTracker(bundleContext, bundleContext.createFilter("(&(foo=bar)(car=cdr))"), userAgent);
+        tracker.open();
+
+        Dictionary<String, String> dictionary = new Hashtable<String, String>();
+        dictionary.put("foo", "bar");
+        dictionary.put("car", "cdr");
+        ServiceRegistration serviceRegistration = bundleContext.registerService(ServiceNotificationListener.class.getName(),
+                                                                                new ServiceNotificationListener()
+                                                                                {
+                                                                                    public void serviceRegistered(ServiceNotificationEvent event)
+                                                                                    {
+                                                                                        if ("service:jmx:rmi:///jndi/jmxrmi".equals(event.getService().getServiceURL().getURL()))
+                                                                                        {
+                                                                                            counter.incrementAndGet();
+                                                                                        }
+                                                                                    }
+
+                                                                                    public void serviceDeregistered(ServiceNotificationEvent event)
+                                                                                    {
+                                                                                        if ("service:jmx:rmi:///jndi/jmxrmi".equals(event.getService().getServiceURL().getURL()))
+                                                                                        {
+                                                                                            counter.decrementAndGet();
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                dictionary);
+
+        ServiceURL serviceURL = new ServiceURL("service:jmx:rmi:///jndi/jmxrmi");
+        ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.from("(a=1,2),(b=true),(c=string),(d=\\FF\\00),e"));
+
+        serviceAgent.register(service);
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(1, counter.get());
+
+        serviceAgent.deregister(service.getServiceURL(), service.getLanguage());
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceRegistration.unregister();
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        dictionary.put("foo", "bad-value");
+        serviceRegistration = bundleContext.registerService(ServiceNotificationListener.class.getName(),
+                                                            new ServiceNotificationListener()
+                                                            {
+                                                                public void serviceRegistered(ServiceNotificationEvent event)
+                                                                {
+                                                                    if ("service:jmx:rmi:///jndi/jmxrmi".equals(event.getService().getServiceURL().getURL()))
+                                                                    {
+                                                                        counter.incrementAndGet();
+                                                                    }
+                                                                }
+
+                                                                public void serviceDeregistered(ServiceNotificationEvent event)
+                                                                {
+                                                                    if ("service:jmx:rmi:///jndi/jmxrmi".equals(event.getService().getServiceURL().getURL()))
+                                                                    {
+                                                                        counter.decrementAndGet();
+                                                                    }
+                                                                }
+                                                            },
+                                                            dictionary);
+
+        serviceAgent.register(service);
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceAgent.deregister(service.getServiceURL(), service.getLanguage());
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        serviceRegistration.unregister();
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(0, tracker.size());
+        Assert.assertEquals(0, counter.get());
+
+        tracker.close();
+
+        serviceAgent.stop();
         userAgent.stop();
     }
 

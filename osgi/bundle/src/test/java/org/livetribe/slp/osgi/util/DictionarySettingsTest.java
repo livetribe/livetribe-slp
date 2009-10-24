@@ -20,21 +20,22 @@ import java.util.Properties;
 
 import org.testng.annotations.Test;
 
+import org.livetribe.slp.settings.Keys;
+
 
 /**
  * @version $Revision$ $Date$
  */
-public class UtilsTest
+public class DictionarySettingsTest
 {
     @Test
-    public void test()
+    public void testDictionary()
     {
         Properties p = new Properties();
-        p.put("foo", "bar");
-        p.put("car", "cdr");
+        p.put(Keys.LANGUAGE_KEY.getKey(), "en");
 
-        assert "This is a bar test".equals(Utils.subst("This is a ${foo} test", p));
-        assert "This is a bar cdr test".equals(Utils.subst("This is a ${foo} ${car} ${oops}test", p));
-        assert "This is a bar cdr tes${t".equals(Utils.subst("This is a ${foo} ${car} ${oops}tes${t", p));
+        DictionarySettings ds = DictionarySettings.from(p);
+
+        assert "en".equals(ds.get(Keys.LANGUAGE_KEY));
     }
 }

@@ -19,6 +19,7 @@ package org.livetribe.slp.osgi;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleContext;
@@ -34,7 +35,12 @@ import org.livetribe.slp.sa.ServiceAgent;
 
 
 /**
+ * Instances of {@link ServiceAgent} can be created and configured using OSGi's
+ * Configuration Admin Service.
+ *
  * @version $Revision$ $Date$
+ * @see ManagedServiceFactory
+ * @see ServiceAgent
  */
 public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
 {
@@ -44,6 +50,14 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
     private final BundleContext bundleContext;
     private final String name;
 
+    /**
+     * Create a <code>ServiceAgentManagedServiceFactory</code> which will be used to
+     * manage and configure instances of {@link ServiceAgent} using OSGi's
+     * Configuration Admin Service.
+     *
+     * @param bundleContext The OSGi {@link BundleContext} used to register OSGi service instances.
+     * @param name          The name for the factory.
+     */
     public ServiceAgentManagedServiceFactory(BundleContext bundleContext, String name)
     {
         if (bundleContext == null) throw new IllegalArgumentException("Bundle context cannot be null");
@@ -51,17 +65,41 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
 
         this.bundleContext = bundleContext;
         this.name = name;
+
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("bundleContext: " + bundleContext);
+            LOGGER.config("name: " + name);
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getName()
     {
         return name;
     }
 
+    /**
+     * Update the SLP service agent's configuration, unregistering from the
+     * OSGi service registry and stopping it if it had already started.  The
+     * new SLP service agent will be started with the new configuration and
+     * registered in the OSGi service registry using the configuration
+     * parameters as service properties.
+     *
+     * @param pid        The PID for this configuration.
+     * @param dictionary The dictionary used to configure the SLP service agent.
+     * @throws ConfigurationException Thrown if an error occurs during the SLP service agent's configuration.
+     */
     public void updated(String pid, Dictionary dictionary) throws ConfigurationException
     {
         LOGGER.entering(CLASS_NAME, "updated", new Object[]{pid, dictionary});
 
+        /**
+         * This could be an update to an existing SLP service agent.  Delete
+         * it first then we'll recreate it.
+         */
         deleted(pid);
 
         ServiceAgent serviceAgent = SLP.newServiceAgent(dictionary == null ? null : DictionarySettings.from(dictionary));
@@ -73,6 +111,12 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
         LOGGER.exiting(CLASS_NAME, "updated");
     }
 
+    /**
+     * Remove the SLP service agent identified by a pid that it was associated
+     * with when it was first created.
+     *
+     * @param pid The PID for the SLP service agent to be removed.
+     */
     public void deleted(String pid)
     {
         LOGGER.entering(CLASS_NAME, "deleted", pid);
@@ -81,7 +125,7 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
         if (serviceRegistration != null)
         {
             ServiceReference serviceReference = serviceRegistration.getReference();
-            ServiceAgent serviceAgent = (ServiceAgent) bundleContext.getService(serviceReference);
+            ServiceAgent serviceAgent = (ServiceAgent)bundleContext.getService(serviceReference);
 
             serviceRegistration.unregister();
             serviceAgent.stop();

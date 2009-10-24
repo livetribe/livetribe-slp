@@ -47,29 +47,44 @@ public class DictionarySettings implements Settings
         this.dictionary = dictionary;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public <K> K get(Key<K> key)
     {
         Object value = dictionary.get(key.getKey());
         return key.convert(value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public <V> V get(Key<V> key, V defaultValue)
     {
         if (containsKey(key)) return get(key);
         return defaultValue;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean containsKey(Key<?> key)
     {
         return dictionary.get(key.getKey()) != null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings({"unchecked"})
     public <V> void put(Key<? super V> key, V value)
     {
         dictionary.put(key.getKey(), value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public <K> K remove(Key<K> key)
     {
         Object value = dictionary.remove(key.getKey());

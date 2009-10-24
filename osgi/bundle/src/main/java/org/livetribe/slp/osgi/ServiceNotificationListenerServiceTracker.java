@@ -31,7 +31,21 @@ import org.livetribe.slp.ua.UserAgent;
 
 
 /**
+ * The <code>ServiceNotificationListenerServiceTracker</code> simplifies the
+ * managment of SLP service notification listeners by leverging the
+ * OSGi service registry mechanism. This has the added benefit of automatic
+ * deregistration of the listeners should the bundle become unresolved.
+ * <p/>
+ * Bundles wishing to register an SLP service notification listeners
+ * merely need to register an instance of {@link ServiceNotificationListener}
+ * in the OSGi service registry.
+ * <p/>
+ * A {@link Filter} can be passed to the constructor to narrow which instances
+ * of {@link ServiceNotificationListener} are registered.
+ *
  * @version $Revision$ $Date$
+ * @see UserAgent
+ * @see ServiceNotificationListener
  */
 public class ServiceNotificationListenerServiceTracker
 {
@@ -39,6 +53,14 @@ public class ServiceNotificationListenerServiceTracker
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final ServiceTracker tracker;
 
+    /**
+     * Create a <code>ServiceNotificationListenerServiceTracker</code> which will be
+     * used to automatically register instances of {@link ServiceNotificationListener}
+     * to a specific {@link UserAgent}.
+     *
+     * @param context   The OSGi {@link BundleContext} used to obtain OSGi service instances.
+     * @param userAgent The {@link UserAgent} that service notification listeners will be registered to.
+     */
     public ServiceNotificationListenerServiceTracker(final BundleContext context, final UserAgent userAgent)
     {
         if (context == null) throw new IllegalArgumentException("Bundle context cannot be null");
@@ -54,8 +76,22 @@ public class ServiceNotificationListenerServiceTracker
             throw new IllegalStateException("Oddly this caused an invalid syntax exception");
         }
 
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("context: " + context);
+            LOGGER.config("userAgent: " + userAgent);
+        }
     }
 
+    /**
+     * Create a <code>ServiceNotificationListenerServiceTracker</code> which will be
+     * used to automatically register instances of {@link ServiceNotificationListener}
+     * to a specific {@link UserAgent}.
+     *
+     * @param context   The OSGi {@link BundleContext} used to obtain OSGi service instances.
+     * @param filter    The {@link Filter} used to narrow which instances of {@link ServiceNotificationListener} are registered.
+     * @param userAgent The {@link UserAgent} that service notification listeners will be registered to.
+     */
     public ServiceNotificationListenerServiceTracker(final BundleContext context, Filter filter, final UserAgent userAgent)
     {
         if (context == null) throw new IllegalArgumentException("Bundle context cannot be null");
@@ -71,13 +107,40 @@ public class ServiceNotificationListenerServiceTracker
             LOGGER.log(Level.WARNING, "Oddly this caused an invalid syntax exception", ise);
             throw new IllegalStateException("Oddly this caused an invalid syntax exception");
         }
+
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("context: " + context);
+            LOGGER.config("filter: " + filter);
+            LOGGER.config("userAgent: " + userAgent);
+        }
     }
 
+    /**
+     * Return the number of {@link ServiceNotificationListener} instances being tracked by this <code>ServiceTracker</code>.
+     *
+     * @return The number of listeners being tracked.
+     */
+    public int size()
+    {
+        return tracker.size();
+    }
+
+    /**
+     * Open this <code>ServiceTracker</code> and begin tracking instances of {@link ServiceNotificationListener}.
+     */
     public void open()
     {
         tracker.open();
     }
 
+
+    /**
+     * Close this <code>ServiceTracker</code>.
+     * <p/>
+     * This method should be called when this <code>ServiceTracker</code> should
+     * end the tracking instances of {@link ServiceNotificationListener}.
+     */
     public void close()
     {
         tracker.close();
@@ -93,7 +156,7 @@ public class ServiceNotificationListenerServiceTracker
                                       {
                                           LOGGER.entering(CLASS_NAME, "addingService", reference);
 
-                                          ServiceNotificationListener listener = (ServiceNotificationListener) context.getService(reference);
+                                          ServiceNotificationListener listener = (ServiceNotificationListener)context.getService(reference);
 
                                           userAgent.addServiceNotificationListener(listener);
 
@@ -111,7 +174,7 @@ public class ServiceNotificationListenerServiceTracker
                                           LOGGER.entering(CLASS_NAME, "removedService", new Object[]{reference, listener});
 
                                           context.ungetService(reference);
-                                          userAgent.addServiceNotificationListener((ServiceNotificationListener) listener);
+                                          userAgent.removeServiceNotificationListener((ServiceNotificationListener)listener);
 
                                           LOGGER.exiting(CLASS_NAME, "removedService");
                                       }
