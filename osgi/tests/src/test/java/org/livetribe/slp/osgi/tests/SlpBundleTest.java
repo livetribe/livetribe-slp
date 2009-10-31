@@ -33,6 +33,7 @@ import static org.ops4j.pax.exam.CoreOptions.provision;
 import org.ops4j.pax.exam.Inject;
 import static org.ops4j.pax.exam.MavenUtils.asInProject;
 import org.ops4j.pax.exam.Option;
+import static org.ops4j.pax.exam.container.def.PaxRunnerOptions.compendiumProfile;
 import org.ops4j.pax.exam.junit.Configuration;
 import org.ops4j.pax.exam.junit.JUnit4TestRunner;
 import org.osgi.framework.Bundle;
@@ -77,6 +78,7 @@ public class SlpBundleTest
                 equinox(),
                 felix(),
                 knopflerfish(),
+                compendiumProfile(),
                 provision(
                         mavenBundle().groupId("org.livetribe.slp").artifactId("livetribe-slp-osgi").version(asInProject())
                 )

@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <paxExamVersion>1.1.0</paxExamVersion>
+        <paxExamVersion>1.2.0</paxExamVersion>
         <osgiVersion>4.2.0.200908310645</osgiVersion>
     </properties>
 
@@ -22,60 +22,59 @@
         <module>tests</module>
     </modules>
 
-       <dependencyManagement>
+    <dependencyManagement>
 
-    <dependencies>
+        <dependencies>
 
-        <dependency>
-            <groupId>org.livetribe.slp</groupId>
-            <artifactId>livetribe-slp</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+            <dependency>
+                <groupId>org.livetribe.slp</groupId>
+                <artifactId>livetribe-slp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.5</version>
-            <scope>test</scope>
-        </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.5</version>
+                <scope>test</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam</artifactId>
-            <version>${paxExamVersion}</version>
-            <scope>test</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam</artifactId>
+                <version>${paxExamVersion}</version>
+                <scope>test</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-junit</artifactId>
-            <version>${paxExamVersion}</version>
-            <scope>test</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-junit</artifactId>
+                <version>${paxExamVersion}</version>
+                <scope>test</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-container-default</artifactId>
-            <version>${paxExamVersion}</version>
-            <scope>test</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-container-default</artifactId>
+                <version>${paxExamVersion}</version>
+                <scope>test</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>org.papoose.osgi</groupId>
-            <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
-            <version>${osgiVersion}</version>
-            <scope>provided</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.papoose.osgi</groupId>
+                <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
+                <version>${osgiVersion}</version>
+                <scope>provided</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>org.papoose.osgi</groupId>
-            <artifactId>OSGi_R4_v4.2_cmpn_spec</artifactId>
-            <version>${osgiVersion}</version>
-            <scope>provided</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.papoose.osgi</groupId>
+                <artifactId>OSGi_R4_v4.2_cmpn_spec</artifactId>
+                <version>${osgiVersion}</version>
+                <scope>provided</scope>
+            </dependency>
 
-    </dependencies>
+        </dependencies>
     </dependencyManagement>
-
 
 </project>
