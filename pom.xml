@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.livetribe</groupId>
         <artifactId>livetribe</artifactId>
-        <version>1.5-SNAPSHOT</version>
+        <version>1.5.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -22,19 +22,7 @@
     </modules>
 
     <build>
-        <defaultGoal>install</defaultGoal>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
-                    <showDeprecation>true</showDeprecation>
-                    <showWarnings>true</showWarnings>
-                    <compilerArgument>-Xlint:all,-serial,-unchecked</compilerArgument>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
