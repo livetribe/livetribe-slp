@@ -327,6 +327,18 @@ public class AttributesTest
     }
 
     @Test
+    public void testIntersect()
+    {
+        Attributes attributes1 = Attributes.from("(foo=1),(fxo=2),fo,(bar=2)");
+        Attributes attributes2 = Attributes.fromTags("f*o");
+        Attributes result = attributes1.intersect(attributes2);
+        assert attributes1.getSize() == 4;
+        assert attributes2.getSize() == 1;
+        assert result.getSize() == 3;
+        assert !result.containsTag("bar");
+    }
+
+    @Test
     public void testComplement()
     {
         Attributes attributes1 = Attributes.from("(a=1),(b=1,2),(c=3),cad,(cod=5)");

@@ -598,10 +598,14 @@ public class Attributes
         if (that == null || that.isEmpty()) return NONE;
 
         Attributes result = new Attributes(this);
-        for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext();)
+
+        for (Tag tagToRetain : that.attributes.keySet())
         {
-            Tag tag = tags.next();
-            if (!that.attributes.containsKey(tag)) tags.remove();
+            for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext();)
+            {
+                Tag tag = tags.next();
+                if (!tagToRetain.matches(tag)) tags.remove();
+            }
         }
         return result;
     }
