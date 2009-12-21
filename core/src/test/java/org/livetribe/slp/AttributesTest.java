@@ -336,6 +336,14 @@ public class AttributesTest
         assert attributes2.getSize() == 1;
         assert result.getSize() == 3;
         assert !result.containsTag("bar");
+
+        attributes1 = Attributes.from("(a=1),(aa=11),(b=2),(c=3)");
+        attributes2 = Attributes.fromTags("a*,c");
+        result = attributes1.intersect(attributes2);
+        assert attributes1.getSize() == 4;
+        assert attributes2.getSize() == 2;
+        assert result.getSize() == 3;
+        assert !result.containsTag("b");
     }
 
     @Test

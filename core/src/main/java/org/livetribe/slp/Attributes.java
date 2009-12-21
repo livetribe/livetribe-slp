@@ -586,6 +586,8 @@ public class Attributes
      * <code>Attributes</code> object, returning a new <code>Attributes</code> object.
      * The resulting <code>Attributes</code> will contain only the attributes whose tags are present in this
      * <code>Attributes</code> object and in the given <code>Attributes</code> object.
+     * If a tag in the given <code>Attributes</code> object contains the globbing character '*', all attributes in this
+     * <code>Attributes</code> object that match will be retained.
      * If the given <code>Attributes</code> is null or empty, {@link Attributes#NONE} will be returned.
      *
      * @param that The <code>Attributes</code> to intersect with
@@ -597,14 +599,15 @@ public class Attributes
     {
         if (that == null || that.isEmpty()) return NONE;
 
-        Attributes result = new Attributes(this);
+        Attributes result = new Attributes();
 
         for (Tag tagToRetain : that.attributes.keySet())
         {
-            for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext();)
+            for (Iterator<Tag> tags = attributes.keySet().iterator(); tags.hasNext();)
             {
                 Tag tag = tags.next();
-                if (!tagToRetain.matches(tag)) tags.remove();
+                if (tagToRetain.matches(tag))
+                    result.attributes.put(tag, attributes.get(tag));
             }
         }
         return result;
