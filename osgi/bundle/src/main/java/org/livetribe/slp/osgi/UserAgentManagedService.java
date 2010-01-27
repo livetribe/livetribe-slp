@@ -68,7 +68,12 @@ public class UserAgentManagedService implements ManagedService
         if (startDefault)
         {
             userAgent = SLP.newUserAgent(null);
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("User Agent " + this + " starting...");
+
             userAgent.start();
+
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("User Agent " + this + " started successfully");
 
             serviceRegistration = bundleContext.registerService(IUserAgent.class.getName(), userAgent, null);
         }
@@ -99,11 +104,22 @@ public class UserAgentManagedService implements ManagedService
             if (userAgent != null)
             {
                 serviceRegistration.unregister();
+
+                if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("User Agent " + this + " stopping...");
+
                 userAgent.stop();
+
+                if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("User Agent " + this + " stopped successfully");
             }
 
             userAgent = SLP.newUserAgent(dictionary == null ? null : DictionarySettings.from(dictionary));
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("User Agent " + this + " starting...");
+
             userAgent.start();
+
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("User Agent " + this + " started successfully");
+
             serviceRegistration = bundleContext.registerService(IUserAgent.class.getName(), userAgent, dictionary);
         }
 

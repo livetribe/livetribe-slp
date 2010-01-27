@@ -103,7 +103,12 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
         deleted(pid);
 
         ServiceAgent serviceAgent = SLP.newServiceAgent(dictionary == null ? null : DictionarySettings.from(dictionary));
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("Service Agent " + pid + " starting...");
+
         serviceAgent.start();
+
+        if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Service Agent " + pid + " started successfully");
 
         ServiceRegistration serviceRegistration = bundleContext.registerService(IServiceAgent.class.getName(), serviceAgent, dictionary);
         serviceAgents.put(pid, serviceRegistration);
@@ -128,7 +133,12 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
             ServiceAgent serviceAgent = (ServiceAgent)bundleContext.getService(serviceReference);
 
             serviceRegistration.unregister();
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("Service Agent " + pid + " starting...");
+
             serviceAgent.stop();
+
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Service Agent " + pid + " stopped successfully");
         }
 
         LOGGER.exiting(CLASS_NAME, "deleted");

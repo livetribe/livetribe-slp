@@ -20,15 +20,15 @@ import java.util.Dictionary;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.cm.ConfigurationException;
-import org.osgi.service.cm.ManagedService;
-
 import org.livetribe.slp.SLP;
 import org.livetribe.slp.osgi.util.DictionarySettings;
 import org.livetribe.slp.sa.IServiceAgent;
 import org.livetribe.slp.sa.ServiceAgent;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.ConfigurationException;
+import org.osgi.service.cm.ManagedService;
 
 
 /**
@@ -67,8 +67,12 @@ public class ServiceAgentManagedService implements ManagedService
 
         if (startDefault)
         {
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("Server " + this + " starting...");
+
             serviceAgent = SLP.newServiceAgent(null);
             serviceAgent.start();
+
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Server " + this + " started successfully");
 
             serviceRegistration = bundleContext.registerService(IServiceAgent.class.getName(), serviceAgent, null);
         }
@@ -99,11 +103,22 @@ public class ServiceAgentManagedService implements ManagedService
             if (serviceAgent != null)
             {
                 serviceRegistration.unregister();
+
+                if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("Server " + this + " stopping...");
+
                 serviceAgent.stop();
+
+                if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Server " + this + " stopped successfully");
             }
 
             serviceAgent = SLP.newServiceAgent(dictionary == null ? null : DictionarySettings.from(dictionary));
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("Server " + this + " starting...");
+
             serviceAgent.start();
+
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Server " + this + " started successfully");
+
             serviceRegistration = bundleContext.registerService(IServiceAgent.class.getName(), serviceAgent, dictionary);
         }
 
