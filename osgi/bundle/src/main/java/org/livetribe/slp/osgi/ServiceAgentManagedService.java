@@ -20,15 +20,15 @@ import java.util.Dictionary;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.livetribe.slp.SLP;
-import org.livetribe.slp.osgi.util.DictionarySettings;
-import org.livetribe.slp.sa.IServiceAgent;
-import org.livetribe.slp.sa.ServiceAgent;
-
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.cm.ManagedService;
+
+import org.livetribe.slp.SLP;
+import org.livetribe.slp.osgi.util.DictionarySettings;
+import org.livetribe.slp.sa.IServiceAgent;
+import org.livetribe.slp.sa.ServiceAgent;
 
 
 /**
