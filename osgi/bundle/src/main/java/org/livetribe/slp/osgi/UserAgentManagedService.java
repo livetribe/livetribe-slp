@@ -16,6 +16,7 @@
  */
 package org.livetribe.slp.osgi;
 
+import java.io.Closeable;
 import java.util.Dictionary;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,7 +44,7 @@ import org.livetribe.slp.ua.UserAgent;
  * @see ManagedService
  * @see UserAgent
  */
-public class UserAgentManagedService implements ManagedService
+public class UserAgentManagedService implements ManagedService, Closeable
 {
     private final static String CLASS_NAME = UserAgentManagedService.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -124,5 +125,29 @@ public class UserAgentManagedService implements ManagedService
         }
 
         LOGGER.exiting(CLASS_NAME, "updated");
+    }
+
+    /**
+     * Shuts down the user agent if one exists.
+     */
+    public void close()
+    {
+        LOGGER.entering(CLASS_NAME, "close");
+
+        synchronized (lock)
+        {
+            if (userAgent != null)
+            {
+                serviceRegistration.unregister();
+
+                if (LOGGER.isLoggable(Level.FINER)) LOGGER.finer("User Agent " + this + " stopping...");
+
+                userAgent.stop();
+
+                if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("User Agent " + this + " stopped successfully");
+            }
+        }
+
+        LOGGER.exiting(CLASS_NAME, "close");
     }
 }

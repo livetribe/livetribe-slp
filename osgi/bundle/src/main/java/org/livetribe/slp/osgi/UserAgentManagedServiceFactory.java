@@ -16,6 +16,7 @@
  */
 package org.livetribe.slp.osgi;
 
+import java.io.Closeable;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,11 +43,11 @@ import org.livetribe.slp.ua.UserAgent;
  * @see ManagedServiceFactory
  * @see UserAgent
  */
-public class UserAgentManagedServiceFactory implements ManagedServiceFactory
+public class UserAgentManagedServiceFactory implements ManagedServiceFactory, Closeable
 {
     private final static String CLASS_NAME = UserAgentManagedServiceFactory.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
-    private final Map<String, ServiceRegistration> serviceAgents = new HashMap<String, ServiceRegistration>();
+    private final Map<String, ServiceRegistration> userAgents = new HashMap<String, ServiceRegistration>();
     private final BundleContext bundleContext;
     private final String name;
 
@@ -107,7 +108,7 @@ public class UserAgentManagedServiceFactory implements ManagedServiceFactory
         if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("User Agent " + pid + " started successfully");
 
         ServiceRegistration serviceRegistration = bundleContext.registerService(IServiceAgent.class.getName(), userAgent, dictionary);
-        serviceAgents.put(pid, serviceRegistration);
+        userAgents.put(pid, serviceRegistration);
 
         LOGGER.exiting(CLASS_NAME, "updated");
     }
@@ -122,7 +123,7 @@ public class UserAgentManagedServiceFactory implements ManagedServiceFactory
     {
         LOGGER.entering(CLASS_NAME, "deleted", pid);
 
-        ServiceRegistration serviceRegistration = serviceAgents.remove(pid);
+        ServiceRegistration serviceRegistration = userAgents.remove(pid);
         if (serviceRegistration != null)
         {
             ServiceReference serviceReference = serviceRegistration.getReference();
@@ -138,5 +139,20 @@ public class UserAgentManagedServiceFactory implements ManagedServiceFactory
         }
 
         LOGGER.exiting(CLASS_NAME, "deleted");
+    }
+
+    /**
+     * Close all the configured user agents.
+     */
+    public void close()
+    {
+        LOGGER.entering(CLASS_NAME, "close");
+
+        for (String pid : userAgents.keySet())
+        {
+            deleted(pid);
+        }
+
+        LOGGER.exiting(CLASS_NAME, "close");
     }
 }

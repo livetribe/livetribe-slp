@@ -16,6 +16,8 @@
  */
 package org.livetribe.slp.osgi;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +44,7 @@ import org.livetribe.slp.sa.ServiceAgent;
  * @see ManagedServiceFactory
  * @see ServiceAgent
  */
-public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
+public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory, Closeable
 {
     private final static String CLASS_NAME = ServiceAgentManagedServiceFactory.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -142,5 +144,20 @@ public class ServiceAgentManagedServiceFactory implements ManagedServiceFactory
         }
 
         LOGGER.exiting(CLASS_NAME, "deleted");
+    }
+
+    /**
+     * Close all the configured service agents.
+     */
+    public void close()
+    {
+        LOGGER.entering(CLASS_NAME, "close");
+
+        for (String pid : serviceAgents.keySet())
+        {
+            deleted(pid);
+        }
+
+        LOGGER.exiting(CLASS_NAME, "close");
     }
 }

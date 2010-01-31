@@ -32,7 +32,7 @@ import org.livetribe.slp.ua.UserAgent;
 
 /**
  * The <code>ServiceNotificationListenerServiceTracker</code> simplifies the
- * managment of SLP service notification listeners by leverging the
+ * management of SLP service notification listeners by leveraging the
  * OSGi service registry mechanism. This has the added benefit of automatic
  * deregistration of the listeners should the bundle become unresolved.
  * <p/>
