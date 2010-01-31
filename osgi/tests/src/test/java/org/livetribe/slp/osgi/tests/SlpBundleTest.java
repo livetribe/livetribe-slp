@@ -78,6 +78,7 @@ public class SlpBundleTest
                 equinox(),
                 felix(),
                 knopflerfish(),
+//                papoose(),
                 compendiumProfile(),
                 provision(
                         mavenBundle().groupId("org.livetribe.slp").artifactId("livetribe-slp-osgi").version(asInProject())

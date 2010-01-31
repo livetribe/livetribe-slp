@@ -216,6 +216,12 @@ public class ByServicePropertiesServiceTracker extends ServiceTracker
         LOGGER.exiting(CLASS_NAME, "removedService");
     }
 
+    /**
+     * Generate SLP service information by scraping relevant information from
+     * the OSGi service reference's properties.
+     * @param reference the OSGi service reference used to generate the SLP service information
+     * @return the generated SLP service information
+     */
     private ServiceInfo generateServiceInfo(ServiceReference reference)
     {
         Map<String, String> map = Utils.toMap(reference);
