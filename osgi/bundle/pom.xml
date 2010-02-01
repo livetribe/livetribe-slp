@@ -21,7 +21,7 @@
                 <configuration>
                     <instructions>
                         <Embed-Dependency>livetribe-slp</Embed-Dependency>
-                        <_exportcontents>org.livetribe.slp;org.livetribe.slp.da;org.livetribe.slp.sa;org.livetribe.slp.settings;org.livetribe.slp.spi;org.livetribe.slp.spi.da;org.livetribe.slp.spi.filter;org.livetribe.slp.spi.msg;org.livetribe.slp.spi.net;org.livetribe.slp.spi.sa;org.livetribe.slp.spi.ua;org.livetribe.slp.ua;org.livetribe.slp.osgi;version=${pom.version}</_exportcontents>
+                        <_exportcontents>org.livetribe.slp;org.livetribe.slp.da;org.livetribe.slp.sa;org.livetribe.slp.settings;org.livetribe.slp.spi;org.livetribe.slp.spi.da;org.livetribe.slp.spi.filter;org.livetribe.slp.spi.msg;org.livetribe.slp.spi.net;org.livetribe.slp.spi.sa;org.livetribe.slp.spi.ua;org.livetribe.slp.ua;org.livetribe.slp.osgi;version=1.0.0</_exportcontents>
                         <Export-Package>org.livetribe.slp.osgi</Export-Package>
                         <Private-Package>org.livetribe.slp.util;org.livetribe.slp.osgi.util</Private-Package>
                     </instructions>
