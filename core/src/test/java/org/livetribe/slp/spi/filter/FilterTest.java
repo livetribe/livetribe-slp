@@ -50,6 +50,32 @@ public class FilterTest
     }
 
     @Test
+    public void testMatchWithWhitespace() throws Exception
+    {
+        String attributeList = "(a=fo  o)";
+        Attributes attributes = Attributes.from(attributeList);
+        FilterParser parser = new FilterParser();
+
+        Filter filter = parser.parse("( a   = Fo  o )");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a >= f)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a >= F)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a<=g)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a=f*o)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a=FO*)");
+        assert filter.matches(attributes);
+    }
+
+    @Test
     public void testMatchSingleLong() throws Exception
     {
         String attributeList = "(a=14)";
