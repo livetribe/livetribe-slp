@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 the original author or authors
+ * Copyright 2005-2010 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class SrvRqst extends Rqst
         int serviceTypeLength = serviceTypeBytes.length;
         byte[] scopesBytes = scopesToBytes(getScopes());
         int scopesLength = scopesBytes.length;
-        byte[] filterBytes = writeString(getFilter(), true);
+        byte[] filterBytes = writeString(getFilter(), false);
         int filterLength = filterBytes.length;
         byte[] securityParameterIndexBytes = writeString(getSecurityParameterIndex(), true);
         int securityParameterIndexLength = securityParameterIndexBytes.length;
@@ -136,7 +136,7 @@ public class SrvRqst extends Rqst
         int filterLength = readInt(bytes, offset, FILTER_LENGTH_BYTES_LENGTH);
 
         offset += FILTER_LENGTH_BYTES_LENGTH;
-        setFilter(readString(bytes, offset, filterLength, true));
+        setFilter(readString(bytes, offset, filterLength, false));
 
         offset += filterLength;
         int securityParameterIndexLength = readInt(bytes, offset, SPI_LENGTH_BYTES_LENGTH);
