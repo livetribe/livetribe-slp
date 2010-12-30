@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2008 the original author or authors
+ * Copyright 2006-2010 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,20 +157,6 @@ public class FilterParser
 
     private Filter createFilter(String expression) throws ServiceLocationException
     {
-        expression = expression.trim();
-
-        int ge = expression.indexOf(ExpressionFilter.GE);
-        if (ge > 0)
-            return new ExpressionFilter(expression.substring(0, ge).trim(), ExpressionFilter.GE, expression.substring(ge + ExpressionFilter.GE.length()).trim());
-
-        int le = expression.indexOf(ExpressionFilter.LE);
-        if (le > 0)
-            return new ExpressionFilter(expression.substring(0, le).trim(), ExpressionFilter.LE, expression.substring(le + ExpressionFilter.LE.length()).trim());
-
-        int eq = expression.indexOf(ExpressionFilter.EQ);
-        if (eq > 0)
-            return new ExpressionFilter(expression.substring(0, eq).trim(), ExpressionFilter.EQ, expression.substring(eq + ExpressionFilter.EQ.length()).trim());
-
-        throw new ServiceLocationException("Unknown expression " + expression, SLPError.PARSE_ERROR);
+        return ExpressionFilter.fromString(expression);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2008 the original author or authors
+ * Copyright 2006-2010 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,10 @@
  */
 package org.livetribe.slp.spi.filter;
 
-import org.livetribe.slp.Attributes;
 import org.testng.annotations.Test;
+
+import org.livetribe.slp.Attributes;
+
 
 /**
  * @version $Rev$ $Date$
@@ -72,6 +74,15 @@ public class FilterTest
         assert filter.matches(attributes);
 
         filter = parser.parse("(a=FO*)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a=fo   o*)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a=fo  o*)");
+        assert filter.matches(attributes);
+
+        filter = parser.parse("(a=fo o*)");
         assert filter.matches(attributes);
     }
 
@@ -209,6 +220,79 @@ public class FilterTest
     }
 
     @Test
+    public void testMatchEscapedString()
+    {
+        FilterParser parser = new FilterParser();
+
+        //Test rfc2254 reserved characters
+        Attributes attributes = Attributes.from("(msg=*\\28\\29\\5c)");
+
+        assert parser
+                .parse("(msg=\\2a\\28\\29\\5c)")
+                .matches(attributes);
+
+        assert parser
+                .parse("(msg=*()\\")
+                .matches(attributes);
+
+        //Test rfc2608.txt reserved characters ( minus rfc2254 reserved ones )
+        assert parser
+                .parse("(msg=,<=>==~!)")
+                .matches(Attributes.from("(msg=\\2c\\3c\\3d\\3e\\3d\\3d\\7e\\21)"));
+
+        //Generic char
+        assert parser
+                .parse("(msg=ab\\63)")
+                .matches(Attributes.from("(msg=abc)"));
+
+        assert parser
+                .parse("(msg=ab\\63*)")
+                .matches(Attributes.from("(msg=abcd)"));
+
+        assert parser
+                .parse("(msg=\\61b\\63)")
+                .matches(Attributes.from("(msg=abc)"));
+
+        //UTF-8 char
+        assert parser
+                .parse("(msg=\\e1\\ba\\a3)")
+                .matches(Attributes.from("(msg=\u1EA3)"));
+
+        //Invalid UTF-8 char
+        assert !parser
+                .parse("(msg=abc\\FFd)")
+                .matches(Attributes.from("(msg=abcd)"));
+
+        //NUL
+        assert parser
+                .parse("(msg=abc\\00qwe)")
+                .matches(Attributes.from("(msg=abc\\00qwe)"));
+
+        //Numeric
+        assert parser
+                .parse("(msg=12\\33)")
+                .matches(Attributes.from("(msg=123)"));
+
+        //Boolean
+        assert parser
+                .parse("(msg=tr\\55e)")
+                .matches(Attributes.from("(msg=true)"));
+
+        //Opaque
+        // That will fail !
+        /*
+            assert parser
+                .parse("(msg=\\FF\\01\\02\\03)")
+                .matches(Attributes.from("(msg=\\FF\\01\\02\\03)"));
+        */
+
+        //Broken escape sequence (will be kept as-is)
+        assert parser
+                .parse("(msg=\\qq)")
+                .matches(Attributes.from("(msg=\\5cqq)"));
+    }
+
+    @Test
     public void testToString()
     {
         FilterParser parser = new FilterParser();
@@ -233,4 +317,5 @@ public class FilterTest
         filter = parser.parse(expression);
         assert expression.equals(filter.asString());
     }
+
 }
