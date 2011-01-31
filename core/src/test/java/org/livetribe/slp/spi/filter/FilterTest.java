@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2010 the original author or authors
+ * Copyright 2006-2011 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.filter;
 import org.testng.annotations.Test;
 
 import org.livetribe.slp.Attributes;
+import org.livetribe.slp.ServiceLocationException;
 
 
 /**
@@ -279,17 +280,42 @@ public class FilterTest
                 .matches(Attributes.from("(msg=true)"));
 
         //Opaque
-        // That will fail !
-        /*
-            assert parser
-                .parse("(msg=\\FF\\01\\02\\03)")
+        assert parser
+                .parse("(msg=\\01\\02\\03)")
                 .matches(Attributes.from("(msg=\\FF\\01\\02\\03)"));
-        */
 
         //Broken escape sequence (will be kept as-is)
         assert parser
                 .parse("(msg=\\qq)")
                 .matches(Attributes.from("(msg=\\5cqq)"));
+
+        //Broken opaque value escape sequence
+        try
+        {
+            parser
+                    .parse("(msg=\\)")
+                    .matches(Attributes.from("(msg=\\FF\\01\\02\\03)"));
+            assert false;
+        }
+        catch (ServiceLocationException sle) {}
+
+        try
+        {
+            parser
+                    .parse("(msg=\\xx)")
+                    .matches(Attributes.from("(msg=\\FF\\01\\02\\03)"));
+            assert false;
+        }
+        catch (ServiceLocationException sle) {}
+
+        try
+        {
+            parser
+                    .parse("(msg=xab)")
+                    .matches(Attributes.from("(msg=\\FF\\01\\02\\03)"));
+            assert false;
+        }
+        catch (ServiceLocationException sle) {}
     }
 
     @Test
