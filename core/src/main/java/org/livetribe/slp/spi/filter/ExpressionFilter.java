@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2010 the original author or authors
+ * Copyright 2006-2011 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.livetribe.slp.spi.filter;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -197,8 +198,9 @@ public class ExpressionFilter implements Filter
         else if (attributeValue.isOpaqueType())
         {
             if (!EQ.equals(operator)) return false;
-            String value = (String)attributeValue.getValue();
-            return unescape(compare).equals(value);
+            byte[] value = (byte[])attributeValue.getValue();
+
+            return Arrays.equals(octetStringToBytes(compare), value);
         }
         else
         {
@@ -242,26 +244,53 @@ public class ExpressionFilter implements Filter
 
     private static String octetString2UTF8(String ostr) throws ServiceLocationException
     {
+        try
+        {
+            return new String(octetStringToBytes(ostr), "UTF-8");
+        }
+        catch (UnsupportedEncodingException uee)
+        {
+            throw new ServiceLocationException("Error while decoding octet string: " + ostr, uee, SLPError.PARSE_ERROR);
+        }
+    }
+
+    private static byte[] octetStringToBytes(String ostr) throws ServiceLocationException
+    {
+        if (ostr.length() == 0) return new byte[0];
+
+        if (ostr.length() % 3 != 0)
+        {
+            throw new ServiceLocationException("Illegal escape sequence, number of characters is not multiple of 3",
+                                               SLPError.PARSE_ERROR);
+        }
+
         int len = ostr.length() / 3;
 
         byte[] bytes = new byte[len];
         for (int i = 0; i < len; i++)
         {
-            bytes[i] = (byte)(
-                    Integer.parseInt(
-                            ostr.substring(3 * i + 1, 3 * i + 3), 16
-                    ) & 0xFF
-            );
+            if (ostr.charAt(i * 3) != '\\')
+            {
+                throw new ServiceLocationException("Escape sequence does not start with \\ at " + (3 * i) + ": " + ostr,
+                                                   SLPError.PARSE_ERROR);
+            }
+
+            try
+            {
+                bytes[i] = (byte)(
+                        Integer.parseInt(
+                                ostr.substring(3 * i + 1, 3 * i + 3), 16
+                        ) & 0xFF
+                );
+            }
+            catch (NumberFormatException nfe)
+            {
+                throw new ServiceLocationException("Illegal escape sequence at " + (3 * i + 1) + ": " + ostr,
+                                                   SLPError.PARSE_ERROR);
+            }
         }
 
-        try
-        {
-            return new String(bytes, "UTF-8");
-        }
-        catch (UnsupportedEncodingException uee)
-        {
-            throw new ServiceLocationException("Error while decoding octet string: " + ostr, SLPError.PARSE_ERROR);
-        }
+        return bytes;
     }
 
     public String asString()
