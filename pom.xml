@@ -28,30 +28,18 @@
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
     <packaging>pom</packaging>
-    <version>2.1.2</version>
+    <version>2.1.2-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
         <module>osgi</module>
     </modules>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <tagBase>https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags</tagBase>
-                    <goals>deploy</goals>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <scm>
+      <connection>scm:svn:http://svn.codehaus.org/livetribe/garden/livetribe-slp/branches/2.1.x</connection>
+      <developerConnection>scm:svn:https://svn.codehaus.org/livetribe/garden/livetribe-slp/branches/2.1.x</developerConnection>
+      <url>http://svn.livetribe.codehaus.org/browse/livetribe/garden/livetribe-slp/branches/2.1.x</url>
+    </scm>
 
-
-  <scm>
-    <connection>scm:svn:http://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/2.1.2</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/2.1.2</developerConnection>
-    <url>http://svn.livetribe.codehaus.org/browse/livetribe/garden/livetribe-slp/tags/2.1.2</url>
-  </scm>
 </project>
 
