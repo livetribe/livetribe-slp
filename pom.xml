@@ -28,7 +28,7 @@
     <name>LiveTribe :: SLP</name>
     <description>LiveTribe Service Location Protocol</description>
     <packaging>pom</packaging>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>2.1.2</version>
 
     <modules>
         <module>core</module>
@@ -36,9 +36,9 @@
     </modules>
 
     <scm>
-      <connection>scm:svn:http://svn.codehaus.org/livetribe/garden/livetribe-slp/branches/2.1.x</connection>
-      <developerConnection>scm:svn:https://svn.codehaus.org/livetribe/garden/livetribe-slp/branches/2.1.x</developerConnection>
-      <url>http://svn.livetribe.codehaus.org/browse/livetribe/garden/livetribe-slp/branches/2.1.x</url>
+      <connection>scm:svn:http://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/livetribe-slp-project-2.1.2</connection>
+      <developerConnection>scm:svn:https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags/livetribe-slp-project-2.1.2</developerConnection>
+      <url>http://svn.livetribe.codehaus.org/browse/livetribe/garden/livetribe-slp/tags/livetribe-slp-project-2.1.2</url>
     </scm>
 
 </project>
