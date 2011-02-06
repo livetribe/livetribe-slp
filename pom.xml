@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.livetribe</groupId>
         <artifactId>livetribe</artifactId>
-        <version>1.5.0</version>
+        <version>6</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -21,17 +21,7 @@
         <module>osgi</module>
     </modules>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <tagBase>https://svn.codehaus.org/livetribe/garden/livetribe-slp/tags</tagBase>
-                    <goals>deploy</goals>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <build/>
 
 </project>
 
