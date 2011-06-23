@@ -15,9 +15,17 @@
  */
 package org.livetribe.slp.spi.net;
 
+import org.livetribe.slp.SLPError;
+import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
+
 import static org.livetribe.slp.settings.Keys.*;
+
 import org.livetribe.slp.settings.Settings;
+
+import java.io.IOException;
+import java.net.*;
+
 
 /**
  * @version $Revision$ $Date$
@@ -25,6 +33,7 @@ import org.livetribe.slp.settings.Settings;
 public class MulticastSocketUDPConnector extends SocketUDPConnector
 {
     private String multicastAddress = Defaults.get(MULTICAST_ADDRESS_KEY);
+    private int multicastTimeToLive = Defaults.get(MULTICAST_TIME_TO_LIVE_KEY);
 
     public MulticastSocketUDPConnector()
     {
@@ -40,6 +49,9 @@ public class MulticastSocketUDPConnector extends SocketUDPConnector
     private void setSettings(Settings settings)
     {
         if (settings.containsKey(MULTICAST_ADDRESS_KEY)) this.multicastAddress = settings.get(MULTICAST_ADDRESS_KEY);
+
+        if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY))
+            this.multicastTimeToLive = settings.get(MULTICAST_TIME_TO_LIVE_KEY);
     }
 
     public String getMulticastAddress()
@@ -56,4 +68,24 @@ public class MulticastSocketUDPConnector extends SocketUDPConnector
     {
         return multicastAddress;
     }
+
+    @Override
+    protected DatagramSocket newDatagramSocket(String localAddress)
+    {
+        try
+        {
+            MulticastSocket multicastSocket = new MulticastSocket(
+                    (localAddress == null ? new InetSocketAddress(0) : new InetSocketAddress(localAddress, 0))
+            );
+
+            multicastSocket.setTimeToLive(multicastTimeToLive);
+
+            return multicastSocket;
+        }
+        catch (IOException ioe)
+        {
+            throw new ServiceLocationException(ioe, SLPError.NETWORK_INIT_FAILED);
+        }
+    }
+
 }
