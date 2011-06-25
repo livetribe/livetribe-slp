@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 the original author or authors
+ * Copyright 2007-2011 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,18 @@
  */
 package org.livetribe.slp.spi.net;
 
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
+
+import static org.livetribe.slp.settings.Keys.MULTICAST_ADDRESS_KEY;
+import static org.livetribe.slp.settings.Keys.MULTICAST_TIME_TO_LIVE_KEY;
+
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-
-import static org.livetribe.slp.settings.Keys.*;
-
 import org.livetribe.slp.settings.Settings;
-
-import java.io.IOException;
-import java.net.*;
 
 
 /**
@@ -50,8 +52,7 @@ public class MulticastSocketUDPConnector extends SocketUDPConnector
     {
         if (settings.containsKey(MULTICAST_ADDRESS_KEY)) this.multicastAddress = settings.get(MULTICAST_ADDRESS_KEY);
 
-        if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY))
-            this.multicastTimeToLive = settings.get(MULTICAST_TIME_TO_LIVE_KEY);
+        if (settings.containsKey(MULTICAST_TIME_TO_LIVE_KEY)) this.multicastTimeToLive = settings.get(MULTICAST_TIME_TO_LIVE_KEY);
     }
 
     public String getMulticastAddress()
