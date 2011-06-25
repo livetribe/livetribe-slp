@@ -26,6 +26,6 @@ SLP is useful in all those cases where you need to contact a remote service, but
 
 ### More Resources ###
 
-*  Discuss LiveTribe at [http://www.livetribe.org/Mailing+Lists](http://livetribe.codehaus.org/Mailing+Lists)
-*  Learn even more at [http://www.livetribe.org/LiveTribe-SLP](http://livetribe.codehaus.org/LiveTribe-SLP)
+*  Discuss LiveTribe at [http://www.livetribe.org/Mailing+Lists](http://www.livetribe.org/Mailing+Lists)
+*  Learn even more at [http://www.livetribe.org/LiveTribe-SLP](http://www.livetribe.org/LiveTribe-SLP)
 *  Check out code at [https://github.com/livetribe/livetribe-slp](https://github.com/livetribe/livetribe-slp)
