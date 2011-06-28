@@ -31,4 +31,4 @@ SLP is useful in all those cases where you need to contact a remote service, but
 *  Check out code at [https://github.com/livetribe/livetribe-slp](https://github.com/livetribe/livetribe-slp)
 
 A CodeHaus project
-![Alt text](https://github.com/livetribe/livetribe-slp/raw/master/doc/images/codehaus.gif)
+![Alt text](https://github.com/livetribe/livetribe-slp/raw/master/docs/images/codehaus.gif)
