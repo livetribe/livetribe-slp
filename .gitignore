@@ -2,6 +2,7 @@
 *.ipr
 *.iml
 *.iws
+.idea
 # all target dirs
 target/
 # Mac OS X mumbo jumbo
