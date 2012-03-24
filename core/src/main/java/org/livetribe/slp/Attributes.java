@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+
 /**
  * Attributes are a comma separated list of key-value pairs that describe a service.
  * <br />
@@ -105,6 +106,50 @@ public class Attributes
         }
 
         return result;
+    }
+
+    /**
+     * Return a deep copy of an <code>Attributes</code> object and returns it
+     * as a map.
+     *
+     * @param from the <code>Attributes</code> object whose contents are copied
+     * @return a map whose contents were copied from the <code>Attributes</code> object
+     */
+    public static Map<String, Object> toMap(Attributes from)
+    {
+        Map<String, Object> result = new HashMap<String, Object>(from.getSize());
+
+        for (Map.Entry<Tag, Value> entry : from.attributes.entrySet())
+        {
+            result.put(unescapeTag(entry.getKey().tag), deepCopy(entry.getValue().value));
+        }
+
+        return result;
+    }
+
+    private static Object deepCopy(Object object)
+    {
+        if (object instanceof Object[])
+        {
+            Object[] from = (Object[])object;
+            Object[] result = new Object[from.length];
+            for (int i = 0; i < from.length; i++)
+            {
+                result[i] = deepCopy(from[i]);
+            }
+            return result;
+        }
+        else if (object instanceof byte[])
+        {
+            byte[] from = (byte[])object;
+            byte[] result = new byte[from.length];
+            System.arraycopy(from, 0, result, 0, from.length);
+            return result;
+        }
+        else
+        {
+            return object;
+        }
     }
 
     /**
@@ -465,7 +510,7 @@ public class Attributes
     {
         TreeMap<Tag, Value> orderedAttributes = new TreeMap<Tag, Value>(attributes);
         StringBuilder result = new StringBuilder();
-        for (Iterator<Map.Entry<Tag, Value>> entries = orderedAttributes.entrySet().iterator(); entries.hasNext();)
+        for (Iterator<Map.Entry<Tag, Value>> entries = orderedAttributes.entrySet().iterator(); entries.hasNext(); )
         {
             Map.Entry<Tag, Value> mapEntry = entries.next();
             Tag tag = mapEntry.getKey();
@@ -513,7 +558,7 @@ public class Attributes
     {
         TreeMap<Tag, Value> orderedAttributes = new TreeMap<Tag, Value>(attributes);
         StringBuilder result = new StringBuilder();
-        for (Iterator<Tag> tags = orderedAttributes.keySet().iterator(); tags.hasNext();)
+        for (Iterator<Tag> tags = orderedAttributes.keySet().iterator(); tags.hasNext(); )
         {
             Tag tag = tags.next();
             result.append(tag.tag);
@@ -571,7 +616,7 @@ public class Attributes
         {
             for (Tag tagToRemove : that.attributes.keySet())
             {
-                for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext();)
+                for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext(); )
                 {
                     Tag tag = tags.next();
                     if (tagToRemove.matches(tag)) tags.remove();
@@ -603,7 +648,7 @@ public class Attributes
 
         for (Tag tagToRetain : that.attributes.keySet())
         {
-            for (Iterator<Tag> tags = attributes.keySet().iterator(); tags.hasNext();)
+            for (Iterator<Tag> tags = attributes.keySet().iterator(); tags.hasNext(); )
             {
                 Tag tag = tags.next();
                 if (tagToRetain.matches(tag))
@@ -985,6 +1030,7 @@ public class Attributes
 
     private static class Attribute
     {
+
         private final Tag tag;
         private final Value value;
 

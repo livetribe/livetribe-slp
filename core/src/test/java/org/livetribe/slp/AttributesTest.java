@@ -16,8 +16,10 @@
 package org.livetribe.slp;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import org.testng.annotations.Test;
+
 
 /**
  * @version $Rev$ $Date$
@@ -450,5 +452,32 @@ public class AttributesTest
         assert merged.containsTag("i");
 
         assert merged.containsTag("j");
+    }
+
+    @Test
+    public void testAsMap()
+    {
+        Attributes attributes = Attributes.from("(a=1),(b=true),(c=string),(d=\\FF\\00),e,(f=1,2,3),(g=foo,bar,cdr),(h=\\FF\\00,\\FF\\01,\\FF\\02),(i=true,false,true)");
+        Map<String, Object> map = Attributes.toMap(attributes);
+
+        assert map.size() == 9;
+        assert map.get("a").equals(1);
+        assert map.get("b").equals(true);
+        assert map.get("c").equals("string");
+        assert Arrays.equals((byte[])map.get("d"), new byte[]{0x00});
+        assert map.get("e") == null;
+        assert Arrays.equals((Object[])map.get("f"), new Object[]{1, 2, 3});
+        assert Arrays.equals((Object[])map.get("g"), new Object[]{"foo", "bar", "cdr"});
+        assert Arrays.equals((Object[])map.get("i"), new Object[]{true, false, true});
+
+        Object[] h = (Object[])map.get("h");
+        assert Arrays.equals((byte[])h[0], new byte[]{0x00});
+        assert Arrays.equals((byte[])h[1], new byte[]{0x01});
+        assert Arrays.equals((byte[])h[2], new byte[]{0x02});
+
+        ((Object[])map.get("g"))[2] = "ouch";
+
+        map = Attributes.toMap(attributes);
+        assert Arrays.equals((Object[])map.get("g"), new Object[]{"foo", "bar", "cdr"});
     }
 }
