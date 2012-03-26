@@ -16,6 +16,7 @@
  */
 package org.livetribe.slp.osgi.tests;
 
+import javax.inject.Inject;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Locale;
@@ -24,18 +25,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
 import static org.ops4j.pax.exam.CoreOptions.equinox;
 import static org.ops4j.pax.exam.CoreOptions.felix;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.knopflerfish;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.provision;
-import org.ops4j.pax.exam.Inject;
 import static org.ops4j.pax.exam.MavenUtils.asInProject;
 import org.ops4j.pax.exam.Option;
-import static org.ops4j.pax.exam.container.def.PaxRunnerOptions.compendiumProfile;
 import org.ops4j.pax.exam.junit.Configuration;
+import org.ops4j.pax.exam.junit.ExamReactorStrategy;
 import org.ops4j.pax.exam.junit.JUnit4TestRunner;
+import org.ops4j.pax.exam.spi.reactors.AllConfinedStagedReactorFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -56,7 +59,6 @@ import org.livetribe.slp.osgi.ServiceNotificationListenerServiceTracker;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.ua.UserAgent;
@@ -66,6 +68,7 @@ import org.livetribe.slp.ua.UserAgent;
  * @version $Revision$ $Date$
  */
 @RunWith(JUnit4TestRunner.class)
+@ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
 public class SlpBundleTest
 {
     @Inject
@@ -75,11 +78,11 @@ public class SlpBundleTest
     public static Option[] configure()
     {
         return options(
+                junitBundles(),
                 equinox(),
                 felix(),
                 knopflerfish(),
 //                papoose(),
-                compendiumProfile(),
                 provision(
                         mavenBundle().groupId("org.livetribe.slp").artifactId("livetribe-slp-osgi").version(asInProject())
                 )
