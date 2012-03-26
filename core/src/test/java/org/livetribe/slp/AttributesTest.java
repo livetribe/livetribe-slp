@@ -16,7 +16,10 @@
 package org.livetribe.slp;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
@@ -450,5 +453,53 @@ public class AttributesTest
         assert merged.containsTag("i");
 
         assert merged.containsTag("j");
+    }
+
+    @Test
+    public void testIteration() throws Exception
+    {
+        Attributes attributes = Attributes.from("(a=1,2),  (b=true), (file\\5fpath=My Documents),(d=\\FF\\00), e");
+        Set<String> tags1 = new HashSet<String>();
+        tags1.add("a");
+        tags1.add("b");
+        tags1.add("file_path");
+        tags1.add("d");
+        tags1.add("e");
+        Set<String> tags2 = new HashSet<String>();
+        for (String tag : attributes)
+            tags2.add(tag);
+        Assert.assertEquals(tags1, tags2);
+
+        for (String tag : attributes)
+        {
+            Attributes.Value value = attributes.valueFor(tag);
+            if ("a".equals(tag))
+            {
+                Assert.assertTrue(value.isIntegerType());
+                Assert.assertTrue(value.isMultiValued());
+            }
+            else if ("b".equals(tag))
+            {
+                Assert.assertTrue(value.isBooleanType());
+                Assert.assertSame(Boolean.TRUE, value.getValue());
+            }
+            else if ("file_path".equals(tag))
+            {
+                Assert.assertTrue(value.isStringType());
+                Assert.assertEquals("My Documents", value.getValue());
+            }
+            else if ("d".equals(tag))
+            {
+                Assert.assertTrue(value.isOpaqueType());
+            }
+            else if ("e".equals(tag))
+            {
+                Assert.assertTrue(value.isPresenceType());
+            }
+            else
+            {
+                Assert.fail();
+            }
+        }
     }
 }

@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
  *
  * @version $Rev$ $Date$
  */
-public class Attributes
+public class Attributes implements Iterable<String>
 {
     private static final char STAR = '*';
     private static final char ESCAPE = '\\';
@@ -172,6 +172,30 @@ public class Attributes
     public boolean containsTag(String unescapedTag)
     {
         return attributes.containsKey(Tag.from(escapeTag(unescapedTag), false));
+    }
+
+    public Iterator<String> iterator()
+    {
+        return new Iterator<String>()
+        {
+            private final Iterator<Tag> i = attributes.keySet().iterator();
+
+            public boolean hasNext()
+            {
+                return i.hasNext();
+            }
+
+            public String next()
+            {
+                Tag tag = i.next();
+                return unescapeTag(tag.tag);
+            }
+
+            public void remove()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     /**
