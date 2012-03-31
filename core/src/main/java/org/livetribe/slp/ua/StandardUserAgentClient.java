@@ -17,12 +17,14 @@ package org.livetribe.slp.ua;
 
 import java.util.List;
 
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
 import org.livetribe.slp.spi.filter.Filter;
@@ -30,8 +32,9 @@ import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.ua.AbstractUserAgent;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class StandardUserAgentClient extends AbstractUserAgent implements UserAgentClient
 {

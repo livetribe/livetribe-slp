@@ -27,21 +27,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
-import org.livetribe.slp.SLPError;
-import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
 import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
 import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
 import static org.livetribe.slp.settings.Keys.MULTICAST_TIME_TO_LIVE_KEY;
 import static org.livetribe.slp.settings.Keys.NOTIFICATION_PORT_KEY;
 import static org.livetribe.slp.settings.Keys.PORT_KEY;
+
+import org.livetribe.slp.SLPError;
+import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class SocketUDPConnectorServer extends AbstractConnectorServer implements UDPConnectorServer
 {

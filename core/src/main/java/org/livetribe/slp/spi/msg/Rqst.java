@@ -17,8 +17,9 @@ package org.livetribe.slp.spi.msg;
 
 import java.util.Set;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public abstract class Rqst extends Message
 {

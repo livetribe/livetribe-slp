@@ -30,7 +30,7 @@ import org.livetribe.slp.settings.Settings;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MulticastSocketUDPConnector extends SocketUDPConnector
 {

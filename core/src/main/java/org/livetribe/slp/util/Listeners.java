@@ -22,8 +22,9 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class Listeners<T extends EventListener> implements Iterable<T>
 {

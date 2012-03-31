@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
 import org.livetribe.slp.Scopes;
@@ -31,14 +35,12 @@ import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.ServiceNotificationEvent;
 import org.livetribe.slp.sa.ServiceNotificationListener;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class StandardUserAgentTest
 {

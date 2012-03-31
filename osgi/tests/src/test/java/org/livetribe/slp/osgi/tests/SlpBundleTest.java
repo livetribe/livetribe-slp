@@ -65,7 +65,7 @@ import org.livetribe.slp.ua.UserAgent;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 @RunWith(JUnit4TestRunner.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)

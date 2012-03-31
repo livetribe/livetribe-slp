@@ -18,8 +18,6 @@ package org.livetribe.slp.settings;
 /**
  * Holds a pair represented by a string key, as one can find in properties files, and the class of the value
  * associated with this Key.
- *
- * @version $Revision$ $Date$
  */
 public class Key<T>
 {

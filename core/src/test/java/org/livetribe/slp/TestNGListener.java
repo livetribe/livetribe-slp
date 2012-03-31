@@ -18,8 +18,9 @@ package org.livetribe.slp;
 import org.testng.ITestResult;
 import org.testng.TestListenerAdapter;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class TestNGListener extends TestListenerAdapter
 {

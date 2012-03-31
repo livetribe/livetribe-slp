@@ -20,15 +20,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceEvent;
 import org.livetribe.slp.sa.ServiceListener;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.ua.UserAgent;
-import org.testng.annotations.Test;
+
 
 /**
  * Purpose of this test is to test how SLP can be used to implement cluster nodes
@@ -40,8 +42,6 @@ import org.testng.annotations.Test;
  * listen for services advertised by ServiceAgents. An additional helper class acts as a
  * service cache, since UserAgents do not cache services but only give a way to actively
  * find them.
- *
- * @version $Rev$ $Date$
  */
 public class ServiceAgentClusterTest
 {

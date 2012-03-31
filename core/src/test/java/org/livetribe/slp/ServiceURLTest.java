@@ -17,8 +17,9 @@ package org.livetribe.slp;
 
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class ServiceURLTest
 {

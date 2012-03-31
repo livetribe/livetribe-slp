@@ -17,8 +17,9 @@ package org.livetribe.slp.spi.msg;
 
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class BytesBlockTest
 {

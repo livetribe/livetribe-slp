@@ -26,15 +26,17 @@ import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.livetribe.slp.settings.Keys.TCP_MESSAGE_MAX_LENGTH_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_READ_TIMEOUT_KEY;
+
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.TCP_MESSAGE_MAX_LENGTH_KEY;
-import static org.livetribe.slp.settings.Keys.TCP_READ_TIMEOUT_KEY;
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SocketTCPConnector implements TCPConnector
 {

@@ -17,9 +17,10 @@ package org.livetribe.slp.spi.sa;
 
 import java.net.InetSocketAddress;
 
+import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
+
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
@@ -27,8 +28,9 @@ import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UnicastSrvDeRegPerformer extends SrvDeRegPerformer
 {

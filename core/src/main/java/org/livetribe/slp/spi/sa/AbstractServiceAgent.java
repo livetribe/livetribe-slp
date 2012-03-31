@@ -23,6 +23,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.LANGUAGE_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_ATTRIBUTES_KEY;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.SCOPES_KEY;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
@@ -34,13 +42,6 @@ import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
-import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
-import static org.livetribe.slp.settings.Keys.LANGUAGE_KEY;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.SA_ATTRIBUTES_KEY;
-import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
-import static org.livetribe.slp.settings.Keys.SCOPES_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.AbstractServer;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
@@ -62,8 +63,9 @@ import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class AbstractServiceAgent extends AbstractServer implements DirectoryAgentListener
 {

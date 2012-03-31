@@ -21,6 +21,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static org.livetribe.slp.settings.Keys.SA_SERVICE_RENEWAL_ENABLED_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
@@ -30,7 +35,6 @@ import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.DirectoryAgentInfo;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.net.TCPConnector;
@@ -39,8 +43,9 @@ import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.sa.AbstractServiceAgent;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class StandardServiceAgent extends AbstractServiceAgent implements ServiceAgent
 {

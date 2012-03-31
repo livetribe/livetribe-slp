@@ -20,8 +20,9 @@ import java.util.EventObject;
 
 import org.livetribe.slp.spi.msg.Message;
 
+
 /**
- * @version $Rev: 46 $ $Date: 2006-03-24 19:10:49 +0100 (Fri, 24 Mar 2006) $
+ *
  */
 public class MessageEvent extends EventObject
 {

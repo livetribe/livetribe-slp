@@ -21,6 +21,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
+import static org.livetribe.slp.settings.Keys.DA_ADVERTISEMENT_PERIOD_KEY;
+import static org.livetribe.slp.settings.Keys.DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
 import org.livetribe.slp.SLPError;
@@ -32,13 +41,6 @@ import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.ServiceEvent;
 import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
-import static org.livetribe.slp.settings.Keys.DA_ADVERTISEMENT_PERIOD_KEY;
-import static org.livetribe.slp.settings.Keys.DA_EXPIRED_SERVICES_PURGE_PERIOD_KEY;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.MulticastDASrvRqstPerformer;
@@ -50,10 +52,10 @@ import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.ua.MulticastSrvRqstPerformer;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class StandardDirectoryAgentServerTest
 {

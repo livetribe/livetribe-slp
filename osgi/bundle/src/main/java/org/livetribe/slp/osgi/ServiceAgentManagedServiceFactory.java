@@ -17,7 +17,6 @@
 package org.livetribe.slp.osgi;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +39,6 @@ import org.livetribe.slp.sa.ServiceAgent;
  * Instances of {@link ServiceAgent} can be created and configured using OSGi's
  * Configuration Admin Service.
  *
- * @version $Revision$ $Date$
  * @see ManagedServiceFactory
  * @see ServiceAgent
  */

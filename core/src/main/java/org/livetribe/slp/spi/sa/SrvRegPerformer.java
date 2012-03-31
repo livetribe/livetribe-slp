@@ -21,8 +21,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvReg;
 import org.livetribe.slp.spi.msg.URLEntry;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SrvRegPerformer
 {

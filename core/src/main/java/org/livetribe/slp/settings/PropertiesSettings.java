@@ -22,10 +22,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
+
 /**
  * A {@link Properties} based implementation of {@link Settings}.
- *
- * @version $Revision$ $Date$
  */
 public class PropertiesSettings implements Settings
 {

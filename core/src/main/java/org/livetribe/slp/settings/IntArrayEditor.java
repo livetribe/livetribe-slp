@@ -19,10 +19,9 @@ import java.beans.PropertyEditorSupport;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * PropertyEditor for int[].
- *
- * @version $Revision$ $Date$
  */
 public class IntArrayEditor extends PropertyEditorSupport
 {

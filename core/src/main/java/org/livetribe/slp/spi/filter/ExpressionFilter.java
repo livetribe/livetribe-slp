@@ -26,7 +26,7 @@ import org.livetribe.slp.ServiceLocationException;
 
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class ExpressionFilter implements Filter
 {

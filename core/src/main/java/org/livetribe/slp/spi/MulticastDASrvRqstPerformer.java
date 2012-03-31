@@ -26,8 +26,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MulticastDASrvRqstPerformer
 {

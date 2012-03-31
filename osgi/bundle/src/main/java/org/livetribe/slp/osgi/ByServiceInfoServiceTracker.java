@@ -38,7 +38,6 @@ import org.livetribe.slp.sa.ServiceAgent;
  * of {@link ServiceInfo} contains all the information to register an SLP
  * service URL.
  *
- * @version $Revision$ $Date$
  * @see ServiceInfo
  * @see ServiceAgent
  */

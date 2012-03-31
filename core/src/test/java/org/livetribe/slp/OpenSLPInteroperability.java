@@ -21,6 +21,7 @@ import java.util.Locale;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.ua.UserAgent;
 
+
 /**
  * This class tests that the SLP implementation is compatible with <a href="http://openslp.org">OpenSLP</a>.
  * <br />
@@ -38,8 +39,6 @@ import org.livetribe.slp.ua.UserAgent;
  * </ul>
  * Since OpenSLP runs on the standard SLP port (427), this class must be run as superuser in Unix-like
  * operative systems.
- *
- * @version $Rev$ $Date$
  */
 public class OpenSLPInteroperability
 {

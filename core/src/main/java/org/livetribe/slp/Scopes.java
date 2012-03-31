@@ -20,14 +20,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+
 /**
  * Scopes are case insensitive string labels used to group together related services.
  * <br />
  * Both DirectoryAgent and ServiceAgent have assigned one or more scopes so that they can advertise services
  * belonging to the scopes they've been assigned. The scope assigned by default to DirectoryAgents and
  * UserAgents is the {@link #DEFAULT} scope.
- *
- * @version $Rev$ $Date$
  */
 public class Scopes
 {

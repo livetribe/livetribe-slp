@@ -34,13 +34,12 @@ import org.livetribe.slp.sa.ServiceListener;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.util.Listeners;
 
+
 /**
  * // TODO: RFC 2608 (8.6) suggests that ServiceAgents have an attribute 'service-type'
  * // TODO: whose value is all the service types of services represented by the SA.
  * // TODO: put a getServiceTypes() or something like that to support it
  * A cache for {@link ServiceInfo}s, that provides facilities to store, update, remove and query ServiceInfos.
- *
- * @version $Rev: 252 $ $Date: 2006-08-21 09:56:15 +0200 (Mon, 21 Aug 2006) $
  */
 public class ServiceInfoCache<T extends ServiceInfo>
 {
@@ -130,8 +129,8 @@ public class ServiceInfoCache<T extends ServiceInfo>
             ServiceType existingServiceType = keysToServiceTypes.get(service.getKey());
             if (existingServiceType != null && !existingServiceType.equals(serviceType))
                 throw new ServiceLocationException("Invalid registration of service " + service.getKey() +
-                        ": already registered under service type " + existingServiceType +
-                        ", cannot be registered also under service type " + serviceType, SLPError.INVALID_REGISTRATION);
+                                                   ": already registered under service type " + existingServiceType +
+                                                   ", cannot be registered also under service type " + serviceType, SLPError.INVALID_REGISTRATION);
             keysToServiceTypes.put(service.getKey(), serviceType);
             previous = keysToServiceInfos.put(service.getKey(), service);
             service.setRegistered(true);

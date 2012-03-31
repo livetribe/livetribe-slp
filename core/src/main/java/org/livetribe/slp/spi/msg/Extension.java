@@ -17,6 +17,7 @@ package org.livetribe.slp.spi.msg;
 
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 extension is the following:
  * <pre>
@@ -28,8 +29,6 @@ import org.livetribe.slp.ServiceLocationException;
  * | Offset, contd.|                Extension Data                 \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public abstract class Extension extends BytesBlock
 {

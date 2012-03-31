@@ -18,14 +18,16 @@ package org.livetribe.slp.spi.net;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
+import static org.livetribe.slp.settings.Keys.BROADCAST_ADDRESS_KEY;
+
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.BROADCAST_ADDRESS_KEY;
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BroadcastSocketUDPConnector extends SocketUDPConnector
 {

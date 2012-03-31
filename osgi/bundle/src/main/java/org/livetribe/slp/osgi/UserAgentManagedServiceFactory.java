@@ -39,7 +39,6 @@ import org.livetribe.slp.ua.UserAgent;
  * Instances of {@link UserAgent} can be created and configured using OSGi's
  * Configuration Admin Service.
  *
- * @version $Revision$ $Date$
  * @see ManagedServiceFactory
  * @see UserAgent
  */

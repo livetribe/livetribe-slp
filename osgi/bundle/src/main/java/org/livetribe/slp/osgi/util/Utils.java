@@ -27,8 +27,6 @@ import org.osgi.framework.ServiceReference;
 
 /**
  * A handy utility class that should be private to this bundle.
- *
- * @version $Revision$ $Date$
  */
 public class Utils
 {

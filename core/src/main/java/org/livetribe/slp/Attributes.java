@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+
 /**
  * Attributes are a comma separated list of key-value pairs that describe a service.
  * <br />
@@ -55,8 +56,6 @@ import java.util.regex.Pattern;
  * <li>the fourth attribute has tag "present", no value, and type "presence";</li>
  * <li>the fifth attribute has tag "description", value "Something Interesting" and type "string".</li>
  * </ul>
- *
- * @version $Rev$ $Date$
  */
 public class Attributes implements Iterable<String>
 {
@@ -489,7 +488,7 @@ public class Attributes implements Iterable<String>
     {
         TreeMap<Tag, Value> orderedAttributes = new TreeMap<Tag, Value>(attributes);
         StringBuilder result = new StringBuilder();
-        for (Iterator<Map.Entry<Tag, Value>> entries = orderedAttributes.entrySet().iterator(); entries.hasNext();)
+        for (Iterator<Map.Entry<Tag, Value>> entries = orderedAttributes.entrySet().iterator(); entries.hasNext(); )
         {
             Map.Entry<Tag, Value> mapEntry = entries.next();
             Tag tag = mapEntry.getKey();
@@ -537,7 +536,7 @@ public class Attributes implements Iterable<String>
     {
         TreeMap<Tag, Value> orderedAttributes = new TreeMap<Tag, Value>(attributes);
         StringBuilder result = new StringBuilder();
-        for (Iterator<Tag> tags = orderedAttributes.keySet().iterator(); tags.hasNext();)
+        for (Iterator<Tag> tags = orderedAttributes.keySet().iterator(); tags.hasNext(); )
         {
             Tag tag = tags.next();
             result.append(tag.tag);
@@ -595,7 +594,7 @@ public class Attributes implements Iterable<String>
         {
             for (Tag tagToRemove : that.attributes.keySet())
             {
-                for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext();)
+                for (Iterator<Tag> tags = result.attributes.keySet().iterator(); tags.hasNext(); )
                 {
                     Tag tag = tags.next();
                     if (tagToRemove.matches(tag)) tags.remove();
@@ -627,7 +626,7 @@ public class Attributes implements Iterable<String>
 
         for (Tag tagToRetain : that.attributes.keySet())
         {
-            for (Iterator<Tag> tags = attributes.keySet().iterator(); tags.hasNext();)
+            for (Iterator<Tag> tags = attributes.keySet().iterator(); tags.hasNext(); )
             {
                 Tag tag = tags.next();
                 if (tagToRetain.matches(tag))

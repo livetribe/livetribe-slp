@@ -21,14 +21,16 @@ import java.net.MulticastSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
+import static org.livetribe.slp.settings.Keys.MULTICAST_ADDRESS_KEY;
+
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.MULTICAST_ADDRESS_KEY;
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MulticastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {

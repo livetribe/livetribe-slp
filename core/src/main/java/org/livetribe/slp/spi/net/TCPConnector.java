@@ -20,8 +20,9 @@ import java.net.Socket;
 
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface TCPConnector
 {

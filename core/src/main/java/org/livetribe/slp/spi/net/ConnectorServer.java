@@ -17,8 +17,9 @@ package org.livetribe.slp.spi.net;
 
 import org.livetribe.slp.spi.Server;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface ConnectorServer extends Server
 {

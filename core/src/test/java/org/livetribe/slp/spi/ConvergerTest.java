@@ -21,16 +21,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.UDPConnector;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class ConvergerTest
 {

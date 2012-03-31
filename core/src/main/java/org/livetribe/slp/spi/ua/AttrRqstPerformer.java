@@ -20,8 +20,9 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.spi.msg.AttrRqst;
 import org.livetribe.slp.spi.msg.Message;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class AttrRqstPerformer
 {

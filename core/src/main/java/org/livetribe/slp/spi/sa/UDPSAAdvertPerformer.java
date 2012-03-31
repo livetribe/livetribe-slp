@@ -23,8 +23,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SAAdvert;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UDPSAAdvertPerformer
 {

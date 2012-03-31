@@ -22,6 +22,7 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * A parser that parses a string with LDAPv3 syntax, and returns a {@link Filter} that
  * is used to match {@link Attributes} content.
@@ -38,8 +39,6 @@ import org.livetribe.slp.ServiceLocationException;
  * <li><code>(!(a&gt;=10))</code> matches <code>a&lt;10</code></li>
  * <li><code>(name=L*ve*b*)</code> matches <code>name=LiveTribe</code> but also <code>name=Loveboat</code></li>
  * <li><code>(foo=*)</code> matches the presence of the attribute tag named <code>foo</code></li>
- *
- * @version $Rev:157 $ $Date:2006-06-05 23:29:25 +0200 (Mon, 05 Jun 2006) $
  */
 public class FilterParser
 {

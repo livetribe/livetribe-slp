@@ -30,8 +30,6 @@ package org.livetribe.slp.settings;
  * <li>UA = UserAgent</li>
  * <li>UAC = UserAgent client</li>
  * </ul>
- *
- * @version $Revision$ $Date$
  */
 public class Keys
 {

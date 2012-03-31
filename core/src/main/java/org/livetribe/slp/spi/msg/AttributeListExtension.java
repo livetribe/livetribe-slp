@@ -22,6 +22,7 @@ import java.util.List;
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 3059 Attribute List Extension is the following:
  * <pre>
@@ -37,8 +38,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |# of AttrAuths |(if present) Attribute Authentication Blocks.../
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class AttributeListExtension extends Extension
 {

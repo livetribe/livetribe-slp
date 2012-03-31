@@ -17,10 +17,10 @@ package org.livetribe.slp.sa;
 
 import java.util.EventListener;
 
+
 /**
  * The listener that receives ServiceEvents.
  *
- * @version $Revision$ $Date$
  * @see ServiceEvent
  */
 public interface ServiceListener extends EventListener

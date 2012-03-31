@@ -18,9 +18,10 @@ package org.livetribe.slp.spi.sa;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
+
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.SrvRplyPerformer;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
@@ -28,8 +29,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UDPSrvRplyPerformer extends SrvRplyPerformer
 {

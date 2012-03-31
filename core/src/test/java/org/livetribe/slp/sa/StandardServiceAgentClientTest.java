@@ -18,17 +18,19 @@ package org.livetribe.slp.sa;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_READ_TIMEOUT_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
-import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.TCP_READ_TIMEOUT_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.net.ConnectorServer;
@@ -36,10 +38,10 @@ import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.TCPConnectorServer;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class StandardServiceAgentClientTest
 {

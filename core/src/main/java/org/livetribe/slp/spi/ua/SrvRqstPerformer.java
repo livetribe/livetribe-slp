@@ -24,8 +24,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.ScopeListExtension;
 import org.livetribe.slp.spi.msg.SrvRqst;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SrvRqstPerformer
 {

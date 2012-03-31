@@ -18,6 +18,7 @@ package org.livetribe.slp.spi.msg;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 SrvAck message body is the following:
  * <pre>
@@ -29,8 +30,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |          Error Code           |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class SrvAck extends Message
 {

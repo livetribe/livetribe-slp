@@ -43,8 +43,6 @@ import org.livetribe.slp.ServiceURL;
  * |  length of [SLP SPI] string   |       [SLP SPI] String        \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class AttrRqst extends Rqst
 {

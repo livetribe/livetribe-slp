@@ -19,8 +19,9 @@ import java.util.List;
 
 import org.livetribe.slp.Attributes;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class AndFilter implements Filter
 {

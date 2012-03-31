@@ -18,11 +18,10 @@ package org.livetribe.slp.settings;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * Creates new instances of classes whose full qualified name is specified in configuration settings under
  * a certain key.
- *
- * @version $Revision$ $Date$
  */
 public class Factories
 {

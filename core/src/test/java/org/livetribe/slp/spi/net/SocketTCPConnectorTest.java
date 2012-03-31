@@ -16,7 +16,7 @@
 package org.livetribe.slp.spi.net;
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class SocketTCPConnectorTest
 {

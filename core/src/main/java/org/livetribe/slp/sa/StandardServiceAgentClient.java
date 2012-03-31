@@ -19,6 +19,12 @@ import java.net.InetSocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_CLIENT_CONNECT_ADDRESS;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
@@ -27,11 +33,6 @@ import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.SA_CLIENT_CONNECT_ADDRESS;
-import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
-import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.NetUtils;
@@ -40,8 +41,9 @@ import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.sa.UnicastSrvDeRegPerformer;
 import org.livetribe.slp.spi.sa.UnicastSrvRegPerformer;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class StandardServiceAgentClient implements ServiceAgentClient
 {

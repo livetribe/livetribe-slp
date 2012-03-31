@@ -19,8 +19,6 @@ package org.livetribe.slp;
  * Thrown when something goes wrong in Service Location Protocol operations.
  * Details about what happened are provided by an {@link #getSLPError() error}.
  * This exception is normally unrecoverable, so it extends {@link RuntimeException}.
- *
- * @version $Rev$ $Date$
  */
 public class ServiceLocationException extends RuntimeException
 {

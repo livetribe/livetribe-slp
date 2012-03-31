@@ -20,8 +20,9 @@ import java.io.UnsupportedEncodingException;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class BytesBlock
 {

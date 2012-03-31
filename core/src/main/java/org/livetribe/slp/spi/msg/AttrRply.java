@@ -19,6 +19,7 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 AttrRply message body is the following:
  * <pre>
@@ -34,8 +35,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |# of AttrAuths |  Attribute Authentication Block (if present)  \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class AttrRply extends Rply
 {

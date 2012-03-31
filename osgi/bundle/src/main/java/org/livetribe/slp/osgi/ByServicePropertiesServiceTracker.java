@@ -71,7 +71,6 @@ import org.livetribe.slp.sa.ServiceAgent;
  * These properties do not participate in the variable subtitution for the SLP
  * service URL.  All are optional except <code>slp.url</code>.
  *
- * @version $Revision$ $Date$
  * @see ServiceInfo
  * @see ServiceAgent
  */
@@ -219,6 +218,7 @@ public class ByServicePropertiesServiceTracker extends ServiceTracker
     /**
      * Generate SLP service information by scraping relevant information from
      * the OSGi service reference's properties.
+     *
      * @param reference the OSGi service reference used to generate the SLP service information
      * @return the generated SLP service information
      */

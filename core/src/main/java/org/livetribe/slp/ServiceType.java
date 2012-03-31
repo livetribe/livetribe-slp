@@ -37,7 +37,6 @@ package org.livetribe.slp;
  * <br />
  * The <code>naming-authority</code> denotes the name of an organization that defined the service type.
  *
- * @version $Rev$ $Date$
  * @see ServiceURL
  */
 public class ServiceType implements Comparable<ServiceType>

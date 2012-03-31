@@ -24,8 +24,6 @@ import org.livetribe.slp.settings.Settings;
 
 /**
  * A {@link Dictionary} based implementation of {@link Settings}.
- *
- * @version $Revision$ $Date$
  */
 public class DictionarySettings implements Settings
 {

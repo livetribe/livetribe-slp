@@ -22,6 +22,7 @@ import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 
+
 /**
  * The RFC 2608 SrvTypeRply message body is the following:
  * <pre>
@@ -35,8 +36,6 @@ import org.livetribe.slp.ServiceType;
  * |                         [srvtype-list]                        |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Revision$ $Date$
  */
 public class SrvTypeRply extends Rply
 {

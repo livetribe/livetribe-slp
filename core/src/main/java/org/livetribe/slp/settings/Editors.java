@@ -20,11 +20,10 @@ import java.beans.PropertyEditorManager;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * This class is equivalent to {@link PropertyEditorManager} and it is used to avoid polluting PropertyEditorManager
  * with property editors used only by the LiveTribe SLP implementation.
- *
- * @version $Revision$ $Date$
  */
 public class Editors
 {

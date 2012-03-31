@@ -20,6 +20,7 @@ import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 
+
 /**
  * The interface of an SLP service agent client, that will connect via TCP on the loopback interface to a
  * {@link StandardServiceAgentServer service agent standalone server} running on the same host.
@@ -36,7 +37,6 @@ import org.livetribe.slp.settings.Settings;
  * ServiceAgentClient sac = SLP.newServiceAgentClient(settings);
  * </pre>
  *
- * @version $Revision$ $Date$
  * @see StandardServiceAgentServer
  * @see ServiceAgent
  * @see SLP

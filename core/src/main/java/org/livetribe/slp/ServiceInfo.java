@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
 
+
 /**
  * Representation of a service, exposed by ServiceAgents and cached by DirectoryAgents.
  * <br />
@@ -37,7 +38,6 @@ import org.livetribe.slp.spi.msg.SrvReg;
  * {@link SrvReg}), but not deregistered from one ServiceType only (as {@link SrvDeReg}
  * does not support an additional ServiceType field).
  *
- * @version $Rev$ $Date$
  * @see ServiceURL
  * @see Scopes
  * @see Attributes

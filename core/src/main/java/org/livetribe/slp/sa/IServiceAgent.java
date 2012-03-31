@@ -21,6 +21,7 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 
+
 /**
  * Common interface for SLP service agents.
  * <br />
@@ -36,8 +37,6 @@ import org.livetribe.slp.ServiceURL;
  * agent replies to this request sending the information necessary for the client to connect to the JMXConnectorServer.
  * At this point SLP goes out of the games, and the remote client can use the JMX API to connect to the
  * JMXConnectorServer.
- *
- * @version $Revision$ $Date$
  */
 public interface IServiceAgent
 {

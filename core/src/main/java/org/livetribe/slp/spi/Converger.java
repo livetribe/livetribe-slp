@@ -35,6 +35,7 @@ import org.livetribe.slp.spi.msg.Rply;
 import org.livetribe.slp.spi.msg.Rqst;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
  * Encapsulates the multicast convergence algorithm. <br />
  * SLP uses multicast convergence for discovery.
@@ -46,8 +47,6 @@ import org.livetribe.slp.spi.net.UDPConnector;
  * interested parties do not reply to requests that contain their own identifier.
  * When two consecutive wait times elapse, the algorithm exits and returns the non-duplicate replies that have been
  * received (if any).
- *
- * @version $Revision$ $Date$
  */
 public class Converger<T extends Rply>
 {

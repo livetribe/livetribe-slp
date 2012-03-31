@@ -26,7 +26,6 @@ package org.livetribe.slp;
  * ServiceURLs have a lifetime, used to denote the period of time over which the service is
  * available.
  *
- * @version $Rev$ $Date$
  * @see ServiceType
  */
 public class ServiceURL implements Comparable<ServiceURL>

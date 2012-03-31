@@ -17,12 +17,11 @@ package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
 
+
 /**
  * A LDAPv3 expression used to match {@link Attributes}.
  * <br />
  * Instances of this class are created via {@link FilterParser}.
- *
- * @version $Rev$ $Date$
  */
 public interface Filter
 {

@@ -19,6 +19,7 @@ import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 SrvDeReg message body is the following:
  * <pre>
@@ -34,8 +35,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |      Length of [tag-list]     |            [tag-list]         \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class SrvDeReg extends Message
 {

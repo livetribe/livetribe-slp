@@ -21,8 +21,9 @@ import java.net.UnknownHostException;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class NetUtils
 {
