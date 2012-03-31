@@ -51,5 +51,11 @@
         </plugins>
     </build>
 
+    <scm>
+        <connection>scm:git:git@github.com:livetribe/livetribe-slp.git</connection>
+        <developerConnection>scm:git:git@github.com:livetribe/livetribe-slp.git</developerConnection>
+        <url>scm:git:git@github.com:livetribe/livetribe-slp.git</url>
+    </scm>
+
 </project>
 
