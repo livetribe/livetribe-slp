@@ -23,10 +23,9 @@ import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.ua.UserAgent;
 import org.livetribe.slp.ua.UserAgentClient;
 
+
 /**
  * Static factory that adds syntactic sugar to the creation of UserAgents and ServiceAgents.
- *
- * @version $Revision$ $Date$
  */
 public class SLP
 {

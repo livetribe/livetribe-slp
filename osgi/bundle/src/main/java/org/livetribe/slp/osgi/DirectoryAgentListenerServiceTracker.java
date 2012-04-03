@@ -43,7 +43,6 @@ import org.livetribe.slp.spi.DirectoryAgentNotifier;
  * A {@link Filter} can be passed to the constructor to narrow which instances
  * of {@link DirectoryAgentListener} are registered.
  *
- * @version $Revision$ $Date$
  * @see DirectoryAgentNotifier
  * @see DirectoryAgentListener
  */

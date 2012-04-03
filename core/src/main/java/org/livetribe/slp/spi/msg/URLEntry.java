@@ -20,6 +20,7 @@ import java.util.Arrays;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceURL;
 
+
 /**
  * The RFC 2608 &lt;URL Entry&gt; is defined as:
  * <pre>
@@ -33,8 +34,6 @@ import org.livetribe.slp.ServiceURL;
  * |# of URL auths |            Auth. blocks (if any)              \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class URLEntry extends BytesBlock
 {

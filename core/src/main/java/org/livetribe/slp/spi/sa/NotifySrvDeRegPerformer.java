@@ -26,10 +26,9 @@ import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
  * TODO: RFC 3082, 9.0, says that notification must use the convergence algorithm
- *
- * @version $Revision$ $Date$
  */
 public class NotifySrvDeRegPerformer
 {

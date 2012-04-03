@@ -17,8 +17,6 @@ package org.livetribe.slp.spi;
 
 /**
  * Lifecycle interface for server objects that can be started and stopped.
- *
- * @version $Rev$ $Date$
  */
 public interface Server
 {

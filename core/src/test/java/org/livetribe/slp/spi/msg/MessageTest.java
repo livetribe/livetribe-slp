@@ -20,14 +20,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceType;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class MessageTest
 {

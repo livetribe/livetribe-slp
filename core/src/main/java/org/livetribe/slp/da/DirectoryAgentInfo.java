@@ -23,6 +23,7 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.msg.DAAdvert;
 
+
 /**
  * Representation of the information regarding a DirectoryAgent.
  * <br />
@@ -32,8 +33,6 @@ import org.livetribe.slp.spi.msg.DAAdvert;
  * <br />
  * DirectoryAgentInfos have a {@link #getKey() key} that distinguishes them and that can be used as key
  * in hash structures.
- *
- * @version $Rev: 163 $ $Date: 2006-06-12 17:14:02 +0200 (Mon, 12 Jun 2006) $
  */
 public class DirectoryAgentInfo
 {

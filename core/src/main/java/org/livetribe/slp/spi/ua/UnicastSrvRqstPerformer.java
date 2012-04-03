@@ -27,8 +27,9 @@ import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UnicastSrvRqstPerformer extends SrvRqstPerformer
 {

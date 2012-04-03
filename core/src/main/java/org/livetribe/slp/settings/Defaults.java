@@ -20,10 +20,9 @@ import java.io.IOException;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * Gives read-only access to the default configuration values and default configuration objects.
- *
- * @version $Revision$ $Date$
  */
 public class Defaults
 {

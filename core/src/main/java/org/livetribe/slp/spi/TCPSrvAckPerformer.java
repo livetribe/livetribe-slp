@@ -23,8 +23,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 import org.livetribe.slp.spi.net.TCPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class TCPSrvAckPerformer extends SrvAckPerformer
 {

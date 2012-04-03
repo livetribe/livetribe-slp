@@ -40,8 +40,6 @@ import org.livetribe.slp.spi.ua.IUserAgent;
  * UserAgent ua = SLP.newUserAgent(settings);
  * ua.start();
  * </pre>
- *
- * @version $Revision$ $Date$
  */
 public interface UserAgent extends IUserAgent, DirectoryAgentNotifier, Server
 {

@@ -19,13 +19,15 @@ package org.livetribe.slp.spi.da;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.da.DirectoryAgentInfo;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DirectoryAgentInfoCacheTest
 {

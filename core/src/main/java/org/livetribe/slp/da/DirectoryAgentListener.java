@@ -17,10 +17,10 @@ package org.livetribe.slp.da;
 
 import java.util.EventListener;
 
+
 /**
  * The listener that receives DirectoryAgentEvents.
  *
- * @version $Revision$ $Date$
  * @see DirectoryAgentEvent
  */
 public interface DirectoryAgentListener extends EventListener

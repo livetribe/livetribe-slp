@@ -19,8 +19,9 @@ import java.util.Locale;
 
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class LanguageExtensionTest
 {

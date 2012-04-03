@@ -24,8 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class AbstractServerTest
 {

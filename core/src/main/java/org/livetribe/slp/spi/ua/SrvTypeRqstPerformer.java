@@ -20,8 +20,9 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvTypeRqst;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class SrvTypeRqstPerformer
 {

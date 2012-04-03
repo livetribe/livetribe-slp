@@ -25,8 +25,9 @@ import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvTypeRply;
 import org.livetribe.slp.spi.net.TCPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class TCPSrvTypeRplyPerformer extends SrvTypeRplyPerformer
 {

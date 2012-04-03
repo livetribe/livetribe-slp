@@ -23,8 +23,9 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface IUserAgent
 {

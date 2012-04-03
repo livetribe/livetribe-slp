@@ -20,8 +20,9 @@ import org.livetribe.slp.SLPError;
 import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.Message;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class AttrRplyPerformer
 {

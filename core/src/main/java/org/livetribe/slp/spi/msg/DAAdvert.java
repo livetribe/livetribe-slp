@@ -24,6 +24,7 @@ import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 DAAdvert message body is the following:
  * <pre>
@@ -47,8 +48,6 @@ import org.livetribe.slp.ServiceLocationException;
  * | # Auth Blocks |         Authentication block (if any)         \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class DAAdvert extends Rply
 {

@@ -20,8 +20,9 @@ import java.io.StringWriter;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class SimpleFormatter extends Formatter
 {

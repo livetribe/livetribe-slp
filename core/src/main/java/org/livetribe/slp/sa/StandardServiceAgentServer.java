@@ -20,16 +20,17 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.logging.Level;
 
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Factories;
-import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.Server;
@@ -47,6 +48,7 @@ import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.sa.AbstractServiceAgent;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
 
+
 /**
  * Implementation of an SLP service agent standalone server that can be started as a service in a host.
  * <br />
@@ -54,8 +56,6 @@ import org.livetribe.slp.spi.sa.ServiceAgentInfo;
  * In SLP, a service agent standalone server exposes the services of all applications in the host it resides,
  * so that each application does not need to start a {@link ServiceAgent}, but only uses a {@link ServiceAgentClient}
  * to contact the service agent standalone server.
- *
- * @version $Rev$ $Date$
  */
 public class StandardServiceAgentServer extends AbstractServiceAgent
 {

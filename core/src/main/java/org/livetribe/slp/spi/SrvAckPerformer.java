@@ -19,8 +19,9 @@ import org.livetribe.slp.SLPError;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvAck;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SrvAckPerformer
 {

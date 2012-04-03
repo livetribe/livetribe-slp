@@ -29,11 +29,10 @@ import org.livetribe.slp.da.DirectoryAgentListener;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.util.Listeners;
 
+
 /**
  * A thread-safe class that caches {@link DirectoryAgentInfo}.
  * <br />
- *
- * @version $Rev: 157 $ $Date: 2006-06-05 23:29:25 +0200 (Mon, 05 Jun 2006) $
  */
 public class DirectoryAgentInfoCache
 {

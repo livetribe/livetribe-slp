@@ -17,8 +17,9 @@ package org.livetribe.slp.spi.net;
 
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface UDPConnectorServer extends ConnectorServer
 {

@@ -22,8 +22,9 @@ import java.util.Set;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class AttributesTest
 {

@@ -22,6 +22,7 @@ import java.util.Set;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 SrvTypeRqst message body is the following:
  * <pre>
@@ -37,8 +38,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |    length of [scope-list]     |     [scope-list] String       \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Revision$ $Date$
  */
 public class SrvTypeRqst extends Rqst
 {

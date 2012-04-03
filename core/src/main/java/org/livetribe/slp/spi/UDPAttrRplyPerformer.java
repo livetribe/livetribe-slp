@@ -17,17 +17,19 @@ package org.livetribe.slp.spi;
 
 import java.net.InetSocketAddress;
 
+import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UDPAttrRplyPerformer extends AttrRplyPerformer
 {

@@ -20,6 +20,7 @@ import org.livetribe.slp.settings.Keys;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.ua.IUserAgent;
 
+
 /**
  * The interface of an SLP user agent client.
  * <br />
@@ -33,8 +34,6 @@ import org.livetribe.slp.spi.ua.IUserAgent;
  * Settings settings = ...
  * UserAgentClient uac = SLP.newUserAgentClient(settings);
  * </pre>
- *
- * @version $Revision$ $Date$
  */
 public interface UserAgentClient extends IUserAgent
 {

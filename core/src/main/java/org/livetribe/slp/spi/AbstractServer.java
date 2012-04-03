@@ -19,8 +19,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public abstract class AbstractServer implements Server
 {

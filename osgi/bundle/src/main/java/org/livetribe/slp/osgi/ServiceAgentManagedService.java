@@ -40,7 +40,6 @@ import org.livetribe.slp.sa.ServiceAgent;
  * can be replaced when the OSGi service's configuration is updated or no
  * {@link ServiceAgent} instance until the service's configuration is updated.
  *
- * @version $Revision$ $Date$
  * @see ManagedService
  * @see ServiceAgent
  */

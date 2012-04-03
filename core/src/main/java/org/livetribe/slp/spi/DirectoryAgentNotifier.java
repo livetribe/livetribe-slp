@@ -20,7 +20,7 @@ import org.livetribe.slp.da.DirectoryAgentListener;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface DirectoryAgentNotifier
 {

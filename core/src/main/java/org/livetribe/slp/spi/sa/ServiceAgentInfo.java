@@ -21,8 +21,9 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.msg.IdentifierExtension;
 import org.livetribe.slp.spi.msg.SAAdvert;
 
+
 /**
- * @version $Rev: 163 $ $Date: 2006-06-12 17:14:02 +0200 (Mon, 12 Jun 2006) $
+ *
  */
 public class ServiceAgentInfo
 {

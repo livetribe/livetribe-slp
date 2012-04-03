@@ -27,8 +27,9 @@ import org.livetribe.slp.spi.msg.ScopeListExtension;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SrvRplyPerformer
 {

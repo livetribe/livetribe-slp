@@ -28,16 +28,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
+import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SocketTCPConnectorServer extends AbstractConnectorServer implements TCPConnectorServer
 {

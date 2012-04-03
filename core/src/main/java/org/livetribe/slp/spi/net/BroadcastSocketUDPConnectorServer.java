@@ -25,8 +25,9 @@ import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BroadcastSocketUDPConnectorServer extends SocketUDPConnectorServer
 {

@@ -24,8 +24,9 @@ import org.livetribe.slp.spi.msg.DAAdvert;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MulticastDAAdvertPerformer
 {

@@ -20,6 +20,7 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 
+
 /**
  * The RFC 2608 SrvReg message body is the following:
  * <pre>
@@ -39,8 +40,6 @@ import org.livetribe.slp.ServiceType;
  * |# of AttrAuths |(if present) Attribute Authentication Blocks...\
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class SrvReg extends Message
 {

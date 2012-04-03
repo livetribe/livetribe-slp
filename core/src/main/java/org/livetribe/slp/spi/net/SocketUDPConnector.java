@@ -24,18 +24,20 @@ import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.livetribe.slp.SLPError;
-import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.settings.Defaults;
 import static org.livetribe.slp.settings.Keys.BROADCAST_ENABLED_KEY;
 import static org.livetribe.slp.settings.Keys.MAX_TRANSMISSION_UNIT_KEY;
 import static org.livetribe.slp.settings.Keys.NOTIFICATION_PORT_KEY;
 import static org.livetribe.slp.settings.Keys.PORT_KEY;
 import static org.livetribe.slp.settings.Keys.UNICAST_TIMEOUTS_KEY;
+
+import org.livetribe.slp.SLPError;
+import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class SocketUDPConnector implements UDPConnector
 {

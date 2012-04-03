@@ -20,13 +20,13 @@ import java.util.EventObject;
 import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.ua.UserAgent;
 
+
 /**
  * The event that indicates that a DirectoryAgent has either born or died.
  * <br />
  * {@link ServiceAgent}s and {@link UserAgent}s listen for directory agent advertisements and forward these events
  * to interested listeners.
  *
- * @version $Revision$ $Date$
  * @see DirectoryAgentListener
  */
 public class DirectoryAgentEvent extends EventObject

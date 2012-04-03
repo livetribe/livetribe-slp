@@ -22,6 +22,8 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
@@ -33,10 +35,10 @@ import org.livetribe.slp.spi.msg.ScopeListExtension;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.NetUtils;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UDPSrvRplyPerformerTest
 {

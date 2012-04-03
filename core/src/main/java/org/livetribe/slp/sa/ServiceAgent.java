@@ -43,7 +43,6 @@ import org.livetribe.slp.spi.Server;
  * sa.start();
  * </pre>
  *
- * @version $Rev: 200 $ $Date: 2006-08-09 14:17:10 +0200 (Wed, 09 Aug 2006) $
  * @see ServiceAgentClient
  * @see StandardServiceAgentServer
  * @see SLP

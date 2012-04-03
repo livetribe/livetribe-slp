@@ -43,7 +43,6 @@ import org.livetribe.slp.ua.UserAgent;
  * A {@link Filter} can be passed to the constructor to narrow which instances
  * of {@link ServiceNotificationListener} are registered.
  *
- * @version $Revision$ $Date$
  * @see UserAgent
  * @see ServiceNotificationListener
  */

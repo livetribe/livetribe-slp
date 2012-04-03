@@ -22,8 +22,9 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvTypeRply;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SrvTypeRplyPerformer
 {

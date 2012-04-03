@@ -24,8 +24,9 @@ import org.livetribe.slp.spi.msg.AttrRply;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.net.TCPConnector;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class TCPAttrRplyPerformer extends AttrRplyPerformer
 {

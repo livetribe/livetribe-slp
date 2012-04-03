@@ -21,17 +21,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import org.testng.annotations.Test;
+
 import org.livetribe.slp.settings.Defaults;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvRply;
 import org.livetribe.slp.spi.msg.URLEntry;
-import org.testng.annotations.Test;
+
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class SocketTCPConnectorServerTest
 {

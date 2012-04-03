@@ -22,7 +22,7 @@ import org.testng.annotations.Test;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class UtilsTest
 {

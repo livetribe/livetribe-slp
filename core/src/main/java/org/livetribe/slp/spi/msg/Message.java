@@ -27,6 +27,7 @@ import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceLocationException;
 import org.livetribe.slp.ServiceType;
 
+
 /**
  * The RFC 2608 message header is the following:
  * <pre>
@@ -42,8 +43,6 @@ import org.livetribe.slp.ServiceType;
  * |      Language Tag Length      |         Language Tag          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public abstract class Message extends BytesBlock
 {

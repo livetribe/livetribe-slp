@@ -16,7 +16,7 @@
 package org.livetribe.slp.spi.msg;
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class AuthenticationBlock extends BytesBlock
 {

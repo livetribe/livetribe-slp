@@ -17,8 +17,9 @@ package org.livetribe.slp.spi.filter;
 
 import org.livetribe.slp.Attributes;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class AlwaysMatchFilter implements Filter
 {

@@ -21,6 +21,7 @@ import java.util.List;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The RFC 2608 SrvRply message body is the following:
  * <pre>
@@ -34,8 +35,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |       [URL Entry 1]          ...       [URL Entry N]          \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class SrvRply extends Rply
 {

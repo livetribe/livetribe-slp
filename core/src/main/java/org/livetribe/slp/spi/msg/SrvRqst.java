@@ -44,8 +44,6 @@ import org.livetribe.slp.ServiceType;
  * |  length of [SLP SPI] string   |       [SLP SPI] String        \
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class SrvRqst extends Rqst
 {
@@ -198,7 +196,7 @@ public class SrvRqst extends Rqst
         StringBuilder result = new StringBuilder("[SrvRqst@").append(Integer.toHexString(System.identityHashCode(this)));
         result.append(" responders(");
         Set responders = getPreviousResponders();
-        for (Iterator iterator = responders.iterator(); iterator.hasNext();)
+        for (Iterator iterator = responders.iterator(); iterator.hasNext(); )
         {
             result.append(iterator.next());
             if (iterator.hasNext()) result.append(",");

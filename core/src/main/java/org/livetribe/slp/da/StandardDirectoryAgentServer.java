@@ -28,16 +28,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import org.livetribe.slp.Attributes;
-import org.livetribe.slp.SLPError;
-import org.livetribe.slp.Scopes;
-import org.livetribe.slp.ServiceInfo;
-import org.livetribe.slp.ServiceLocationException;
-import org.livetribe.slp.ServiceType;
-import org.livetribe.slp.ServiceURL;
-import org.livetribe.slp.sa.ServiceListener;
-import org.livetribe.slp.settings.Defaults;
-import org.livetribe.slp.settings.Factories;
 import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
 import static org.livetribe.slp.settings.Keys.DA_ADVERTISEMENT_PERIOD_KEY;
 import static org.livetribe.slp.settings.Keys.DA_ATTRIBUTES_KEY;
@@ -49,6 +39,17 @@ import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
 import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
 import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
 import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
+
+import org.livetribe.slp.Attributes;
+import org.livetribe.slp.SLPError;
+import org.livetribe.slp.Scopes;
+import org.livetribe.slp.ServiceInfo;
+import org.livetribe.slp.ServiceLocationException;
+import org.livetribe.slp.ServiceType;
+import org.livetribe.slp.ServiceURL;
+import org.livetribe.slp.sa.ServiceListener;
+import org.livetribe.slp.settings.Defaults;
+import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.PropertiesSettings;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.AbstractServer;
@@ -87,8 +88,6 @@ import org.livetribe.slp.spi.net.UDPConnectorServer;
  * In SLP, directory agents work as cache of services and allow to reduce the network utilization since
  * both user agents and service agents will prefer a direct tcp connection with the directory agent over the
  * use of multicast.
- *
- * @version $Rev$ $Date$
  */
 public class StandardDirectoryAgentServer extends AbstractServer
 {

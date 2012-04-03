@@ -22,7 +22,7 @@ import org.livetribe.slp.ServiceLocationException;
 
 
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class FilterTest
 {

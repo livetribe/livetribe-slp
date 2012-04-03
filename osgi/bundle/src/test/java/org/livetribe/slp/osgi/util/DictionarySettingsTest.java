@@ -24,7 +24,7 @@ import org.livetribe.slp.settings.Keys;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DictionarySettingsTest
 {

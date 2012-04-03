@@ -19,8 +19,9 @@ import java.util.Arrays;
 
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Rev$ $Date$
+ *
  */
 public class ScopesTest
 {

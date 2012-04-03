@@ -17,10 +17,9 @@ package org.livetribe.slp.settings;
 
 import java.beans.PropertyEditorSupport;
 
+
 /**
  * PropertyEditor for java.lang.Integer
- *
- * @version $Revision$ $Date$
  */
 public class IntegerEditor extends PropertyEditorSupport
 {

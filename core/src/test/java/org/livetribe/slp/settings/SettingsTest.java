@@ -20,8 +20,9 @@ import java.util.Properties;
 
 import org.testng.annotations.Test;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SettingsTest
 {

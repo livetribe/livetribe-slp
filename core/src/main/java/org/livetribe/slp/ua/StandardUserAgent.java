@@ -18,6 +18,10 @@ package org.livetribe.slp.ua;
 import java.util.List;
 import java.util.logging.Level;
 
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
+
 import org.livetribe.slp.Scopes;
 import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.da.DirectoryAgentInfo;
@@ -27,7 +31,6 @@ import org.livetribe.slp.sa.ServiceNotificationListener;
 import org.livetribe.slp.settings.Defaults;
 import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.Keys;
-import static org.livetribe.slp.settings.Keys.*;
 import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.AbstractServer;
 import org.livetribe.slp.spi.da.DirectoryAgentInfoCache;
@@ -44,8 +47,9 @@ import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.ua.AbstractUserAgent;
 import org.livetribe.slp.util.Listeners;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class StandardUserAgent extends AbstractUserAgent implements UserAgent
 {

@@ -15,11 +15,13 @@
  */
 package org.livetribe.slp.spi.msg;
 
-import org.livetribe.slp.Scopes;
 import org.testng.annotations.Test;
 
+import org.livetribe.slp.Scopes;
+
+
 /**
- * @version $Rev: 157 $ $Date: 2006-06-05 23:29:25 +0200 (Mon, 05 Jun 2006) $
+ *
  */
 public class ScopeListExtensionTest
 {

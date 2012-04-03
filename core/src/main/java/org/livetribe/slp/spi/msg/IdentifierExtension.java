@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.livetribe.slp.ServiceLocationException;
 
+
 /**
  * The LiveTribe SLP Identifier Extension is the following:
  * <pre>
@@ -36,8 +37,6 @@ import org.livetribe.slp.ServiceLocationException;
  * |  # of Auths   |    (if present)  Authentication Blocks...     /
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * </pre>
- *
- * @version $Rev$ $Date$
  */
 public class IdentifierExtension extends Extension
 {

@@ -40,7 +40,6 @@ import org.livetribe.slp.ua.UserAgent;
  * can be replaced when the OSGi service's configuration is updated or no
  * {@link UserAgent} instance until the service's configuration is updated.
  *
- * @version $Revision$ $Date$
  * @see ManagedService
  * @see UserAgent
  */

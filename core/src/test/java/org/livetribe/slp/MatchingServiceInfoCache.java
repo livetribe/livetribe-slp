@@ -24,8 +24,9 @@ import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.filter.Filter;
 import org.livetribe.slp.spi.filter.FilterParser;
 
+
 /**
- * @version $Rev: 252 $ $Date: 2006-08-21 09:56:15 +0200 (Mon, 21 Aug 2006) $
+ *
  */
 public class MatchingServiceInfoCache implements ServiceNotificationListener
 {

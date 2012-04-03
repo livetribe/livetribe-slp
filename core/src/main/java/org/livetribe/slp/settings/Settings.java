@@ -17,6 +17,7 @@ package org.livetribe.slp.settings;
 
 import java.util.Map;
 
+
 /**
  * The configuration settings used throughout LiveTribe SLP.
  * <br />
@@ -24,7 +25,6 @@ import java.util.Map;
  * The interface of this class is similar to that of {@link Map} except
  * that each key defines the type of the corrispondent value.
  *
- * @version $Revision$ $Date$
  * @see Defaults
  * @see Keys
  */

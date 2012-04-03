@@ -21,8 +21,9 @@ import java.net.InetSocketAddress;
 
 import org.livetribe.slp.settings.Settings;
 
+
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface UDPConnector
 {
