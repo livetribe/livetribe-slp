@@ -807,11 +807,18 @@ public class Attributes implements Iterable<String>
             // Is it opaque ?
             if (isOpaque(value)) return new Value(opaqueToBytes(value), Value.OPAQUE);
 
-            // Is it a number ?
-            if (isInteger(value)) return new Value(Integer.valueOf(value), Value.INTEGER);
-
             // Is it a boolean ?
             if (isBoolean(value)) return new Value(Boolean.valueOf(value), Value.BOOLEAN);
+
+            try
+            {
+                // Is it a number ?
+                if (isInteger(value)) return new Value(Integer.valueOf(value), Value.INTEGER);
+            }
+            catch (NumberFormatException x)
+            {
+                // Ignore it, and return it as a string
+            }
 
             // Then it's a string
             return new Value(unescapeValue(value), Value.STRING);

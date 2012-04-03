@@ -502,4 +502,13 @@ public class AttributesTest
             }
         }
     }
+
+    @Test
+    public void testIntegerOverflow() throws Exception
+    {
+        long tooBigInteger = Integer.MAX_VALUE + 10L;
+        Attributes attributes = Attributes.from("(a=" + tooBigInteger + ")");
+        Attributes.Value value = attributes.valueFor("a");
+        Assert.assertTrue(value.isStringType());
+    }
 }
