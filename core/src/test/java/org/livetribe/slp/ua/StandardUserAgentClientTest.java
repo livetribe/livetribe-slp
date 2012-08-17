@@ -26,6 +26,7 @@ import org.livetribe.slp.ServiceInfo;
 import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
+import org.livetribe.slp.sa.ServiceAgent;
 import org.livetribe.slp.sa.ServiceAgentClient;
 import org.livetribe.slp.sa.StandardServiceAgentServer;
 import org.livetribe.slp.settings.Factories;
@@ -107,13 +108,39 @@ public class StandardUserAgentClientTest
     }
 
     @Test
-    public void testFindServicesWithOverflow() throws Exception
+    public void testFindServicesOnServiceAgentServerWithOverflow() throws Exception
     {
         StandardServiceAgentServer sas = StandardServiceAgentServer.newInstance(newSettings());
         sas.start();
         try
         {
-            ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
+            ServiceAgentClient sac = SLP.newServiceAgentClient(newSettings());
+            int size = 20;
+            for (int i = 0; i < size; ++i)
+            {
+                ServiceURL serviceURL = new ServiceURL("service:jmx:rmi" + i + ":///jndi/rmi:///test");
+                ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.NONE);
+                sac.register(service);
+            }
+
+            UserAgentClient uac = SLP.newUserAgentClient(newSettings());
+            List<ServiceInfo> services = uac.findServices(new ServiceType("service:jmx"), Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, null);
+
+            assert services.size() == size;
+        }
+        finally
+        {
+            sas.stop();
+        }
+    }
+
+    @Test
+    public void testFindServicesOnServiceAgentWithOverflow() throws Exception
+    {
+        ServiceAgent sa = SLP.newServiceAgent(newSettings());
+        sa.start();
+        try
+        {
             int size = 20;
             for (int i = 0; i < size; ++i)
             {
@@ -125,11 +152,11 @@ public class StandardUserAgentClientTest
             UserAgentClient uac = SLP.newUserAgentClient(newSettings());
             List<ServiceInfo> services = uac.findServices(new ServiceType("service:jmx"), Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, null);
 
-            assert services.size() == size;
+            assert services.size() < size;
         }
         finally
         {
-            sas.stop();
+            sa.stop();
         }
     }
 
