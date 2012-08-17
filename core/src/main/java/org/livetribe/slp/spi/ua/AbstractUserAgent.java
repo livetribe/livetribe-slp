@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
-
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
@@ -48,6 +45,9 @@ import org.livetribe.slp.spi.msg.URLEntry;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
+
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
 
 
 /**
@@ -113,7 +113,25 @@ public abstract class AbstractUserAgent implements IUserAgent
         {
             List<SrvRply> srvRplys = multicastSrvRqst.perform(serviceType, language, scopes, filter);
             for (SrvRply srvRply : srvRplys)
-                if (srvRply.getSLPError() == SLPError.NO_ERROR) result.addAll(srvRplyToServiceInfos(srvRply, scopes));
+            {
+                if (srvRply.getSLPError() == SLPError.NO_ERROR)
+                {
+                    if (srvRply.isOverflow())
+                    {
+                        try
+                        {
+                            // Attempt to use TCP
+                            InetSocketAddress address = new InetSocketAddress(srvRply.getResponder(), port);
+                            srvRply = unicastSrvRqst.perform(address, true, serviceType, language, scopes, filter);
+                        }
+                        catch (Exception ignored)
+                        {
+                            // Attempt failed, use what we have
+                        }
+                    }
+                    result.addAll(srvRplyToServiceInfos(srvRply, scopes));
+                }
+            }
         }
 
         return result;

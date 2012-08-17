@@ -18,12 +18,8 @@ package org.livetribe.slp.sa;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import java.util.logging.Level;
-
-import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
@@ -36,9 +32,11 @@ import org.livetribe.slp.settings.Settings;
 import org.livetribe.slp.spi.Server;
 import org.livetribe.slp.spi.ServiceInfoCache;
 import org.livetribe.slp.spi.TCPSrvAckPerformer;
+import org.livetribe.slp.spi.da.TCPSrvRplyPerformer;
 import org.livetribe.slp.spi.msg.Message;
 import org.livetribe.slp.spi.msg.SrvDeReg;
 import org.livetribe.slp.spi.msg.SrvReg;
+import org.livetribe.slp.spi.msg.SrvRqst;
 import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.TCPConnector;
@@ -47,6 +45,11 @@ import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
 import org.livetribe.slp.spi.sa.AbstractServiceAgent;
 import org.livetribe.slp.spi.sa.ServiceAgentInfo;
+
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.TCP_CONNECTOR_SERVER_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_FACTORY_KEY;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 
 
 /**
@@ -92,6 +95,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     private final MessageListener tcpListener = new TCPMessageListener();
     private final TCPConnectorServer tcpConnectorServer;
     private final TCPSrvAckPerformer tcpSrvAck;
+    private final TCPSrvRplyPerformer tcpSrvRply;
 
     /**
      * Creates a new StandardServiceAgentServer using the default settings
@@ -121,6 +125,7 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
         super(udpConnector, tcpConnector, udpConnectorServer, settings);
         this.tcpConnectorServer = tcpConnectorServer;
         this.tcpSrvAck = new TCPSrvAckPerformer(tcpConnector, settings);
+        this.tcpSrvRply = new TCPSrvRplyPerformer(tcpConnector, settings);
         if (settings != null) setSettings(settings);
     }
 
@@ -201,6 +206,30 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
     }
 
     /**
+     * Handles a unicast TCP SrvRqst message arrived to this service agent.
+     * <br />
+     * This service agent will reply with a list of matching services.
+     *
+     * @param srvRqst the SrvRqst message to handle
+     * @param socket the socket connected to the client where to write the reply
+     */
+    protected void handleTCPSrvRqst(SrvRqst srvRqst, Socket socket)
+    {
+        // Match scopes
+        if (!getScopes().weakMatch(srvRqst.getScopes()))
+        {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("ServiceAgent server " + this + " dropping message " + srvRqst + ": no scopes match among agent scopes " + getScopes() + " and message scopes " + srvRqst.getScopes());
+            return;
+        }
+
+        List<ServiceInfo> matchingServices = matchServices(srvRqst.getServiceType(), srvRqst.getLanguage(), srvRqst.getScopes(), srvRqst.getFilter());
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("ServiceAgent server " + this + " returning " + matchingServices.size() + " services of type " + srvRqst.getServiceType());
+        tcpSrvRply.perform(socket, srvRqst, matchingServices);
+    }
+
+    /**
      * ServiceAgents listen for tcp messages that may arrive.
      */
     private class TCPMessageListener implements MessageListener
@@ -212,26 +241,30 @@ public class StandardServiceAgentServer extends AbstractServiceAgent
                 logger.finest("ServiceAgent server message listener received message " + message);
 
             Socket socket = (Socket)event.getSource();
-            if (socket.getInetAddress().isLoopbackAddress())
+            switch (message.getMessageType())
             {
-                switch (message.getMessageType())
-                {
-                    case Message.SRV_REG_TYPE:
-                        handleTCPSrvReg((SrvReg)message, socket);
-                        break;
-                    case Message.SRV_DEREG_TYPE:
-                        handleTCPSrvDeReg((SrvDeReg)message, socket);
-                        break;
-                    default:
+                case Message.SRV_REG_TYPE:
+                case Message.SRV_DEREG_TYPE:
+                    if (socket.getInetAddress().isLoopbackAddress())
+                    {
+                        if (message.getMessageType() == Message.SRV_REG_TYPE)
+                            handleTCPSrvReg((SrvReg)message, socket);
+                        else
+                            handleTCPSrvDeReg((SrvDeReg)message, socket);
+                    }
+                    else
+                    {
                         if (logger.isLoggable(Level.FINE))
-                            logger.fine("ServiceAgent server " + this + " dropping tcp message " + message + ": not handled by ServiceAgents");
-                        break;
-                }
-            }
-            else
-            {
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("ServiceAgent server " + this + " dropping tcp message " + message + ": not from loopback address");
+                            logger.fine("ServiceAgent server " + this + " dropping tcp message " + message + ": not from loopback address");
+                    }
+                    break;
+                case Message.SRV_RQST_TYPE:
+                    handleTCPSrvRqst((SrvRqst)message, socket);
+                    break;
+                default:
+                    if (logger.isLoggable(Level.FINE))
+                        logger.fine("ServiceAgent server " + this + " dropping tcp message " + message + ": not handled by ServiceAgents");
+                    break;
             }
         }
     }

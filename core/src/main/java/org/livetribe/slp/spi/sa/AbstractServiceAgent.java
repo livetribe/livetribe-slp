@@ -23,14 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
-import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
-import static org.livetribe.slp.settings.Keys.LANGUAGE_KEY;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.SA_ATTRIBUTES_KEY;
-import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
-import static org.livetribe.slp.settings.Keys.SCOPES_KEY;
-
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLPError;
 import org.livetribe.slp.Scopes;
@@ -62,6 +54,14 @@ import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.TCPConnector;
 import org.livetribe.slp.spi.net.UDPConnector;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
+
+import static org.livetribe.slp.settings.Keys.ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.LANGUAGE_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.SA_ATTRIBUTES_KEY;
+import static org.livetribe.slp.settings.Keys.SA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.SCOPES_KEY;
 
 
 /**
@@ -405,7 +405,7 @@ public abstract class AbstractServiceAgent extends AbstractServer implements Dir
         }
     }
 
-    private List<ServiceInfo> matchServices(ServiceType serviceType, String language, Scopes scopes, String filter) throws ServiceLocationException
+    protected List<ServiceInfo> matchServices(ServiceType serviceType, String language, Scopes scopes, String filter) throws ServiceLocationException
     {
         if (logger.isLoggable(Level.FINEST))
             logger.finest("ServiceAgent " + this + " matching ServiceType " + serviceType + ", language " + language + ", scopes " + scopes + ", filter " + filter);

@@ -19,13 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
-import static org.livetribe.slp.settings.Keys.PORT_KEY;
-import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
-import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import org.livetribe.slp.Attributes;
 import org.livetribe.slp.SLP;
 import org.livetribe.slp.Scopes;
@@ -34,6 +27,7 @@ import org.livetribe.slp.ServiceType;
 import org.livetribe.slp.ServiceURL;
 import org.livetribe.slp.da.StandardDirectoryAgentServer;
 import org.livetribe.slp.sa.ServiceAgentClient;
+import org.livetribe.slp.sa.StandardServiceAgentServer;
 import org.livetribe.slp.settings.Factories;
 import org.livetribe.slp.settings.MapSettings;
 import org.livetribe.slp.settings.Settings;
@@ -41,6 +35,13 @@ import org.livetribe.slp.spi.net.MessageEvent;
 import org.livetribe.slp.spi.net.MessageListener;
 import org.livetribe.slp.spi.net.NetUtils;
 import org.livetribe.slp.spi.net.UDPConnectorServer;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import static org.livetribe.slp.settings.Keys.DA_ADDRESSES_KEY;
+import static org.livetribe.slp.settings.Keys.PORT_KEY;
+import static org.livetribe.slp.settings.Keys.UA_UNICAST_PREFER_TCP;
+import static org.livetribe.slp.settings.Keys.UDP_CONNECTOR_SERVER_FACTORY_KEY;
 
 
 /**
@@ -102,6 +103,33 @@ public class StandardUserAgentClientTest
         finally
         {
             da.stop();
+        }
+    }
+
+    @Test
+    public void testFindServicesWithOverflow() throws Exception
+    {
+        StandardServiceAgentServer sas = StandardServiceAgentServer.newInstance(newSettings());
+        sas.start();
+        try
+        {
+            ServiceAgentClient sa = SLP.newServiceAgentClient(newSettings());
+            int size = 20;
+            for (int i = 0; i < size; ++i)
+            {
+                ServiceURL serviceURL = new ServiceURL("service:jmx:rmi" + i + ":///jndi/rmi:///test");
+                ServiceInfo service = new ServiceInfo(serviceURL, Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, Attributes.NONE);
+                sa.register(service);
+            }
+
+            UserAgentClient uac = SLP.newUserAgentClient(newSettings());
+            List<ServiceInfo> services = uac.findServices(new ServiceType("service:jmx"), Locale.ENGLISH.getLanguage(), Scopes.DEFAULT, null);
+
+            assert services.size() == size;
+        }
+        finally
+        {
+            sas.stop();
         }
     }
 
